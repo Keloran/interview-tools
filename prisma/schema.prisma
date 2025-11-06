@@ -13,3 +13,78 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+model User {
+  id         Int         @id @default(autoincrement())
+  clerkId    String      @unique
+  email      String      @unique
+  name       String?
+  companies  Company[]
+  interviews Interview[]
+}
+
+model Company {
+  id         Int         @id @default(autoincrement())
+  name       String
+  userId     Int
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  interviews Interview[]
+  created_at DateTime    @default(now())
+
+  @@unique([userId, name])
+}
+
+model Interview {
+  id              Int               @id @default(autoincrement())
+  companyId       Int
+  company         Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  jobTitle        String // Role you're applying for
+  applicationDate DateTime // When you applied for this job
+  interviewer     String? // Name of person interviewing you
+  stageId         Int
+  stage           Stage             @relation(fields: [stageId], references: [id])
+  stageMethodId   Int
+  stageMethod     StageMethod       @relation(fields: [stageMethodId], references: [id])
+  userId          Int
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date            DateTime // When this specific interview stage is scheduled
+  deadline        DateTime? // For take-home tests
+  status          InterviewStatus   @default(SCHEDULED)
+  outcome         InterviewOutcome?
+  notes           String?           @db.Text // Your notes about the interview
+  metadata        Json? // Job posting URL, salary expectations, etc.
+  created_at      DateTime          @default(now())
+  updated_at      DateTime          @updatedAt
+  link            String? // Meeting link (Teams, Google Meet, etc.)
+
+  @@unique([userId, companyId, jobTitle, applicationDate]) // Prevent duplicate applications
+}
+
+model Stage {
+  id         Int         @id @default(autoincrement())
+  stage      String      @unique
+  interviews Interview[]
+}
+
+model StageMethod {
+  id         Int         @id @default(autoincrement())
+  method     String      @unique
+  interviews Interview[]
+}
+
+enum InterviewStatus {
+  SCHEDULED // Upcoming interview
+  COMPLETED // You've done the interview
+  CANCELLED // Interview was cancelled
+  NO_SHOW // You or they didn't show up
+}
+
+enum InterviewOutcome {
+  PASSED // You progressed to next stage
+  REJECTED // You didn't get through
+  AWAITING_RESPONSE // Waiting to hear back
+  OFFER_RECEIVED // You got the job offer!
+  OFFER_ACCEPTED // You accepted the offer
+  OFFER_DECLINED // You declined the offer
+  WITHDREW // You withdrew your application
+}

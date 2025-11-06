@@ -5,11 +5,11 @@ import {
   ClerkProvider,
   UserButton,
   SignInButton,
-  SignUpButton,
   SignedOut,
   SignedIn,
 } from "@clerk/nextjs";
 import {ReactNode} from "react";
+import {Button} from "@/components/ui/button";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -48,8 +48,11 @@ const Navbar = () => {
   return (
     <header className="flex justify-end items-center p-4 gap-4 h-16">
       <SignedOut>
-        <SignInButton />
-        <SignUpButton />
+        <SignInButton>
+          <Button className={"cursor-pointer"}>
+            Sign In
+          </Button>
+        </SignInButton>
       </SignedOut>
       <SignedIn>
         <UserButton />
