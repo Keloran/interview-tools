@@ -3,7 +3,7 @@
 import { useAppStore } from "@/lib/store";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn, isSameDay } from "@/lib/utils";
 import { useState } from "react";
 import {X} from "lucide-react";
 
@@ -15,100 +15,20 @@ interface Event {
   stage: string;
 }
 
-const STAGE_COLORS: Record<string, string> = {
-  Applied: "bg-gray-500",
-  "Phone Screen": "bg-blue-500",
-  "Technical Interview": "bg-purple-500",
-  "Onsite Interview": "bg-orange-500",
-  "Final Round": "bg-pink-500",
-  Offer: "bg-green-500",
-}
-
 export default function InterviewsList() {
   const filteredDateISO = useAppStore((s) => s.filteredDate);
   const setFilteredDate = useAppStore((s) => s.setFilteredDate);
 
   const filteredDate = filteredDateISO ? new Date(filteredDateISO + "T00:00:00") : null;
 
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [currentDate] = useState(new Date());
   const [events, setEvents] = useState<Event[]>([]);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [newEventTitle, setNewEventTitle] = useState("");
-  const [newEventStage, setNewEventStage] = useState("Applied");
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
 
   const firstDayOfMonth = new Date(year, month, 1);
-  const lastDayOfMonth = new Date(year, month + 1, 0);
-  const daysInMonth = lastDayOfMonth.getDate();
   const startingDayOfWeek = firstDayOfMonth.getDay();
-
-  const previousMonth = () => {
-    setCurrentDate(new Date(year, month - 1, 1));
-  };
-
-  const nextMonth = () => {
-    setCurrentDate(new Date(year, month + 1, 1));
-  };
-
-  const today = new Date();
-  const isToday = (day: number) => {
-    return (
-      day === today.getDate() &&
-      month === today.getMonth() &&
-      year === today.getFullYear()
-    );
-  };
-
-  const isSameDay = (date1: Date, date2: Date) => {
-    return (
-      date1.getDate() === date2.getDate() &&
-      date1.getMonth() === date2.getMonth() &&
-      date1.getFullYear() === date2.getFullYear()
-    );
-  };
-
-  const getEventsForDay = (day: number) => {
-    const date = new Date(year, month, day);
-    return events.filter((event) => isSameDay(event.date, date));
-  };
-
-  const toISODate = (d: Date) => {
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    return `${y}-${m}-${day}`;
-  };
-
-  const handleDateClick = (day: number) => {
-    const date = new Date(year, month, day);
-    setFilteredDate(toISODate(date));
-  };
-
-  const handlePlusClick = (day: number, e: React.MouseEvent) => {
-    e.stopPropagation();
-    const date = new Date(year, month, day);
-    setSelectedDate(date);
-    setIsDialogOpen(true);
-  };
-
-  const handleAddEvent = () => {
-    if (newEventTitle.trim() && selectedDate) {
-      const newEvent: Event = {
-        id: Math.random().toString(36).substr(2, 9),
-        title: newEventTitle,
-        date: selectedDate,
-        color: STAGE_COLORS[newEventStage],
-        stage: newEventStage,
-      };
-      setEvents([...events, newEvent]);
-      setNewEventTitle("");
-      setNewEventStage("Applied");
-      setIsDialogOpen(false);
-    }
-  };
 
   const handleDeleteEvent = (eventId: string) => {
     setEvents(events.filter((e) => e.id !== eventId));

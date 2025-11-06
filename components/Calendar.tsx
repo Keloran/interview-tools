@@ -9,7 +9,7 @@ import {Dialog, DialogContent, DialogHeader, DialogTitle} from "@/components/ui/
 import {Label} from "@/components/ui/label";
 import {Input} from "@/components/ui/input";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
-import {cn} from "@/lib/utils";
+import {cn, STAGE_COLORS, toISODate, isSameDay} from "@/lib/utils";
 
 interface Event {
   id: string
@@ -36,15 +36,6 @@ const MONTHS = [
 ]
 
 const INTERVIEW_STAGES = ["Applied", "Phone Screen", "Technical Interview", "Onsite Interview", "Final Round", "Offer"]
-
-const STAGE_COLORS: Record<string, string> = {
-  Applied: "bg-gray-500",
-  "Phone Screen": "bg-blue-500",
-  "Technical Interview": "bg-purple-500",
-  "Onsite Interview": "bg-orange-500",
-  "Final Round": "bg-pink-500",
-  Offer: "bg-green-500",
-}
 
 export default function Calendar() {
   const filteredDateISO = useAppStore((s) => s.filteredDate);
@@ -80,24 +71,9 @@ export default function Calendar() {
     return day === today.getDate() && month === today.getMonth() && year === today.getFullYear()
   }
 
-  const isSameDay = (date1: Date, date2: Date) => {
-    return (
-      date1.getDate() === date2.getDate() &&
-      date1.getMonth() === date2.getMonth() &&
-      date1.getFullYear() === date2.getFullYear()
-    )
-  }
-
   const getEventsForDay = (day: number) => {
     const date = new Date(year, month, day)
     return events.filter((event) => isSameDay(event.date, date))
-  }
-
-  const toISODate = (d: Date) => {
-    const y = d.getFullYear()
-    const m = String(d.getMonth() + 1).padStart(2, "0")
-    const day = String(d.getDate()).padStart(2, "0")
-    return `${y}-${m}-${day}`
   }
 
   const handleDateClick = (day: number) => {
@@ -127,12 +103,6 @@ export default function Calendar() {
       setIsDialogOpen(false)
     }
   }
-
-  const handleDeleteEvent = (eventId: string) => {
-    setEvents(events.filter((e) => e.id !== eventId))
-  }
-
-  const displayedEvents = filteredDate ? events.filter((event) => isSameDay(event.date, filteredDate)) : events
 
   const days = []
   for (let i = 0; i < startingDayOfWeek; i++) {
