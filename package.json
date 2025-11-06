@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "pnpm dlx prisma generate --no-engine --output /app/generated/prisma && next build",
+    "build": "pnpm dlx prisma generate --no-engine && next build",
     "start": "next start",
     "lint": "eslint"
   },
