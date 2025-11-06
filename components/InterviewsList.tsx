@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import {X} from "lucide-react";
 
 interface Event {
   id: string;
@@ -12,6 +13,15 @@ interface Event {
   date: Date;
   color: string;
   stage: string;
+}
+
+const STAGE_COLORS: Record<string, string> = {
+  Applied: "bg-gray-500",
+  "Phone Screen": "bg-blue-500",
+  "Technical Interview": "bg-purple-500",
+  "Onsite Interview": "bg-orange-500",
+  "Final Round": "bg-pink-500",
+  Offer: "bg-green-500",
 }
 
 export default function InterviewsList() {
