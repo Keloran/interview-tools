@@ -136,8 +136,7 @@ export default function Calendar() {
     const isFiltered = filteredDate && isSameDay(date, filteredDate)
 
     days.push(
-      <Button
-        variant={"outline"}
+      <div
         key={day}
         onClick={() => handleDateClick(day)}
         className={cn(
@@ -162,7 +161,7 @@ export default function Calendar() {
             ))}
           </div>
         )}
-      </Button>,
+      </div>,
     )
   }
 
@@ -193,8 +192,8 @@ export default function Calendar() {
           </div>
 
           <div className="grid grid-cols-7 gap-1 mb-1">
-            {DAYS.map((day) => (
-              <div key={`${day}`} className="text-center text-xs font-medium text-muted-foreground py-1">
+            {DAYS.map((day, i) => (
+              <div key={`${day}-${i}`} className="text-center text-xs font-medium text-muted-foreground py-1">
                 {day}
               </div>
             ))}
