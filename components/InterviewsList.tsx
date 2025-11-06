@@ -25,11 +25,13 @@ const STAGE_COLORS: Record<string, string> = {
 }
 
 export default function InterviewsList() {
-  const selectedDay = useAppStore((s) => s.selectedDay);
+  const filteredDateISO = useAppStore((s) => s.filteredDate);
+  const setFilteredDate = useAppStore((s) => s.setFilteredDate);
+
+  const filteredDate = filteredDateISO ? new Date(filteredDateISO + "T00:00:00") : null;
 
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [filteredDate, setFilteredDate] = useState<Date | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newEventTitle, setNewEventTitle] = useState("");
@@ -73,9 +75,16 @@ export default function InterviewsList() {
     return events.filter((event) => isSameDay(event.date, date));
   };
 
+  const toISODate = (d: Date) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  };
+
   const handleDateClick = (day: number) => {
     const date = new Date(year, month, day);
-    setFilteredDate(date);
+    setFilteredDate(toISODate(date));
   };
 
   const handlePlusClick = (day: number, e: React.MouseEvent) => {
@@ -114,8 +123,8 @@ export default function InterviewsList() {
     days.push(<div key={`empty-${i}`} className="aspect-square" />);
   }
 
-  // Placeholder: this would come from Prisma/DB filtered by selectedDay
-  // For now just demonstrate the dependency on selectedDay
+  // Placeholder: this would come from Prisma/DB filtered by filteredDate
+  // For now just demonstrate the dependency on filteredDate
   return (
     <div className="flex-1">
       <Card className="p-6">

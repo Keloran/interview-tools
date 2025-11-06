@@ -5,14 +5,14 @@ import { create } from "zustand";
 export type ISODate = string; // e.g. "2025-11-06"
 
 export type AppState = {
-  selectedDay: ISODate | null;
+  filteredDate: ISODate | null;
 };
 
 export type AppActions = {
-  setSelectedDay: (day: ISODate | null) => void;
+  setFilteredDate: (day: ISODate | null) => void;
 };
 
 export const useAppStore = create<AppState & AppActions>((set) => ({
-  selectedDay: null,
-  setSelectedDay: (day) => set({ selectedDay: day }),
+  filteredDate: null,
+  setFilteredDate: (day) => set({ filteredDate: day }),
 }));
