@@ -1,7 +1,7 @@
 "use client";
 
 import { useAppStore } from "@/lib/store";
-import {useMemo, useState} from "react";
+import {useMemo, useState, MouseEvent} from "react";
 import {Button} from "@/components/ui/button";
 import {ChevronLeft, ChevronRight, Plus} from "lucide-react";
 import {Card} from "@/components/ui/card";
@@ -11,7 +11,7 @@ import {Input} from "@/components/ui/input";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
 import {cn, STAGE_COLORS, toISODate, isSameDay} from "@/lib/utils";
 
-interface Event {
+interface Interview {
   id: string
   title: string
   date: Date
@@ -45,10 +45,11 @@ export default function Calendar() {
 
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
-  const [events, setEvents] = useState<Event[]>([])
+  const [selectedTime, setSelectedTime] = useState("09:00:00")
+  const [interviews, setInterviews] = useState<Interview[]>([])
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [newEventTitle, setNewEventTitle] = useState("")
-  const [newEventStage, setNewEventStage] = useState("Applied")
+  const [newInterviewTitle, setNewInterviewTitle] = useState("")
+  const [newInterviewStage, setNewInterviewStage] = useState("Applied")
 
   const year = currentDate.getFullYear()
   const month = currentDate.getMonth()
@@ -71,9 +72,9 @@ export default function Calendar() {
     return day === today.getDate() && month === today.getMonth() && year === today.getFullYear()
   }
 
-  const getEventsForDay = (day: number) => {
+  const getInterviewsForDay = (day: number) => {
     const date = new Date(year, month, day)
-    return events.filter((event) => isSameDay(event.date, date))
+    return interviews.filter((interview) => isSameDay(interview.date, date))
   }
 
   const handleDateClick = (day: number) => {
@@ -81,26 +82,30 @@ export default function Calendar() {
     setFilteredDateISO(toISODate(date))
   }
 
-  const handlePlusClick = (day: number, e: React.MouseEvent) => {
+  const handlePlusClick = (day: number, e: MouseEvent) => {
     e.stopPropagation()
     const date = new Date(year, month, day)
     setSelectedDate(date)
     setIsDialogOpen(true)
   }
 
-  const handleAddEvent = () => {
-    if (newEventTitle.trim() && selectedDate) {
-      const newEvent: Event = {
+  const handleAddInterview = () => {
+    if (newInterviewTitle.trim() && selectedDate) {
+      const dateWithTime = new Date(selectedDate)
+      const [hours, minutes, seconds] = selectedTime.split(':').map(Number)
+      dateWithTime.setHours(hours, minutes, seconds, 0)
+      const newInterview: Interview = {
         id: Math.random().toString(36).substr(2, 9),
-        title: newEventTitle,
-        date: selectedDate,
-        color: STAGE_COLORS[newEventStage],
-        stage: newEventStage,
+        title: newInterviewTitle,
+        date: dateWithTime,
+        color: STAGE_COLORS[newInterviewStage],
+        stage: newInterviewStage,
       }
-      setEvents([...events, newEvent])
-      setNewEventTitle("")
-      setNewEventStage("Applied")
+      setInterviews([...interviews, newInterview])
+      setNewInterviewTitle("")
+      setNewInterviewStage("Applied")
       setIsDialogOpen(false)
+      setSelectedTime("09:00:00")
     }
   }
 
@@ -109,7 +114,7 @@ export default function Calendar() {
     days.push(<div key={`empty-${i}`} className="aspect-square" />)
   }
   for (let day = 1; day <= daysInMonth; day++) {
-    const dayEvents = getEventsForDay(day)
+    const dayInterviews = getInterviewsForDay(day)
     const date = new Date(year, month, day)
     const isFiltered = filteredDate && isSameDay(date, filteredDate)
 
@@ -132,10 +137,10 @@ export default function Calendar() {
             <Plus className="h-3 w-3" />
           </Button>
         </div>
-        {dayEvents.length > 0 && (
+        {dayInterviews.length > 0 && (
           <div className="absolute bottom-0.5 left-1/2 -translate-x-1/2 flex gap-0.5">
-            {dayEvents.slice(0, 2).map((event) => (
-              <div key={event.id} className={cn("w-1 h-1 rounded-full", event.color)} />
+            {dayInterviews.slice(0, 2).map((interview) => (
+              <div key={interview.id} className={cn("w-1 h-1 rounded-full", interview.color)} />
             ))}
           </div>
         )}
@@ -185,7 +190,7 @@ export default function Calendar() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              Add Event for{" "}
+              Add Interview for{" "}
               {selectedDate?.toLocaleDateString("en-US", {
                 month: "long",
                 day: "numeric",
@@ -195,23 +200,23 @@ export default function Calendar() {
           </DialogHeader>
           <div className="space-y-4 pt-4">
             <div className="space-y-2">
-              <Label htmlFor="event-title">Event Title</Label>
+              <Label htmlFor="interview-title">Interview Title</Label>
               <Input
-                id="event-title"
-                placeholder="Enter event title"
-                value={newEventTitle}
-                onChange={(e) => setNewEventTitle(e.target.value)}
+                id="interview-title"
+                placeholder="Enter interview title"
+                value={newInterviewTitle}
+                onChange={(e) => setNewInterviewTitle(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
-                    handleAddEvent()
+                    handleAddInterview()
                   }
                 }}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="event-stage">Interview Stage</Label>
-              <Select value={newEventStage} onValueChange={setNewEventStage}>
-                <SelectTrigger id="event-stage">
+              <Label htmlFor="interview-stage">Interview Stage</Label>
+              <Select value={newInterviewStage} onValueChange={setNewInterviewStage}>
+                <SelectTrigger id="interview-stage">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -222,10 +227,22 @@ export default function Calendar() {
                   ))}
                 </SelectContent>
               </Select>
+              <Input
+                id={"interview-time"}
+                step={1}
+                type={"time"}
+                placeholder={"09:00:00"}
+                value={"09:00:00"}
+                onChange={(e) => setSelectedTime(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleAddInterview()
+                  }
+                }} />
             </div>
-            <Button onClick={handleAddEvent} className="w-full">
+            <Button onClick={handleAddInterview} className="w-full">
               <Plus className="h-4 w-4 mr-2" />
-              Add Event
+              Add Interview Stage
             </Button>
           </div>
         </DialogContent>
