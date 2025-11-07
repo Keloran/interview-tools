@@ -10,6 +10,9 @@ import {
 } from "@clerk/nextjs";
 import {ReactNode} from "react";
 import {Button} from "@/components/ui/button";
+import {Companies} from "@/components/Company";
+import {FlagsProvider} from "@flags-gg/react-library";
+import ClientProviders from "@/components/ClientProviders";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,22 +36,25 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider>
-      <html lang="en">
-        <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-          <main className="min-h-screen bg-background p-4 md:p-8">
-            <div className="mx-auto max-w-6xl">
-              <div className="mb-8 flex items-start justify-between gap-4">
-                <div>
-                  <h1 className="text-3xl font-bold tracking-tight text-balance">Calendar</h1>
-                  <p className="text-muted-foreground mt-2">Manage your schedule and events</p>
+      <ClientProviders>
+        <html lang="en">
+          <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+            <main className="min-h-screen bg-background p-4 md:p-8">
+              <div className="mx-auto max-w-6xl">
+                <div className="mb-8 flex items-start justify-between gap-4">
+                  <div>
+                    <h1 className="text-3xl font-bold tracking-tight text-balance">Calendar</h1>
+                    <p className="text-muted-foreground mt-2">Manage your schedule and events</p>
+                  </div>
+                  <Navbar />
                 </div>
-                <Navbar />
+                <Companies />
+                {children}
               </div>
-              {children}
-            </div>
-          </main>
-        </body>
-      </html>
+            </main>
+          </body>
+        </html>
+      </ClientProviders>
     </ClerkProvider>
   );
 }

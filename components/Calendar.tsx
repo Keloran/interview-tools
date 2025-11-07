@@ -17,6 +17,13 @@ interface Interview {
   date: Date
   color: string
   stage: string
+  // Optional UI-only metadata (not persisted yet)
+  companyName?: string
+  jobTitle?: string
+  jobPostingLink?: string
+  interviewer?: string
+  locationType?: "phone" | "link"
+  interviewLink?: string
 }
 
 const DAYS = ["S", "M", "T", "W", "T", "F", "S"]
@@ -35,7 +42,7 @@ const MONTHS = [
   "December",
 ]
 
-const INTERVIEW_STAGES = ["Applied", "Phone Screen", "Technical Interview", "Onsite Interview", "Final Round", "Offer"]
+const INTERVIEW_STAGES = ["Applied", "First Stage", "Initial Interview", "Phone Screen", "Technical Interview", "Onsite Interview", "Final Round", "Offer"]
 
 export default function Calendar() {
   const filteredDateISO = useAppStore((s) => s.filteredDate);
@@ -50,6 +57,14 @@ export default function Calendar() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [newInterviewTitle, setNewInterviewTitle] = useState("")
   const [newInterviewStage, setNewInterviewStage] = useState("Applied")
+  const [companyName, setCompanyName] = useState("")
+  const [jobTitle, setJobTitle] = useState("")
+  const [jobPostingLink, setJobPostingLink] = useState("")
+  const [interviewer, setInterviewer] = useState("")
+  const [locationType, setLocationType] = useState<"phone" | "link">("phone")
+  const [interviewLink, setInterviewLink] = useState("")
+
+  console.info("interviews", interviews)
 
   const year = currentDate.getFullYear()
   const month = currentDate.getMonth()
@@ -89,24 +104,63 @@ export default function Calendar() {
     setIsDialogOpen(true)
   }
 
+  const resetForm = () => {
+    setNewInterviewTitle("")
+    setNewInterviewStage("Applied")
+    setCompanyName("")
+    setJobTitle("")
+    setJobPostingLink("")
+    setInterviewer("")
+    setLocationType("phone")
+    setInterviewLink("")
+    setSelectedTime("09:00:00")
+  }
+
   const handleAddInterview = () => {
-    if (newInterviewTitle.trim() && selectedDate) {
-      const dateWithTime = new Date(selectedDate)
-      const [hours, minutes, seconds] = selectedTime.split(':').map(Number)
-      dateWithTime.setHours(hours, minutes, seconds, 0)
-      const newInterview: Interview = {
-        id: Math.random().toString(36).substr(2, 9),
-        title: newInterviewTitle,
-        date: dateWithTime,
-        color: STAGE_COLORS[newInterviewStage],
-        stage: newInterviewStage,
-      }
-      setInterviews([...interviews, newInterview])
-      setNewInterviewTitle("")
-      setNewInterviewStage("Applied")
-      setIsDialogOpen(false)
-      setSelectedTime("09:00:00")
+    if (!selectedDate) return
+
+    const isApplied = newInterviewStage === "Applied"
+    const isEarlyStage = newInterviewStage === "First Stage" || newInterviewStage === "Initial Interview"
+
+    // Basic validation per requirements
+    if (!companyName.trim() || !jobTitle.trim()) {
+      return
     }
+    if (isApplied) {
+      // jobPostingLink optional for now
+    }
+    if (isEarlyStage) {
+      if (!selectedTime || !interviewer.trim()) {
+        return
+      }
+      if (locationType === "link" && !interviewLink.trim()) {
+        return
+      }
+    }
+
+    const dateWithTime = new Date(selectedDate)
+    const [hours, minutes, seconds] = selectedTime.split(":").map(Number)
+    dateWithTime.setHours(hours || 0, minutes || 0, seconds || 0, 0)
+
+    const composedTitle = `${companyName} — ${jobTitle}`
+
+    const newInterview: Interview = {
+      id: Math.random().toString(36).substr(2, 9),
+      title: composedTitle,
+      date: dateWithTime,
+      color: STAGE_COLORS[newInterviewStage],
+      stage: newInterviewStage,
+      companyName,
+      jobTitle,
+      jobPostingLink: jobPostingLink || undefined,
+      interviewer: isEarlyStage ? interviewer : undefined,
+      locationType: isEarlyStage ? locationType : undefined,
+      interviewLink: isEarlyStage && locationType === "link" ? interviewLink : undefined,
+    }
+
+    setInterviews([...interviews, newInterview])
+    resetForm()
+    setIsDialogOpen(false)
   }
 
   const days = []
@@ -200,20 +254,6 @@ export default function Calendar() {
           </DialogHeader>
           <div className="space-y-4 pt-4">
             <div className="space-y-2">
-              <Label htmlFor="interview-title">Interview Title</Label>
-              <Input
-                id="interview-title"
-                placeholder="Enter interview title"
-                value={newInterviewTitle}
-                onChange={(e) => setNewInterviewTitle(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    handleAddInterview()
-                  }
-                }}
-              />
-            </div>
-            <div className="space-y-2">
               <Label htmlFor="interview-stage">Interview Stage</Label>
               <Select value={newInterviewStage} onValueChange={setNewInterviewStage}>
                 <SelectTrigger id="interview-stage">
@@ -227,19 +267,90 @@ export default function Calendar() {
                   ))}
                 </SelectContent>
               </Select>
-              <Input
-                id={"interview-time"}
-                step={1}
-                type={"time"}
-                placeholder={"09:00:00"}
-                value={"09:00:00"}
-                onChange={(e) => setSelectedTime(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    handleAddInterview()
-                  }
-                }} />
             </div>
+
+            {/* Shared fields: company name, job title, job posting link */}
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2 md:col-span-1">
+                <Label htmlFor="company-name">Company name</Label>
+                <Input
+                  id="company-name"
+                  placeholder="e.g. Acme Corp"
+                  value={companyName}
+                  onChange={(e) => setCompanyName(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2 md:col-span-1">
+                <Label htmlFor="job-title">Job title</Label>
+                <Input
+                  id="job-title"
+                  placeholder="e.g. Senior Frontend Engineer"
+                  value={jobTitle}
+                  onChange={(e) => setJobTitle(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="job-posting-link">Job posting link</Label>
+                <Input
+                  id="job-posting-link"
+                  type="url"
+                  placeholder="https://..."
+                  value={jobPostingLink}
+                  onChange={(e) => setJobPostingLink(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* Early stage specific fields */}
+            {(newInterviewStage === "First Stage" || newInterviewStage === "Initial Interview") && (
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2 md:col-span-1">
+                  <Label htmlFor="interview-time">Interview time</Label>
+                  <Input
+                    id="interview-time"
+                    step={1}
+                    type="time"
+                    placeholder="09:00:00"
+                    value={selectedTime}
+                    onChange={(e) => setSelectedTime(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2 md:col-span-1">
+                  <Label htmlFor="interviewer">Interviewer</Label>
+                  <Input
+                    id="interviewer"
+                    placeholder="Who are you meeting?"
+                    value={interviewer}
+                    onChange={(e) => setInterviewer(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2 md:col-span-1">
+                  <Label htmlFor="location-type">Interview location</Label>
+                  <Select value={locationType} onValueChange={(v) => setLocationType(v as any)}>
+                    <SelectTrigger id="location-type">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="phone">Phone</SelectItem>
+                      <SelectItem value="link">Link (online meeting)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {locationType === "link" && (
+                  <div className="space-y-2 md:col-span-1">
+                    <Label htmlFor="interview-link">Interview link</Label>
+                    <Input
+                      id="interview-link"
+                      type="url"
+                      placeholder="https://meet..."
+                      value={interviewLink}
+                      onChange={(e) => setInterviewLink(e.target.value)}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+
             <Button onClick={handleAddInterview} className="w-full">
               <Plus className="h-4 w-4 mr-2" />
               Add Interview Stage

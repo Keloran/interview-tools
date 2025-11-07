@@ -7,6 +7,8 @@ export function cn(...inputs: ClassValue[]) {
 
 export const STAGE_COLORS: Record<string, string> = {
   Applied: "bg-gray-500",
+  "First Stage": "bg-blue-500",
+  "Initial Interview": "bg-indigo-500",
   "Phone Screen": "bg-blue-500",
   "Technical Interview": "bg-purple-500",
   "Onsite Interview": "bg-orange-500",
