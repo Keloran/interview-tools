@@ -1,7 +1,7 @@
 "use client"
 
 import {
-  Command,
+  Command, CommandDialog,
   CommandEmpty,
   CommandInput,
   CommandItem,
@@ -10,6 +10,9 @@ import {
 import {useUser} from "@clerk/nextjs";
 import {useFlags} from "@flags-gg/react-library";
 import {useQuery} from "@tanstack/react-query";
+import {useState} from "react";
+import {Input} from "@/components/ui/input";
+import {Search} from "lucide-react";
 
 async function getCompanies() {
   const res = await fetch(`/api/companies`, {
@@ -26,6 +29,7 @@ async function getCompanies() {
 export function Companies() {
   const {user} = useUser()
   const {is} = useFlags()
+  const [searchOpen, setSearchOpen] = useState(false)
 
   const {data, error} = useQuery({
     queryKey: ["companies", user?.id],
@@ -41,14 +45,20 @@ export function Companies() {
   }
 
   return (
-    <Command className="rounded-lg border shadow-md md:min-w-[450px]">
-      <CommandInput placeholder="Type a command or search..." />
-      <CommandList>
-        <CommandEmpty>No results found.</CommandEmpty>
-        {data?.map((company) => (
-          <CommandItem>{company}</CommandItem>
-        ))}
-      </CommandList>
-    </Command>
+    <div className={"relative ml-auto flex-1 md:grow-0"}>
+      <div onClick={() => setSearchOpen(true)}>
+        <Search className={"absolute left-2.5 top-3 h-4 w-5 text-muted-foreground"} />
+        <Input type={"search"} placeholder={"Companies Talked To"} className={"w-full rounded-lg bg-background pl-8 md:w-[200px] lg:w-[336px]"} />
+      </div>
+      <CommandDialog open={searchOpen} onOpenChange={setSearchOpen}>
+        <CommandInput placeholder="Type a command or search..." />
+        <CommandList>
+          <CommandEmpty>No results found.</CommandEmpty>
+          {data?.map((company) => (
+            <CommandItem>{company}</CommandItem>
+          ))}
+        </CommandList>
+      </CommandDialog>
+    </div>
   )
 }

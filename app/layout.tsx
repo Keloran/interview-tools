@@ -48,7 +48,6 @@ export default function RootLayout({
                   </div>
                   <Navbar />
                 </div>
-                <Companies />
                 {children}
               </div>
             </main>
@@ -62,16 +61,15 @@ export default function RootLayout({
 const Navbar = () => {
   return (
     <>
-        <SignedOut>
-          <SignInButton>
-            <Button className={"cursor-pointer"}>
-              Sign In
-            </Button>
-          </SignInButton>
-        </SignedOut>
-        <SignedIn>
-          <UserButton />
-        </SignedIn>
+      <Companies />
+      <SignedOut>
+        <SignInButton>
+          <Button className={"cursor-pointer"}>Sign In</Button>
+        </SignInButton>
+      </SignedOut>
+      <SignedIn>
+        <UserButton />
+      </SignedIn>
     </>
   );
 };
