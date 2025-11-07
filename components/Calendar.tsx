@@ -185,10 +185,11 @@ export default function Calendar() {
         <div className="flex items-start justify-between">
           <span className="font-medium">{day}</span>
           <Button
+            variant={"ghost"}
             onClick={(e) => handlePlusClick(day, e)}
-            className="opacity-0 group-hover:opacity-100 transition-opacity"
+            className="opacity-0 group-hover:opacity-100 transition-opacity w-3 h-3 cursor-pointer"
           >
-            <Plus className="h-3 w-3" />
+            <Plus className="h-1 w-1" />
           </Button>
         </div>
         {dayInterviews.length > 0 && (
