@@ -27,18 +27,18 @@ export function Companies() {
   const {user} = useUser()
   const {is} = useFlags()
 
-  if (!user) {
-    return null
-  }
-
-  if (!is("companies-list")?.enabled()) {
-    return null
-  }
-
   const {data, error} = useQuery({
     queryKey: ["companies", user?.id],
     queryFn: getCompanies,
   })
+
+  if (!user) {
+    return null
+  }
+
+  if (!is("companies list")?.enabled()) {
+    return null
+  }
 
   return (
     <Command className="rounded-lg border shadow-md md:min-w-[450px]">
