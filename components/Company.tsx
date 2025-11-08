@@ -14,6 +14,11 @@ import {useState} from "react";
 import {Input} from "@/components/ui/input";
 import {Search} from "lucide-react";
 
+interface Company {
+  name: string;
+  id: number;
+}
+
 async function getCompanies() {
   const res = await fetch(`/api/companies`, {
     method: "GET",
@@ -23,7 +28,7 @@ async function getCompanies() {
     throw new Error("Failed to fetch companies from client")
   }
 
-  return await res.json() as [string]
+  return await res.json() as Company[];
 }
 
 export function Companies() {
@@ -55,7 +60,7 @@ export function Companies() {
         <CommandList>
           <CommandEmpty>No results found.</CommandEmpty>
           {data?.map((company) => (
-            <CommandItem>{company}</CommandItem>
+            <CommandItem key={company.id}>{company.name}</CommandItem>
           ))}
         </CommandList>
       </CommandDialog>

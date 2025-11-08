@@ -1,0 +1,217 @@
+"use client";
+
+import {useState} from "react";
+import {Button} from "@/components/ui/button";
+import {Label} from "@/components/ui/label";
+import {Input} from "@/components/ui/input";
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
+import {Popover, PopoverContent, PopoverTrigger} from "@/components/ui/popover";
+import {Command, CommandEmpty, CommandGroup, CommandInput, CommandItem} from "@/components/ui/command";
+import {ChevronsUpDown, Plus} from "lucide-react";
+import {useQuery} from "@tanstack/react-query";
+
+export const INTERVIEW_STAGES = [
+  "Applied",
+  "First Stage",
+  "Initial Interview",
+  "Phone Screen",
+  "Technical Interview",
+  "Onsite Interview",
+  "Final Round",
+  "Offer",
+] as const;
+
+export type LocationType = "phone" | "link";
+
+export type InterviewFormValues = {
+  stage: typeof INTERVIEW_STAGES[number];
+  companyName: string;
+  jobTitle: string;
+  jobPostingLink?: string;
+  time?: string; // HH:mm:ss
+  interviewer?: string;
+  locationType?: LocationType;
+  interviewLink?: string;
+};
+
+export type InterviewFormProps = {
+  initialValues?: Partial<InterviewFormValues>;
+  onSubmit: (values: InterviewFormValues) => void;
+  submitLabel?: string;
+};
+
+interface Company {
+  name: string;
+  id: number;
+}
+
+async function getCompanies() {
+  const res = await fetch(`/api/companies`, { method: "GET" });
+  if (!res.ok) throw new Error("Failed to fetch companies from client");
+  return (await res.json()) as Company[];
+}
+
+export default function InterviewForm({ initialValues, onSubmit, submitLabel = "Add Interview Stage" }: InterviewFormProps) {
+  const [stage, setStage] = useState<InterviewFormValues["stage"]>(initialValues?.stage || "Applied");
+  const [companyName, setCompanyName] = useState(initialValues?.companyName || "");
+  const [jobTitle, setJobTitle] = useState(initialValues?.jobTitle || "");
+  const [jobPostingLink, setJobPostingLink] = useState(initialValues?.jobPostingLink || "");
+  const [time, setTime] = useState(initialValues?.time || "09:00:00");
+  const [interviewer, setInterviewer] = useState(initialValues?.interviewer || "");
+  const [locationType, setLocationType] = useState<LocationType>(initialValues?.locationType || "phone");
+  const [interviewLink, setInterviewLink] = useState(initialValues?.interviewLink || "");
+
+  const [companyOpen, setCompanyOpen] = useState(false);
+  const [searchCompanyValue, setSearchCompanyValue] = useState("");
+
+  const { data: companies } = useQuery({ queryKey: ["companies"], queryFn: getCompanies });
+
+  const isEarlyStage = stage === "First Stage" || stage === "Initial Interview";
+
+  const handleSubmit = () => {
+    // Basic validation (mirrors Calendar.tsx rules)
+    if (!companyName.trim() || !jobTitle.trim()) return;
+    if (isEarlyStage) {
+      if (!time || !interviewer.trim()) return;
+      if (locationType === "link" && !interviewLink.trim()) return;
+    }
+
+    onSubmit({
+      stage,
+      companyName,
+      jobTitle,
+      jobPostingLink: jobPostingLink || undefined,
+      time,
+      interviewer: isEarlyStage ? interviewer : undefined,
+      locationType: isEarlyStage ? locationType : undefined,
+      interviewLink: isEarlyStage && locationType === "link" ? interviewLink : undefined,
+    });
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="interview-stage">Interview Stage</Label>
+        <Select value={stage} onValueChange={(v) => setStage(v as InterviewFormValues["stage"])}>
+          <SelectTrigger id="interview-stage">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {INTERVIEW_STAGES.map((s) => (
+              <SelectItem key={s} value={s}>{s}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="space-y-2 md:col-span-1">
+          <Label htmlFor="company-name">Company name</Label>
+          <Popover open={companyOpen} onOpenChange={setCompanyOpen}>
+            <PopoverTrigger asChild>
+              <Button variant={"outline"} role={"combobox"} className={"w-[200px] justify-between"}>
+                {companyName !== "" ? companyName : "Company"}
+                <ChevronsUpDown className="opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent>
+              <Command>
+                <CommandInput placeholder={"Search Company"} onValueChange={(e) => setSearchCompanyValue(e)} />
+                <CommandEmpty>
+                  <Button onClick={() => setCompanyName(searchCompanyValue)}>{searchCompanyValue}</Button>
+                </CommandEmpty>
+                <CommandGroup>
+                  {companies?.map((c) => (
+                    <CommandItem
+                      key={`interview-company-${c.id}`}
+                      value={c.name}
+                      onSelect={(currentValue) => {
+                        setCompanyName(currentValue);
+                        setCompanyOpen(false);
+                      }}
+                    >
+                      {c.name}
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </Command>
+            </PopoverContent>
+          </Popover>
+        </div>
+        <div className="space-y-2 md:col-span-1">
+          <Label htmlFor="job-title">Job title</Label>
+          <Input
+            id="job-title"
+            placeholder="e.g. Senior Frontend Engineer"
+            value={jobTitle}
+            onChange={(e) => setJobTitle(e.target.value)}
+          />
+        </div>
+        <div className="space-y-2 md:col-span-2">
+          <Label htmlFor="job-posting-link">Job posting link</Label>
+          <Input
+            id="job-posting-link"
+            type="url"
+            placeholder="https://..."
+            value={jobPostingLink}
+            onChange={(e) => setJobPostingLink(e.target.value)}
+          />
+        </div>
+      </div>
+
+      {isEarlyStage && (
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-2 md:col-span-1">
+            <Label htmlFor="interview-time">Interview time</Label>
+            <Input
+              id="interview-time"
+              step={1}
+              type="time"
+              placeholder="09:00:00"
+              value={time}
+              onChange={(e) => setTime(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2 md:col-span-1">
+            <Label htmlFor="interviewer">Interviewer</Label>
+            <Input
+              id="interviewer"
+              placeholder="Who are you meeting?"
+              value={interviewer}
+              onChange={(e) => setInterviewer(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2 md:col-span-1">
+            <Label htmlFor="location-type">Interview location</Label>
+            <Select value={locationType} onValueChange={(v) => setLocationType(v as any)}>
+              <SelectTrigger id="location-type">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="phone">Phone</SelectItem>
+                <SelectItem value="link">Link (online meeting)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {locationType === "link" && (
+            <div className="space-y-2 md:col-span-1">
+              <Label htmlFor="interview-link">Interview link</Label>
+              <Input
+                id="interview-link"
+                type="url"
+                placeholder="https://meet..."
+                value={interviewLink}
+                onChange={(e) => setInterviewLink(e.target.value)}
+              />
+            </div>
+          )}
+        </div>
+      )}
+
+      <Button onClick={handleSubmit} className="w-full">
+        <Plus className="h-4 w-4 mr-2" />
+        {submitLabel}
+      </Button>
+    </div>
+  );
+}

@@ -1,31 +1,14 @@
 "use client";
 
 import { useAppStore } from "@/lib/store";
-import {useMemo, useState, MouseEvent} from "react";
+import {useState, MouseEvent} from "react";
 import {Button} from "@/components/ui/button";
-import {ChevronLeft, ChevronRight, ChevronsUpDown, Plus} from "lucide-react";
+import {ChevronLeft, ChevronRight, Plus} from "lucide-react";
 import {Card} from "@/components/ui/card";
 import {Dialog, DialogContent, DialogHeader, DialogTitle} from "@/components/ui/dialog";
-import {Label} from "@/components/ui/label";
-import {Input} from "@/components/ui/input";
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
 import {cn, STAGE_COLORS, toISODate, isSameDay} from "@/lib/utils";
-import {Popover, PopoverContent, PopoverTrigger} from "@/components/ui/popover";
-import {useQuery} from "@tanstack/react-query";
-import {useUser} from "@clerk/nextjs";
-import {Command, CommandEmpty, CommandGroup, CommandInput, CommandItem} from "@/components/ui/command";
+import InterviewForm, { InterviewFormValues } from "@/components/InterviewForm";
 
-async function getCompanies() {
-  const res = await fetch(`/api/companies`, {
-    method: "GET",
-  })
-
-  if (!res.ok) {
-    throw new Error("Failed to fetch companies from client")
-  }
-
-  return await res.json() as [string]
-}
 
 interface Interview {
   id: string
@@ -58,7 +41,6 @@ const MONTHS = [
   "December",
 ]
 
-const INTERVIEW_STAGES = ["Applied", "First Stage", "Initial Interview", "Phone Screen", "Technical Interview", "Onsite Interview", "Final Round", "Offer"]
 
 export default function Calendar() {
   const filteredDateISO = useAppStore((s) => s.filteredDate);
@@ -68,20 +50,8 @@ export default function Calendar() {
 
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
-  const [selectedTime, setSelectedTime] = useState("09:00:00")
   const [interviews, setInterviews] = useState<Interview[]>([])
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [newInterviewTitle, setNewInterviewTitle] = useState("")
-  const [newInterviewStage, setNewInterviewStage] = useState("Applied")
-  const [companyName, setCompanyName] = useState("")
-  const [jobTitle, setJobTitle] = useState("")
-  const [jobPostingLink, setJobPostingLink] = useState("")
-  const [interviewer, setInterviewer] = useState("")
-  const [locationType, setLocationType] = useState<"phone" | "link">("phone")
-  const [interviewLink, setInterviewLink] = useState("")
-  const {user} = useUser()
-  const [companyOpen, setCompanyOpen] = useState(false)
-  const [searchCompanyValue, setSearchCompanyValue] = useState("")
 
   console.info("interviews", interviews)
 
@@ -93,10 +63,6 @@ export default function Calendar() {
   const daysInMonth = lastDayOfMonth.getDate()
   const startingDayOfWeek = firstDayOfMonth.getDay()
 
-  const {data: companies, error} = useQuery({
-    queryKey: ["companies", user?.id],
-    queryFn: getCompanies,
-  })
 
   const previousMonth = () => {
     setCurrentDate(new Date(year, month - 1, 1))
@@ -128,64 +94,6 @@ export default function Calendar() {
     setIsDialogOpen(true)
   }
 
-  const resetForm = () => {
-    setNewInterviewTitle("")
-    setNewInterviewStage("Applied")
-    setCompanyName("")
-    setJobTitle("")
-    setJobPostingLink("")
-    setInterviewer("")
-    setLocationType("phone")
-    setInterviewLink("")
-    setSelectedTime("09:00:00")
-  }
-
-  const handleAddInterview = () => {
-    if (!selectedDate) return
-
-    const isApplied = newInterviewStage === "Applied"
-    const isEarlyStage = newInterviewStage === "First Stage" || newInterviewStage === "Initial Interview"
-
-    // Basic validation per requirements
-    if (!companyName.trim() || !jobTitle.trim()) {
-      return
-    }
-    if (isApplied) {
-      // jobPostingLink optional for now
-    }
-    if (isEarlyStage) {
-      if (!selectedTime || !interviewer.trim()) {
-        return
-      }
-      if (locationType === "link" && !interviewLink.trim()) {
-        return
-      }
-    }
-
-    const dateWithTime = new Date(selectedDate)
-    const [hours, minutes, seconds] = selectedTime.split(":").map(Number)
-    dateWithTime.setHours(hours || 0, minutes || 0, seconds || 0, 0)
-
-    const composedTitle = `${companyName} — ${jobTitle}`
-
-    const newInterview: Interview = {
-      id: Math.random().toString(36).substr(2, 9),
-      title: composedTitle,
-      date: dateWithTime,
-      color: STAGE_COLORS[newInterviewStage],
-      stage: newInterviewStage,
-      companyName,
-      jobTitle,
-      jobPostingLink: jobPostingLink || undefined,
-      interviewer: isEarlyStage ? interviewer : undefined,
-      locationType: isEarlyStage ? locationType : undefined,
-      interviewLink: isEarlyStage && locationType === "link" ? interviewLink : undefined,
-    }
-
-    setInterviews([...interviews, newInterview])
-    resetForm()
-    setIsDialogOpen(false)
-  }
 
   const days = []
   for (let i = 0; i < startingDayOfWeek; i++) {
@@ -227,13 +135,6 @@ export default function Calendar() {
     )
   }
 
-  const max = useMemo(() => {
-    // allow picking up to 1 year ahead for now
-    const d = new Date();
-    d.setFullYear(d.getFullYear() + 1);
-    const pad = (n: number) => String(n).padStart(2, "0");
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-  }, []);
 
   return (
     <>
@@ -278,128 +179,33 @@ export default function Calendar() {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-4">
-            <div className="space-y-2">
-              <Label htmlFor="interview-stage">Interview Stage</Label>
-              <Select value={newInterviewStage} onValueChange={setNewInterviewStage}>
-                <SelectTrigger id="interview-stage">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {INTERVIEW_STAGES.map((stage) => (
-                    <SelectItem key={stage} value={stage}>
-                      {stage}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <InterviewForm
+              submitLabel="Add Interview Stage"
+              onSubmit={(values: InterviewFormValues) => {
+                if (!selectedDate) return;
+                const dateWithTime = new Date(selectedDate);
+                const [hours, minutes, seconds] = (values.time || "00:00:00").split(":").map(Number);
+                dateWithTime.setHours(hours || 0, minutes || 0, seconds || 0, 0);
 
-            {/* Shared fields: company name, job title, job posting link */}
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2 md:col-span-1">
-                <Label htmlFor="company-name">Company name</Label>
-                <Popover open={companyOpen} onOpenChange={setCompanyOpen}>
-                  <PopoverTrigger asChild>
-                    <Button variant={"outline"} role={"combobox"} className={"w-[200px] justify-between"}>
-                      {companyName !== "" ? companyName : "Company"}
-                      <ChevronsUpDown className="opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent>
-                    <Command>
-                      <CommandInput placeholder={"Search Company"} onValueChange={(e) => setSearchCompanyValue(e)} />
-                      <CommandEmpty>
-                        <Button onClick={() => setCompanyName(searchCompanyValue)}>{searchCompanyValue}</Button>
-                      </CommandEmpty>
-                      <CommandGroup>
-                        {companies?.map((company, i) => (
-                          <CommandItem key={`${i}-${company}`} value={company} onSelect={(currentValue) => {
-                            setCompanyName(currentValue)
-                            setCompanyOpen(false)
-                          }}>
-                            {company}
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-              </div>
-              <div className="space-y-2 md:col-span-1">
-                <Label htmlFor="job-title">Job title</Label>
-                <Input
-                  id="job-title"
-                  placeholder="e.g. Senior Frontend Engineer"
-                  value={jobTitle}
-                  onChange={(e) => setJobTitle(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="job-posting-link">Job posting link</Label>
-                <Input
-                  id="job-posting-link"
-                  type="url"
-                  placeholder="https://..."
-                  value={jobPostingLink}
-                  onChange={(e) => setJobPostingLink(e.target.value)}
-                />
-              </div>
-            </div>
+                const composedTitle = `${values.companyName} — ${values.jobTitle}`;
+                const newInterview: Interview = {
+                  id: Math.random().toString(36).substring(2, 9),
+                  title: composedTitle,
+                  date: dateWithTime,
+                  color: STAGE_COLORS[values.stage],
+                  stage: values.stage,
+                  companyName: values.companyName,
+                  jobTitle: values.jobTitle,
+                  jobPostingLink: values.jobPostingLink,
+                  interviewer: values.interviewer,
+                  locationType: values.locationType,
+                  interviewLink: values.interviewLink,
+                };
 
-            {/* Early stage specific fields */}
-            {(newInterviewStage === "First Stage" || newInterviewStage === "Initial Interview") && (
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2 md:col-span-1">
-                  <Label htmlFor="interview-time">Interview time</Label>
-                  <Input
-                    id="interview-time"
-                    step={1}
-                    type="time"
-                    placeholder="09:00:00"
-                    value={selectedTime}
-                    onChange={(e) => setSelectedTime(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2 md:col-span-1">
-                  <Label htmlFor="interviewer">Interviewer</Label>
-                  <Input
-                    id="interviewer"
-                    placeholder="Who are you meeting?"
-                    value={interviewer}
-                    onChange={(e) => setInterviewer(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2 md:col-span-1">
-                  <Label htmlFor="location-type">Interview location</Label>
-                  <Select value={locationType} onValueChange={(v) => setLocationType(v as any)}>
-                    <SelectTrigger id="location-type">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="phone">Phone</SelectItem>
-                      <SelectItem value="link">Link (online meeting)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                {locationType === "link" && (
-                  <div className="space-y-2 md:col-span-1">
-                    <Label htmlFor="interview-link">Interview link</Label>
-                    <Input
-                      id="interview-link"
-                      type="url"
-                      placeholder="https://meet..."
-                      value={interviewLink}
-                      onChange={(e) => setInterviewLink(e.target.value)}
-                    />
-                  </div>
-                )}
-              </div>
-            )}
-
-            <Button onClick={handleAddInterview} className="w-full">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Interview Stage
-            </Button>
+                setInterviews([...interviews, newInterview]);
+                setIsDialogOpen(false);
+              }}
+            />
           </div>
         </DialogContent>
       </Dialog>

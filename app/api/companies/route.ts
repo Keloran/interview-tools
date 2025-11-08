@@ -11,12 +11,12 @@ export async function GET() {
   try {
     const companies = await prisma.company.findMany({
       where: { user: { clerkId: user.id } },
-      select: { name: true },
+      select: { name: true, id: true },
       orderBy: { name: "asc" },
     });
 
     // Return just an array of company names to match the client expectation
-    return NextResponse.json(companies.map((c) => c.name));
+    return NextResponse.json(companies);
   } catch (err) {
     console.error("Error fetching companies: ", err);
     return NextResponse.json(
