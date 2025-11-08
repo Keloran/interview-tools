@@ -53,8 +53,6 @@ export default function Calendar() {
   const [interviews, setInterviews] = useState<Interview[]>([])
   const [isDialogOpen, setIsDialogOpen] = useState(false)
 
-  console.info("interviews", interviews)
-
   const year = currentDate.getFullYear()
   const month = currentDate.getMonth()
 

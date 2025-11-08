@@ -9,6 +9,8 @@ import {CornerUpRight, Pencil, X} from "lucide-react";
 import {useQuery} from "@tanstack/react-query";
 import {useFlags} from "@flags-gg/react-library";
 import {useUser} from "@clerk/nextjs";
+import {SiGooglemeet, SiZoom} from "react-icons/si";
+import {PiMicrosoftTeamsLogoFill} from "react-icons/pi";
 
 interface Interview {
   id: string;
@@ -16,6 +18,8 @@ interface Interview {
   date: Date;
   color: string;
   stage: string;
+  stageMethod: string;
+  link: string;
   company: {
     name: string;
     id: number
@@ -75,6 +79,7 @@ export default function InterviewsList() {
     date: new Date(item.date),
     color: "bg-blue-500", // You might want to add this to the API response
     stage: item.stage?.stage || "Unknown",
+    stageMethod: item.stageMethod?.method || "Unknown",
     link: item.link,
     company: {
       name: item.company.name,
@@ -94,6 +99,34 @@ export default function InterviewsList() {
   const days = [];
   for (let i = 0; i < startingDayOfWeek; i++) {
     days.push(<div key={`empty-${i}`} className="aspect-square" />);
+  }
+
+  console.info("interviews", interviews, interviewData);
+
+  const getStageMethodButton = (stageMethod: string, link: string) => {
+    switch (stageMethod) {
+      case "Zoom": {
+        return (
+          <Button variant={"outline"} className={"cursor-pointer"} onClick={() => window.open(link)}>
+            <SiZoom/>
+          </Button>
+        )
+      }
+      case "Teams": {
+        return (
+          <Button variant={"outline"} className={"cursor-pointer"} onClick={() => window.open(link)}>
+            <PiMicrosoftTeamsLogoFill />
+          </Button>
+        )
+      }
+      case "Google Meet": {
+        return (
+          <Button variant={"outline"} className={"cursor-pointer"} onClick={() => window.open(link)}>
+            <SiGooglemeet />
+          </Button>
+        )
+      }
+    }
   }
 
   // Placeholder: this would come from Prisma/DB filtered by filteredDate
@@ -167,6 +200,7 @@ export default function InterviewsList() {
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary">
                           {interview.stage}
                         </span>
+                        {getStageMethodButton(interview.stageMethod, interview.link)}
                       </div>
                     </div>
                   </div>
