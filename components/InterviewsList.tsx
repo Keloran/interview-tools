@@ -48,12 +48,12 @@ export default function InterviewsList() {
   const {is} = useFlags()
   const filteredDateISO = useAppStore((s) => s.filteredDate);
   const setFilteredDate = useAppStore((s) => s.setFilteredDate);
-  const filteredDate = filteredDateISO ? new Date(filteredDateISO + "T00:00:00") : null;
-
+  const dateFilter = filteredDateISO ? new Date(filteredDateISO + "T00:00:00") : null;
+  const companyFilter = useAppStore((s) => s.filteredCompany);
 
   const {data: interviewData, error} = useQuery({
     queryKey: ["interviews", user?.id, filteredDateISO],
-    queryFn: () => getInterviews(filteredDate),
+    queryFn: () => getInterviews(dateFilter),
     enabled: !!user?.id,
   })
 
@@ -74,6 +74,7 @@ export default function InterviewsList() {
     date: new Date(item.date),
     color: "bg-blue-500", // You might want to add this to the API response
     stage: item.stage?.stage || "Unknown",
+    link: item.link,
     company: {
       name: item.company.name,
       id: item.company.id,
@@ -85,8 +86,8 @@ export default function InterviewsList() {
     console.log("Delete interview", interviewId);
   };
 
-  const displayedInterviews = filteredDate
-    ? interviews.filter((interview) => isSameDay(interview.date, filteredDate))
+  const displayedInterviews = dateFilter
+    ? interviews.filter((interview) => isSameDay(interview.date, dateFilter))
     : interviews;
 
   const days = [];
@@ -102,16 +103,16 @@ export default function InterviewsList() {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h2 className="text-2xl font-semibold">
-              {filteredDate
+              {dateFilter
                 ? "Events for " +
-                  filteredDate.toLocaleDateString("en-US", {
+                dateFilter.toLocaleDateString("en-US", {
                     month: "long",
                     day: "numeric",
                     year: "numeric",
                   })
                 : "All Upcoming Interviews"}
             </h2>
-            {filteredDate && (
+            {dateFilter && (
               <Button
                 variant="ghost"
                 size="sm"
@@ -119,7 +120,7 @@ export default function InterviewsList() {
                 className="mt-2 h-8"
               >
                 <X className="h-3 w-3 mr-1" />
-                Clear filter
+                Clear Date filter
               </Button>
             )}
           </div>
