@@ -22,13 +22,16 @@ interface Interview {
   };
 }
 
-async function getInterviews(date: Date | string | null) {
+async function getInterviews(date: Date | string | null, company?: string | null) {
   const url = new URL('/api/interviews', window.location.origin);
   if (date) {
     const dateStr = date instanceof Date
       ? date.toISOString().split('T')[0]
       : date;
     url.searchParams.set('date', dateStr);
+  }
+  if (company) {
+    url.searchParams.set('company', company);
   }
 
   const res = await fetch(url.toString(), {
@@ -42,22 +45,20 @@ async function getInterviews(date: Date | string | null) {
   return await res.json();
 }
 
-
 export default function InterviewsList() {
   const {user} = useUser()
   const {is} = useFlags()
   const filteredDateISO = useAppStore((s) => s.filteredDate);
   const setFilteredDate = useAppStore((s) => s.setFilteredDate);
+  const setCompanyFilter = useAppStore((s) => s.setFilteredCompany)
   const dateFilter = filteredDateISO ? new Date(filteredDateISO + "T00:00:00") : null;
   const companyFilter = useAppStore((s) => s.filteredCompany);
 
   const {data: interviewData, error} = useQuery({
-    queryKey: ["interviews", user?.id, filteredDateISO],
-    queryFn: () => getInterviews(dateFilter),
+    queryKey: ["interviews", user?.id, filteredDateISO, companyFilter],
+    queryFn: () => getInterviews(dateFilter, companyFilter),
     enabled: !!user?.id,
   })
-
-  console.info("interviewsData", interviewData);
 
   const [currentDate] = useState(new Date());
 
@@ -103,9 +104,17 @@ export default function InterviewsList() {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h2 className="text-2xl font-semibold">
-              {dateFilter
-                ? "Events for " +
-                dateFilter.toLocaleDateString("en-US", {
+              {companyFilter && dateFilter
+                ? `${companyFilter} Interviews for ${dateFilter.toLocaleDateString("en-US", {
+                    month: "long",
+                    day: "numeric",
+                    year: "numeric",
+                  })}`
+                : companyFilter
+                ? `All Interviews with ${companyFilter}`
+                : dateFilter
+                ? "Interviews for " +
+                  dateFilter.toLocaleDateString("en-US", {
                     month: "long",
                     day: "numeric",
                     year: "numeric",
@@ -113,14 +122,15 @@ export default function InterviewsList() {
                 : "All Upcoming Interviews"}
             </h2>
             {dateFilter && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setFilteredDate(null)}
-                className="mt-2 h-8"
-              >
+              <Button variant="ghost" size="sm" onClick={() => setFilteredDate(null)} className="mt-2 h-8">
                 <X className="h-3 w-3 mr-1" />
                 Clear Date filter
+              </Button>
+            )}
+            {companyFilter && (
+              <Button variant="ghost" onClick={() => setCompanyFilter(null)}className="mt-2 h-8">
+                <X className="h-3 w-3 mr-1" />
+                Clear Company filter
               </Button>
             )}
           </div>

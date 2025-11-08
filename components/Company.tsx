@@ -13,6 +13,7 @@ import {useQuery} from "@tanstack/react-query";
 import {useState} from "react";
 import {Input} from "@/components/ui/input";
 import {Search} from "lucide-react";
+import {useAppStore} from "@/lib/store";
 
 interface Company {
   name: string;
@@ -35,6 +36,13 @@ export function Companies() {
   const {user} = useUser()
   const {is} = useFlags()
   const [searchOpen, setSearchOpen] = useState(false)
+  const setFilteredCompany = useAppStore((s) => s.setFilteredCompany)
+
+  const handleCompanyFilter = (name: string) => {
+    if (name !== "") {
+      setFilteredCompany(name)
+    }
+  }
 
   const {data, error} = useQuery({
     queryKey: ["companies", user?.id],
@@ -60,7 +68,13 @@ export function Companies() {
         <CommandList>
           <CommandEmpty>No results found.</CommandEmpty>
           {data?.map((company) => (
-            <CommandItem key={company.id}>{company.name}</CommandItem>
+            <CommandItem
+              className={"cursor-pointer"}
+              key={company.id}
+              onSelect={() => {
+                handleCompanyFilter(company.name)
+                setSearchOpen(false)
+              }}>{company.name}</CommandItem>
           ))}
         </CommandList>
       </CommandDialog>
