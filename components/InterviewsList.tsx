@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn, isSameDay } from "@/lib/utils";
 import { useState } from "react";
-import {X} from "lucide-react";
+import {CornerUpRight, Pencil, X} from "lucide-react";
 import {useQuery} from "@tanstack/react-query";
 import {useFlags} from "@flags-gg/react-library";
 import {useUser} from "@clerk/nextjs";
@@ -16,10 +16,22 @@ interface Interview {
   date: Date;
   color: string;
   stage: string;
+  company: {
+    name: string;
+    id: number
+  };
 }
 
 async function getInterviews(date: Date | string | null) {
-  const res = await fetch(`/api/interviews`, {
+  const url = new URL('/api/interviews', window.location.origin);
+  if (date) {
+    const dateStr = date instanceof Date
+      ? date.toISOString().split('T')[0]
+      : date;
+    url.searchParams.set('date', dateStr);
+  }
+
+  const res = await fetch(url.toString(), {
     method: "GET",
   });
 
@@ -40,14 +52,14 @@ export default function InterviewsList() {
 
 
   const {data: interviewData, error} = useQuery({
-    queryKey: ["interviews", user?.id],
-    queryFn: getInterviews(filteredDate),
+    queryKey: ["interviews", user?.id, filteredDateISO],
+    queryFn: () => getInterviews(filteredDate),
+    enabled: !!user?.id,
   })
 
   console.info("interviewsData", interviewData);
 
   const [currentDate] = useState(new Date());
-  const [interviews, setInterviews] = useState<Interview[]>([]);
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -55,8 +67,22 @@ export default function InterviewsList() {
   const firstDayOfMonth = new Date(year, month, 1);
   const startingDayOfWeek = firstDayOfMonth.getDay();
 
+  // Map API data to component interface
+  const interviews: Interview[] = (interviewData || []).map((item: any) => ({
+    id: item.id,
+    title: item.jobTitle,
+    date: new Date(item.date),
+    color: "bg-blue-500", // You might want to add this to the API response
+    stage: item.stage?.stage || "Unknown",
+    company: {
+      name: item.company.name,
+      id: item.company.id,
+    }
+  }));
+
   const handleDeleteInterview = (interviewId: string) => {
-    setInterviews(interviews.filter((e) => e.id !== interviewId));
+    // TODO: Implement delete API call and invalidate query
+    console.log("Delete interview", interviewId);
   };
 
   const displayedInterviews = filteredDate
@@ -116,12 +142,14 @@ export default function InterviewsList() {
                       )}
                     />
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-lg">{interview.title}</p>
+                      <p className="font-semibold text-lg">{interview.title} - {interview.company.name}</p>
                       <p className="text-sm text-muted-foreground mt-1">
                         {interview.date.toLocaleDateString("en-US", {
                           month: "long",
                           day: "numeric",
                           year: "numeric",
+                          hour: "numeric",
+                          minute: "numeric"
                         })}
                       </p>
                       <div className="mt-2">
@@ -131,13 +159,11 @@ export default function InterviewsList() {
                       </div>
                     </div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDeleteInterview(interview.id)}
-                  >
-                    Delete
-                  </Button>
+                  <Button variant={"ghost"} size={"sm"} className={"cursor-pointer"}><Pencil /></Button>
+                  <Button variant={"ghost"} size={"sm"} className={"cursor-pointer"}><CornerUpRight /></Button>
+                  {/*<Button variant="ghost" size="sm" className={"cursor-pointer"} onClick={() => handleDeleteInterview(interview.id)}>*/}
+                  {/*  <X />*/}
+                  {/*</Button>*/}
                 </div>
               ))}
           </div>

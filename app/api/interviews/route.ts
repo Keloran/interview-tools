@@ -14,11 +14,17 @@ export async function GET(request: NextRequest) {
     let interviews
 
     if (date) {
-      const filterDate = new Date(date).toISOString().split('T')[0]
+      const filterDate = new Date(date + "T00:00:00Z")
+      const nextDay = new Date(filterDate)
+      nextDay.setDate(nextDay.getDate() + 1)
+
       interviews = await prisma.interview.findMany({
         where: {
           user: {clerkId: user.id},
-          date: filterDate
+          date: {
+            gte: filterDate,
+            lt: nextDay
+          }
         },
         select: {
           id: true,
@@ -26,12 +32,14 @@ export async function GET(request: NextRequest) {
           interviewer: true,
           company: {
             select: {
-              id: true
+              id: true,
+              name: true
             }
           },
           stage: {
             select: {
-              id: true
+              id: true,
+              stage: true
             }
           },
           date: true,
@@ -46,7 +54,9 @@ export async function GET(request: NextRequest) {
       })
     } else {
       // If no date specified, get all future interviews
-      const today = new Date().toISOString().split('T')[0]
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+
       interviews = await prisma.interview.findMany({
         where: {
           user: {clerkId: user.id},
@@ -60,12 +70,14 @@ export async function GET(request: NextRequest) {
           interviewer: true,
           company: {
             select: {
-              id: true
+              id: true,
+              name: true
             }
           },
           stage: {
             select: {
-              id: true
+              id: true,
+              stage: true
             }
           },
           date: true,
