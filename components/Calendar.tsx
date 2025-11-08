@@ -3,13 +3,29 @@
 import { useAppStore } from "@/lib/store";
 import {useMemo, useState, MouseEvent} from "react";
 import {Button} from "@/components/ui/button";
-import {ChevronLeft, ChevronRight, Plus} from "lucide-react";
+import {ChevronLeft, ChevronRight, ChevronsUpDown, Plus} from "lucide-react";
 import {Card} from "@/components/ui/card";
 import {Dialog, DialogContent, DialogHeader, DialogTitle} from "@/components/ui/dialog";
 import {Label} from "@/components/ui/label";
 import {Input} from "@/components/ui/input";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
 import {cn, STAGE_COLORS, toISODate, isSameDay} from "@/lib/utils";
+import {Popover, PopoverContent, PopoverTrigger} from "@/components/ui/popover";
+import {useQuery} from "@tanstack/react-query";
+import {useUser} from "@clerk/nextjs";
+import {Command, CommandEmpty, CommandGroup, CommandInput, CommandItem} from "@/components/ui/command";
+
+async function getCompanies() {
+  const res = await fetch(`/api/companies`, {
+    method: "GET",
+  })
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch companies from client")
+  }
+
+  return await res.json() as [string]
+}
 
 interface Interview {
   id: string
@@ -63,6 +79,9 @@ export default function Calendar() {
   const [interviewer, setInterviewer] = useState("")
   const [locationType, setLocationType] = useState<"phone" | "link">("phone")
   const [interviewLink, setInterviewLink] = useState("")
+  const {user} = useUser()
+  const [companyOpen, setCompanyOpen] = useState(false)
+  const [searchCompanyValue, setSearchCompanyValue] = useState("")
 
   console.info("interviews", interviews)
 
@@ -73,6 +92,11 @@ export default function Calendar() {
   const lastDayOfMonth = new Date(year, month + 1, 0)
   const daysInMonth = lastDayOfMonth.getDate()
   const startingDayOfWeek = firstDayOfMonth.getDay()
+
+  const {data: companies, error} = useQuery({
+    queryKey: ["companies", user?.id],
+    queryFn: getCompanies,
+  })
 
   const previousMonth = () => {
     setCurrentDate(new Date(year, month - 1, 1))
@@ -274,12 +298,32 @@ export default function Calendar() {
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2 md:col-span-1">
                 <Label htmlFor="company-name">Company name</Label>
-                <Input
-                  id="company-name"
-                  placeholder="e.g. Acme Corp"
-                  value={companyName}
-                  onChange={(e) => setCompanyName(e.target.value)}
-                />
+                <Popover open={companyOpen} onOpenChange={setCompanyOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant={"outline"} role={"combobox"} className={"w-[200px] justify-between"}>
+                      {companyName !== "" ? companyName : "Company"}
+                      <ChevronsUpDown className="opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent>
+                    <Command>
+                      <CommandInput placeholder={"Search Company"} onValueChange={(e) => setSearchCompanyValue(e)} />
+                      <CommandEmpty>
+                        <Button onClick={() => setCompanyName(searchCompanyValue)}>{searchCompanyValue}</Button>
+                      </CommandEmpty>
+                      <CommandGroup>
+                        {companies?.map((company, i) => (
+                          <CommandItem key={`${i}-${company}`} value={company} onSelect={(currentValue) => {
+                            setCompanyName(currentValue)
+                            setCompanyOpen(false)
+                          }}>
+                            {company}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
               <div className="space-y-2 md:col-span-1">
                 <Label htmlFor="job-title">Job title</Label>
