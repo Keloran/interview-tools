@@ -1,7 +1,7 @@
 "use client"
 
 import {
-  Command, CommandDialog,
+  CommandDialog,
   CommandEmpty,
   CommandInput,
   CommandItem,

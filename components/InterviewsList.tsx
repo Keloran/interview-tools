@@ -6,8 +6,11 @@ import { Button } from "@/components/ui/button";
 import { cn, isSameDay } from "@/lib/utils";
 import { useState } from "react";
 import {X} from "lucide-react";
+import {useQuery} from "@tanstack/react-query";
+import {useFlags} from "@flags-gg/react-library";
+import {useUser} from "@clerk/nextjs";
 
-interface Event {
+interface Interview {
   id: string;
   title: string;
   date: Date;
@@ -15,14 +18,36 @@ interface Event {
   stage: string;
 }
 
+async function getInterviews(date: Date | string | null) {
+  const res = await fetch(`/api/interviews`, {
+    method: "GET",
+  });
+
+  if (!res.ok) {
+    throw new Error("failed to get interviews");
+  }
+
+  return await res.json();
+}
+
+
 export default function InterviewsList() {
+  const {user} = useUser()
+  const {is} = useFlags()
   const filteredDateISO = useAppStore((s) => s.filteredDate);
   const setFilteredDate = useAppStore((s) => s.setFilteredDate);
-
   const filteredDate = filteredDateISO ? new Date(filteredDateISO + "T00:00:00") : null;
 
+
+  const {data: interviewData, error} = useQuery({
+    queryKey: ["interviews", user?.id],
+    queryFn: getInterviews(filteredDate),
+  })
+
+  console.info("interviewsData", interviewData);
+
   const [currentDate] = useState(new Date());
-  const [events, setEvents] = useState<Event[]>([]);
+  const [interviews, setInterviews] = useState<Interview[]>([]);
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -30,13 +55,13 @@ export default function InterviewsList() {
   const firstDayOfMonth = new Date(year, month, 1);
   const startingDayOfWeek = firstDayOfMonth.getDay();
 
-  const handleDeleteEvent = (eventId: string) => {
-    setEvents(events.filter((e) => e.id !== eventId));
+  const handleDeleteInterview = (interviewId: string) => {
+    setInterviews(interviews.filter((e) => e.id !== interviewId));
   };
 
-  const displayedEvents = filteredDate
-    ? events.filter((event) => isSameDay(event.date, filteredDate))
-    : events;
+  const displayedInterviews = filteredDate
+    ? interviews.filter((interview) => isSameDay(interview.date, filteredDate))
+    : interviews;
 
   const days = [];
   for (let i = 0; i < startingDayOfWeek; i++) {
@@ -58,7 +83,7 @@ export default function InterviewsList() {
                     day: "numeric",
                     year: "numeric",
                   })
-                : "All Upcoming Events"}
+                : "All Upcoming Interviews"}
             </h2>
             {filteredDate && (
               <Button
@@ -74,26 +99,26 @@ export default function InterviewsList() {
           </div>
         </div>
 
-        {displayedEvents.length > 0 ? (
+        {displayedInterviews.length > 0 ? (
           <div className="space-y-3">
-            {displayedEvents
+            {displayedInterviews
               .sort((a, b) => a.date.getTime() - b.date.getTime())
-              .map((event) => (
+              .map((interview) => (
                 <div
-                  key={event.id}
+                  key={interview.id}
                   className="flex items-start justify-between p-4 rounded-lg border border-border hover:bg-accent transition-colors"
                 >
                   <div className="flex items-start gap-4 flex-1">
                     <div
                       className={cn(
                         "w-3 h-3 rounded-full mt-1 flex-shrink-0",
-                        event.color,
+                        interview.color,
                       )}
                     />
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-lg">{event.title}</p>
+                      <p className="font-semibold text-lg">{interview.title}</p>
                       <p className="text-sm text-muted-foreground mt-1">
-                        {event.date.toLocaleDateString("en-US", {
+                        {interview.date.toLocaleDateString("en-US", {
                           month: "long",
                           day: "numeric",
                           year: "numeric",
@@ -101,7 +126,7 @@ export default function InterviewsList() {
                       </p>
                       <div className="mt-2">
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary">
-                          {event.stage}
+                          {interview.stage}
                         </span>
                       </div>
                     </div>
@@ -109,7 +134,7 @@ export default function InterviewsList() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => handleDeleteEvent(event.id)}
+                    onClick={() => handleDeleteInterview(interview.id)}
                   >
                     Delete
                   </Button>
@@ -118,9 +143,9 @@ export default function InterviewsList() {
           </div>
         ) : (
           <div className="text-center py-12 text-muted-foreground">
-            <p>No events scheduled</p>
+            <p>No Interviews scheduled</p>
             <p className="text-sm mt-1">
-              Click the + button on a date to add an event
+              Click the + button on a date to add an Interview
             </p>
           </div>
         )}
