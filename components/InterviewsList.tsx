@@ -4,7 +4,7 @@ import { useAppStore } from "@/lib/store";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {cn, getStageColor, isSameDay} from "@/lib/utils";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {CornerUpRight, Pencil, X} from "lucide-react";
 import {useQuery} from "@tanstack/react-query";
 import {useFlags} from "@flags-gg/react-library";
@@ -28,7 +28,7 @@ interface Interview {
   clientCompany?: string;
 }
 
-async function getInterviews(date: Date | string | null, company?: string | null) {
+async function getInterviews(date: Date | string | null, company?: string | null, futureOnly?: boolean) {
   const url = new URL('/api/interviews', window.location.origin);
   if (date) {
     const dateStr = date instanceof Date
@@ -38,6 +38,11 @@ async function getInterviews(date: Date | string | null, company?: string | null
   }
   if (company) {
     url.searchParams.set('company', company);
+  }
+  // Only send includePast when we have a company filter without a date filter
+  // This allows the backend to use smart defaults otherwise
+  if (company && !date) {
+    url.searchParams.set('includePast', (!futureOnly).toString());
   }
 
   const res = await fetch(url.toString(), {
@@ -59,14 +64,22 @@ export default function InterviewsList() {
   const setCompanyFilter = useAppStore((s) => s.setFilteredCompany)
   const dateFilter = filteredDateISO ? new Date(filteredDateISO + "T00:00:00") : null;
   const companyFilter = useAppStore((s) => s.filteredCompany);
+  const [futureOnly, setFutureOnly] = useState(false);
 
   const {data: interviewData, error} = useQuery({
-    queryKey: ["interviews", user?.id, filteredDateISO, companyFilter],
-    queryFn: () => getInterviews(dateFilter, companyFilter),
+    queryKey: ["interviews", user?.id, filteredDateISO, companyFilter, futureOnly],
+    queryFn: () => getInterviews(dateFilter, companyFilter, futureOnly),
     enabled: !!user?.id,
   })
 
   const [currentDate] = useState(new Date());
+
+  // Reset futureOnly when company filter is cleared or date filter is applied
+  useEffect(() => {
+    if (!companyFilter || dateFilter) {
+      setFutureOnly(false);
+    }
+  }, [companyFilter, dateFilter]);
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -173,10 +186,22 @@ export default function InterviewsList() {
               </Button>
             )}
             {companyFilter && (
-              <Button variant="ghost" onClick={() => setCompanyFilter(null)} className="mt-2 h-8 cursor-pointer">
-                <X className="h-3 w-3 mr-1" />
-                Clear Company filter
-              </Button>
+              <>
+                <Button variant="ghost" onClick={() => setCompanyFilter(null)} className="mt-2 h-8 cursor-pointer">
+                  <X className="h-3 w-3 mr-1" />
+                  Clear Company filter
+                </Button>
+                {!dateFilter && (
+                  <Button
+                    variant={futureOnly ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setFutureOnly(!futureOnly)}
+                    className="mt-2 h-8 cursor-pointer ml-2"
+                  >
+                    {futureOnly ? "Showing Future Only" : "Show Future Only"}
+                  </Button>
+                )}
+              </>
             )}
           </div>
         </div>

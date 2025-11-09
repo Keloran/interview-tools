@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     const date = searchParams.get("date") // yyyy-mm-dd (filters to that day, UTC)
     const dateFrom = searchParams.get("dateFrom") // yyyy-mm-dd
     const dateTo = searchParams.get("dateTo") // yyyy-mm-dd
-    const includePast = searchParams.get("includePast") === "true"
+    const includePastParam = searchParams.get("includePast")
 
     // Entity filters
     const companyId = searchParams.get("companyId") // numeric string allowed
@@ -33,6 +33,11 @@ export async function GET(request: NextRequest) {
     // Pagination (safe defaults)
     const take = Math.min(Number(searchParams.get("take") ?? 100), 200)
     const skip = Math.max(Number(searchParams.get("skip") ?? 0), 0)
+
+    // Default: when filtering by company, show all; otherwise show future only
+    const includePast = includePastParam === null
+      ? (!!companyName)
+      : includePastParam === "true"
 
     // Shared select
     const select = {
@@ -71,6 +76,7 @@ export async function GET(request: NextRequest) {
       if (dateTo) range.lte = new Date(`${dateTo}T23:59:59.999Z`)
       where.date = range
     } else if (!includePast) {
+      // Show only future interviews
       const today = new Date()
       today.setHours(0, 0, 0, 0)
       where.date = { gte: today }

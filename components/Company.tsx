@@ -53,10 +53,6 @@ export function Companies() {
     return null
   }
 
-  if (!is("companies list")?.enabled()) {
-    return null
-  }
-
   return (
     <div className={"relative ml-auto flex-1 md:grow-0"}>
       <div onClick={() => setSearchOpen(true)}>
