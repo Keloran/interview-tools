@@ -8,6 +8,7 @@ import {Card} from "@/components/ui/card";
 import {Dialog, DialogContent, DialogHeader, DialogTitle} from "@/components/ui/dialog";
 import {cn, STAGE_COLORS, toISODate, isSameDay} from "@/lib/utils";
 import InterviewForm, { InterviewFormValues } from "@/components/InterviewForm";
+import {useRouter} from "next/navigation";
 
 
 interface Interview {
@@ -60,6 +61,7 @@ export default function Calendar() {
   const lastDayOfMonth = new Date(year, month + 1, 0)
   const daysInMonth = lastDayOfMonth.getDate()
   const startingDayOfWeek = firstDayOfMonth.getDay()
+  const router = useRouter()
 
 
   const previousMonth = () => {
@@ -226,6 +228,7 @@ export default function Calendar() {
                   console.error(e);
                 } finally {
                   setIsDialogOpen(false);
+                  router.refresh()
                 }
               }}
             />
