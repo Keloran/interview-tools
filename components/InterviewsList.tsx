@@ -11,14 +11,15 @@ import {useFlags} from "@flags-gg/react-library";
 import {useUser} from "@clerk/nextjs";
 import {SiGooglemeet, SiZoom} from "react-icons/si";
 import {PiMicrosoftTeamsLogoFill} from "react-icons/pi";
+import {Tooltip, TooltipContent, TooltipTrigger} from "@/components/ui/tooltip";
 
 interface Interview {
   id: string;
   title: string;
   date: Date;
-  color: string;
   stage: string;
   stageMethod: string;
+  outcome: string;
   link: string;
   company: {
     name: string;
@@ -72,19 +73,21 @@ export default function InterviewsList() {
   const firstDayOfMonth = new Date(year, month, 1);
   const startingDayOfWeek = firstDayOfMonth.getDay();
 
+  // console.info("InterviewData", interviewData);
+
   // Map API data to component interface
   const interviews: Interview[] = (interviewData || []).map((item: any) => ({
     id: item.id,
     title: item.jobTitle,
     date: new Date(item.date),
-    color: "bg-blue-500", // You might want to add this to the API response
     stage: item.stage?.stage || "Unknown",
     stageMethod: item.stageMethod?.method || "Unknown",
     link: item.link,
     company: {
       name: item.company.name,
       id: item.company.id,
-    }
+    },
+    outcome: item.outcome,
   }));
 
   const handleDeleteInterview = (interviewId: string) => {
@@ -100,8 +103,6 @@ export default function InterviewsList() {
   for (let i = 0; i < startingDayOfWeek; i++) {
     days.push(<div key={`empty-${i}`} className="aspect-square" />);
   }
-
-  console.info("interviews", interviews, interviewData);
 
   const getStageMethodButton = (stageMethod: string, link: string) => {
     switch (stageMethod) {
@@ -129,6 +130,33 @@ export default function InterviewsList() {
     }
   }
 
+  const getColor = (outcome: string) => {
+    switch (outcome) {
+      case "PASSED":
+      case "OFFER_ACCEPTED":
+        return "bg-green-500";
+      case "REJECTED":
+      case "WITHDREW":
+        return "bg-red-500";
+      case "OFFER_RECEIVED":
+        return "bg-orange-600";
+      case "OFFER_DECLINED":
+      case "AWAITING_RESPONSE":
+        return "bg-purple-500";
+      default:
+        return "bg-blue-500";
+    }
+  }
+
+  const formatOutcome = (outcome: string): string => {
+    return outcome
+      .split('_') // split at underscores
+      .map(
+        word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase() // capitalize each word
+      )
+      .join(' ');
+  };
+
   // Placeholder: this would come from Prisma/DB filtered by filteredDate
   // For now just demonstrate the dependency on filteredDate
   return (
@@ -155,13 +183,13 @@ export default function InterviewsList() {
                 : "All Upcoming Interviews"}
             </h2>
             {dateFilter && (
-              <Button variant="ghost" size="sm" onClick={() => setFilteredDate(null)} className="mt-2 h-8">
+              <Button variant="ghost" size="sm" onClick={() => setFilteredDate(null)} className="mt-2 h-8 cursor-pointer">
                 <X className="h-3 w-3 mr-1" />
                 Clear Date filter
               </Button>
             )}
             {companyFilter && (
-              <Button variant="ghost" onClick={() => setCompanyFilter(null)}className="mt-2 h-8">
+              <Button variant="ghost" onClick={() => setCompanyFilter(null)} className="mt-2 h-8 cursor-pointer">
                 <X className="h-3 w-3 mr-1" />
                 Clear Company filter
               </Button>
@@ -179,12 +207,14 @@ export default function InterviewsList() {
                   className="flex items-start justify-between p-4 rounded-lg border border-border hover:bg-accent transition-colors"
                 >
                   <div className="flex items-start gap-4 flex-1">
-                    <div
-                      className={cn(
-                        "w-3 h-3 rounded-full mt-1 flex-shrink-0",
-                        interview.color,
-                      )}
-                    />
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className={cn("w-3 h-3 rounded-full mt-1 flex-shrink-0", getColor(interview.outcome),)} />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {formatOutcome(interview.outcome ?? "not happened yet")}
+                      </TooltipContent>
+                    </Tooltip>
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-lg">{interview.title} - {interview.company.name}</p>
                       <p className="text-sm text-muted-foreground mt-1">
