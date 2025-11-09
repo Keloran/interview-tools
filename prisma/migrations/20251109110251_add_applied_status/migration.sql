@@ -1,0 +1,3 @@
+-- Placeholder migration to reconcile history.
+-- Original migration replaced by split-safe migrations.
+-- Intentionally left blank.

@@ -1,0 +1,5 @@
+DO $$ BEGIN
+ALTER TYPE "InterviewStatus" ADD VALUE IF NOT EXISTS 'APPLIED';
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;

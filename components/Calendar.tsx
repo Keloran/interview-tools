@@ -179,29 +179,54 @@ export default function Calendar() {
           <div className="space-y-4 pt-4">
             <InterviewForm
               submitLabel="Add Interview Stage"
-              onSubmit={(values: InterviewFormValues) => {
+              onSubmit={async (values: InterviewFormValues) => {
                 if (!selectedDate) return;
                 const dateWithTime = new Date(selectedDate);
                 const [hours, minutes, seconds] = (values.time || "00:00:00").split(":").map(Number);
                 dateWithTime.setHours(hours || 0, minutes || 0, seconds || 0, 0);
 
-                const composedTitle = `${values.companyName} — ${values.jobTitle}`;
-                const newInterview: Interview = {
-                  id: Math.random().toString(36).substring(2, 9),
-                  title: composedTitle,
-                  date: dateWithTime,
-                  color: STAGE_COLORS[values.stage],
-                  stage: values.stage,
-                  companyName: values.companyName,
-                  jobTitle: values.jobTitle,
-                  jobPostingLink: values.jobPostingLink,
-                  interviewer: values.interviewer,
-                  locationType: values.locationType,
-                  interviewLink: values.interviewLink,
-                };
+                // Send to API
+                try {
+                  const res = await fetch("/api/interviews", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      stage: values.stage,
+                      companyName: values.companyName,
+                      jobTitle: values.jobTitle,
+                      jobPostingLink: values.jobPostingLink,
+                      date: dateWithTime.toISOString(),
+                      interviewer: values.interviewer,
+                      locationType: values.locationType,
+                      interviewLink: values.interviewLink,
+                    }),
+                  });
 
-                setInterviews([...interviews, newInterview]);
-                setIsDialogOpen(false);
+                  if (!res.ok) {
+                    console.error("Failed to create interview", await res.text());
+                  } else {
+                    const created = await res.json();
+                    const composedTitle = `${created.company?.name ?? values.companyName} — ${created.jobTitle ?? values.jobTitle}`;
+                    const newInterview: Interview = {
+                      id: String(created.id ?? Math.random().toString(36).substring(2, 9)),
+                      title: composedTitle,
+                      date: new Date(created.date ?? dateWithTime),
+                      color: STAGE_COLORS[values.stage],
+                      stage: values.stage,
+                      companyName: created.company?.name ?? values.companyName,
+                      jobTitle: created.jobTitle ?? values.jobTitle,
+                      jobPostingLink: values.jobPostingLink,
+                      interviewer: created.interviewer ?? values.interviewer,
+                      locationType: values.locationType,
+                      interviewLink: created.link ?? values.interviewLink,
+                    };
+                    setInterviews([...interviews, newInterview]);
+                  }
+                } catch (e) {
+                  console.error(e);
+                } finally {
+                  setIsDialogOpen(false);
+                }
               }}
             />
           </div>

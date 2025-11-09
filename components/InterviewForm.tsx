@@ -9,6 +9,7 @@ import {Popover, PopoverContent, PopoverTrigger} from "@/components/ui/popover";
 import {Command, CommandEmpty, CommandGroup, CommandInput, CommandItem} from "@/components/ui/command";
 import {ChevronsUpDown, Plus} from "lucide-react";
 import {useQuery} from "@tanstack/react-query";
+import {useRouter} from "next/navigation";
 
 export const INTERVIEW_STAGES = [
   "Applied",
@@ -60,6 +61,7 @@ export default function InterviewForm({ initialValues, onSubmit, submitLabel = "
   const [interviewer, setInterviewer] = useState(initialValues?.interviewer || "");
   const [locationType, setLocationType] = useState<LocationType>(initialValues?.locationType || "phone");
   const [interviewLink, setInterviewLink] = useState(initialValues?.interviewLink || "");
+  const router = useRouter()
 
   const [companyOpen, setCompanyOpen] = useState(false);
   const [searchCompanyValue, setSearchCompanyValue] = useState("");
@@ -86,6 +88,7 @@ export default function InterviewForm({ initialValues, onSubmit, submitLabel = "
       locationType: isEarlyStage ? locationType : undefined,
       interviewLink: isEarlyStage && locationType === "link" ? interviewLink : undefined,
     });
+    router.refresh()
   };
 
   return (

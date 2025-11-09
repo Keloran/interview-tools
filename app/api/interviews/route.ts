@@ -115,3 +115,120 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ message: "Internal Server Error" }, { status: 500 })
   }
 }
+
+export async function POST(request: NextRequest) {
+  const user = await currentUser()
+  if (!user) {
+    return NextResponse.json({ message: "unauthorized" }, { status: 401 })
+  }
+
+  try {
+    const body = await request.json()
+    const {
+      stage,
+      companyName,
+      jobTitle,
+      jobPostingLink,
+      date, // ISO string
+      interviewer,
+      locationType, // "phone" | "link"
+      interviewLink,
+    } = body ?? {}
+
+    // Basic validations
+    if (!stage || !companyName || !jobTitle) {
+      return NextResponse.json({ message: "Missing required fields" }, { status: 400 })
+    }
+
+    // Parse date
+    let interviewDate: Date | null = null
+    if (date) {
+      const d = new Date(date)
+      if (!isNaN(d.getTime())) interviewDate = d
+    }
+
+    // Fallback to today at 09:00 if not provided
+    if (!interviewDate) {
+      const now = new Date()
+      now.setHours(9, 0, 0, 0)
+      interviewDate = now
+    }
+
+    // Ensure DB user exists
+    const dbUser = await prisma.user.upsert({
+      where: { clerkId: user.id },
+      create: {
+        clerkId: user.id,
+        email: user.emailAddresses?.[0]?.emailAddress ?? `${user.id}@example.com`,
+        name: user.firstName ? `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() : null,
+      },
+      update: {},
+    })
+
+    // Company connect or create (unique per userId+name)
+    const company = await prisma.company.upsert({
+      where: { userId_name: { userId: dbUser.id, name: companyName } },
+      create: { name: companyName, userId: dbUser.id },
+      update: {},
+    })
+
+    // Stage connect or create by stage string
+    const stageRecord = await prisma.stage.upsert({
+      where: { stage },
+      create: { stage },
+      update: {},
+    })
+
+    // StageMethod derived from locationType (fallback to "Phone" if not provided)
+    const methodName = locationType === "link" ? "Link" : "Phone"
+    const stageMethod = await prisma.stageMethod.upsert({
+      where: { method: methodName },
+      create: { method: methodName },
+      update: {},
+    })
+
+    // Compose metadata
+    const metadata: Record<string, any> = {}
+    if (jobPostingLink) metadata.jobListing = jobPostingLink
+    if (locationType === "phone") metadata.location = "phone"
+    if (locationType === "link") metadata.location = "link"
+
+    const created = await prisma.interview.create({
+      data: {
+        companyId: company.id,
+        jobTitle,
+        applicationDate: new Date(),
+        interviewer: interviewer || null,
+        stageId: stageRecord.id,
+        stageMethodId: stageMethod.id,
+        userId: dbUser.id,
+        date: interviewDate,
+        deadline: null,
+        notes: null,
+        metadata: Object.keys(metadata).length ? metadata : undefined,
+        link: interviewLink || null,
+      },
+      select: {
+        id: true,
+        jobTitle: true,
+        interviewer: true,
+        company: { select: { id: true, name: true } },
+        stage: { select: { id: true, stage: true } },
+        stageMethod: { select: { id: true, method: true } },
+        applicationDate: true,
+        date: true,
+        deadline: true,
+        status: true,
+        outcome: true,
+        notes: true,
+        metadata: true,
+        link: true,
+      },
+    })
+
+    return NextResponse.json(created, { status: 201 })
+  } catch (error) {
+    console.error("POST /api/interviews error", error)
+    return NextResponse.json({ message: "Internal Server Error" }, { status: 500 })
+  }
+}
