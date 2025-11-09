@@ -8,6 +8,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ message: "unauthorized" }, { status: 401 })
   }
 
+  let userId = user?.id;
+  if (process.env.NODE_ENV !== "production") {
+      userId = "user_35EzDSLP36fAaXr7eyWitgldgZy"
+  }
+
   try {
     const { searchParams } = new URL(request.url)
 
@@ -61,8 +66,8 @@ export async function GET(request: NextRequest) {
     // Build one dynamic where
     // Dev override: use userId 12 in development
     const where: any /* Prisma.InterviewWhereInput */ = process.env.NODE_ENV === 'development'
-      ? { userId: 12 }
-      : { user: { clerkId: user.id } }
+      ? { }
+      : { user: { clerkId: userId } }
 
     // Date filters
     if (date) {
@@ -130,6 +135,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: "unauthorized" }, { status: 401 })
   }
 
+  let userId = user?.id;
+  if (process.env.NODE_ENV !== "production") {
+      userId = "user_35EzDSLP36fAaXr7eyWitgldgZy"
+  }
+
   try {
     const body = await request.json()
     const {
@@ -165,9 +175,9 @@ export async function POST(request: NextRequest) {
 
     // Ensure DB user exists
     const dbUser = await prisma.user.upsert({
-      where: { clerkId: user.id },
+      where: { clerkId: userId },
       create: {
-        clerkId: user.id,
+        clerkId: userId,
         email: user.emailAddresses?.[0]?.emailAddress ?? `${user.id}@example.com`,
         name: user.firstName ? `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() : null,
       },

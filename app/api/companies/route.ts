@@ -8,9 +8,14 @@ export async function GET() {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
 
+  let userId = user?.id;
+  if (process.env.NODE_ENV !== "production") {
+      userId = "user_35EzDSLP36fAaXr7eyWitgldgZy"
+  }
+
   try {
     const companies = await prisma.company.findMany({
-      where: { user: { clerkId: user.id } },
+      where: { user: { clerkId: userId } },
       select: { name: true, id: true },
       orderBy: { name: "asc" },
     });
