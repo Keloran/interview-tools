@@ -54,9 +54,10 @@ export async function GET(request: NextRequest) {
     } as const
 
     // Build one dynamic where
-    const where: any /* Prisma.InterviewWhereInput */ = {
-      user: { clerkId: user.id },
-    }
+    // Dev override: use userId 12 in development
+    const where: any /* Prisma.InterviewWhereInput */ = process.env.NODE_ENV === 'development'
+      ? { userId: 12 }
+      : { user: { clerkId: user.id } }
 
     // Date filters
     if (date) {
@@ -167,10 +168,13 @@ export async function POST(request: NextRequest) {
       update: {},
     })
 
+    // Dev override: use userId 12 in development
+    const effectiveUserId = process.env.NODE_ENV === 'development' ? 12 : dbUser.id
+
     // Company connect or create (unique per userId+name)
     const company = await prisma.company.upsert({
-      where: { userId_name: { userId: dbUser.id, name: companyName } },
-      create: { name: companyName, userId: dbUser.id },
+      where: { userId_name: { userId: effectiveUserId, name: companyName } },
+      create: { name: companyName, userId: effectiveUserId },
       update: {},
     })
 
@@ -204,7 +208,7 @@ export async function POST(request: NextRequest) {
         interviewer: interviewer || null,
         stageId: stageRecord.id,
         stageMethodId: stageMethod.id,
-        userId: dbUser.id,
+        userId: effectiveUserId,
         date: interviewDate,
         deadline: null,
         notes: null,

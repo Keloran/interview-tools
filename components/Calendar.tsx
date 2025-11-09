@@ -215,7 +215,7 @@ export default function Calendar() {
                       id: String(created.id ?? Math.random().toString(36).substring(2, 9)),
                       title: composedTitle,
                       date: new Date(created.date ?? dateWithTime),
-                      color: STAGE_COLORS[values.stage],
+                      color: getStageColor(values.stage),
                       stage: values.stage,
                       companyName: created.company?.name ?? values.companyName,
                       clientCompany: created.clientCompany ?? values.clientCompany,
