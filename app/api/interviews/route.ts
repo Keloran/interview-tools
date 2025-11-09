@@ -1,7 +1,6 @@
 import { currentUser } from "@clerk/nextjs/server"
 import { NextRequest, NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
-// import type { Prisma } from "@prisma/client" // optional strict typing for `where`
 
 export async function GET(request: NextRequest) {
   const user = await currentUser()
@@ -41,6 +40,7 @@ export async function GET(request: NextRequest) {
       jobTitle: true,
       interviewer: true,
       company: { select: { id: true, name: true } },
+      clientCompany: true,
       stage: { select: { id: true, stage: true } },
       stageMethod: { select: { id: true, method: true } },
       applicationDate: true,
@@ -91,12 +91,13 @@ export async function GET(request: NextRequest) {
     if (statuses.length) where.status = { in: statuses }
     if (outcomes.length) where.outcome = { in: outcomes as any }
 
-    // Free-text search across jobTitle, interviewer, and company.name
+    // Free-text search across jobTitle, interviewer, company.name, and clientCompany
     if (q) {
       const or = [
         { jobTitle: { contains: q, mode: "insensitive" } },
         { interviewer: { contains: q, mode: "insensitive" } },
         { company: { name: { contains: q, mode: "insensitive" } } },
+        { clientCompany: { contains: q, mode: "insensitive" } },
       ]
       where.AND = where.AND ? [...where.AND, { OR: or }] : [{ OR: or }]
     }
@@ -127,6 +128,7 @@ export async function POST(request: NextRequest) {
     const {
       stage,
       companyName,
+      clientCompany,
       jobTitle,
       jobPostingLink,
       date, // ISO string
@@ -196,6 +198,7 @@ export async function POST(request: NextRequest) {
     const created = await prisma.interview.create({
       data: {
         companyId: company.id,
+        clientCompany: clientCompany || null,
         jobTitle,
         applicationDate: new Date(),
         interviewer: interviewer || null,
@@ -213,6 +216,7 @@ export async function POST(request: NextRequest) {
         jobTitle: true,
         interviewer: true,
         company: { select: { id: true, name: true } },
+        clientCompany: true,
         stage: { select: { id: true, stage: true } },
         stageMethod: { select: { id: true, method: true } },
         applicationDate: true,

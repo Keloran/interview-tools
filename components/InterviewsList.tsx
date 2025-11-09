@@ -3,7 +3,7 @@
 import { useAppStore } from "@/lib/store";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { cn, isSameDay } from "@/lib/utils";
+import {cn, getStageColor, isSameDay} from "@/lib/utils";
 import { useState } from "react";
 import {CornerUpRight, Pencil, X} from "lucide-react";
 import {useQuery} from "@tanstack/react-query";
@@ -25,6 +25,7 @@ interface Interview {
     name: string;
     id: number
   };
+  clientCompany?: string;
 }
 
 async function getInterviews(date: Date | string | null, company?: string | null) {
@@ -87,6 +88,7 @@ export default function InterviewsList() {
       name: item.company.name,
       id: item.company.id,
     },
+    clientCompany: item.clientCompany,
     outcome: item.outcome,
   }));
 
@@ -127,24 +129,6 @@ export default function InterviewsList() {
           </Button>
         )
       }
-    }
-  }
-
-  const getColor = (outcome: string) => {
-    switch (outcome) {
-      case "PASSED":
-      case "OFFER_ACCEPTED":
-        return "bg-green-500";
-      case "REJECTED":
-      case "WITHDREW":
-        return "bg-red-500";
-      case "OFFER_RECEIVED":
-        return "bg-orange-600";
-      case "OFFER_DECLINED":
-      case "AWAITING_RESPONSE":
-        return "bg-purple-500";
-      default:
-        return "bg-blue-500";
     }
   }
 
@@ -209,14 +193,17 @@ export default function InterviewsList() {
                   <div className="flex items-start gap-4 flex-1">
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <div className={cn("w-3 h-3 rounded-full mt-1 flex-shrink-0", getColor(interview.outcome),)} />
+                        <div className={cn("w-3 h-3 rounded-full mt-1 flex-shrink-0", getStageColor(interview.outcome),)} />
                       </TooltipTrigger>
                       <TooltipContent>
                         {formatOutcome(interview.outcome ?? "not happened yet")}
                       </TooltipContent>
                     </Tooltip>
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-lg">{interview.title} - {interview.company.name}</p>
+                      <p className="font-semibold text-lg">
+                        {interview.title} - {interview.company.name}
+                        {interview.clientCompany && <span className="text-muted-foreground font-normal"> (for {interview.clientCompany})</span>}
+                      </p>
                       <p className="text-sm text-muted-foreground mt-1">
                         {interview.date.toLocaleDateString("en-US", {
                           month: "long",

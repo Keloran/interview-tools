@@ -26,6 +26,7 @@ export type LocationType = "phone" | "link";
 export type InterviewFormValues = {
   stage: typeof INTERVIEW_STAGES[number];
   companyName: string;
+  clientCompany?: string;
   jobTitle: string;
   jobPostingLink?: string;
   time?: string; // HH:mm:ss
@@ -54,6 +55,7 @@ async function getCompanies() {
 export default function InterviewForm({ initialValues, onSubmit, submitLabel = "Add Interview Stage" }: InterviewFormProps) {
   const [stage, setStage] = useState<InterviewFormValues["stage"]>(initialValues?.stage || "Applied");
   const [companyName, setCompanyName] = useState(initialValues?.companyName || "");
+  const [clientCompany, setClientCompany] = useState(initialValues?.clientCompany || "");
   const [jobTitle, setJobTitle] = useState(initialValues?.jobTitle || "");
   const [jobPostingLink, setJobPostingLink] = useState(initialValues?.jobPostingLink || "");
   const [time, setTime] = useState(initialValues?.time || "09:00:00");
@@ -79,6 +81,7 @@ export default function InterviewForm({ initialValues, onSubmit, submitLabel = "
     onSubmit({
       stage,
       companyName,
+      clientCompany: clientCompany || undefined,
       jobTitle,
       jobPostingLink: jobPostingLink || undefined,
       time,
@@ -139,6 +142,15 @@ export default function InterviewForm({ initialValues, onSubmit, submitLabel = "
               </Command>
             </PopoverContent>
           </Popover>
+        </div>
+        <div className="space-y-2 md:col-span-1">
+          <Label htmlFor="client-company">Client company (optional)</Label>
+          <Input
+            id="client-company"
+            placeholder="e.g. End client if via recruiter"
+            value={clientCompany}
+            onChange={(e) => setClientCompany(e.target.value)}
+          />
         </div>
         <div className="space-y-2 md:col-span-1">
           <Label htmlFor="job-title">Job title</Label>

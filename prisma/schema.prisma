@@ -38,6 +38,7 @@ model Interview {
   id              Int               @id @default(autoincrement())
   companyId       Int
   company         Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  clientCompany   String? // End client company (for recruitment agencies)
   jobTitle        String // Role you're applying for
   applicationDate DateTime // When you applied for this job
   interviewer     String? // Name of person interviewing you
@@ -57,7 +58,7 @@ model Interview {
   updated_at      DateTime          @updatedAt
   link            String? // Meeting link (Teams, Google Meet, etc.)
 
-  @@unique([userId, companyId, jobTitle, applicationDate]) // Prevent duplicate applications
+  @@unique([userId, companyId, jobTitle, applicationDate, clientCompany]) // Prevent duplicate applications
 }
 
 model Stage {

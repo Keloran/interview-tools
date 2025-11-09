@@ -30,3 +30,21 @@ export function isSameDay (date1: Date, date2: Date) {
     date1.getFullYear() === date2.getFullYear()
   )
 }
+
+export const getStageColor = (outcome: string) => {
+  switch (outcome) {
+    case "PASSED":
+    case "OFFER_ACCEPTED":
+      return "bg-green-500";
+    case "REJECTED":
+    case "WITHDREW":
+      return "bg-red-500";
+    case "OFFER_RECEIVED":
+      return "bg-orange-600";
+    case "OFFER_DECLINED":
+    case "AWAITING_RESPONSE":
+      return "bg-purple-500";
+    default:
+      return "bg-blue-500";
+  }
+}

@@ -6,7 +6,7 @@ import {Button} from "@/components/ui/button";
 import {ChevronLeft, ChevronRight, Plus} from "lucide-react";
 import {Card} from "@/components/ui/card";
 import {Dialog, DialogContent, DialogHeader, DialogTitle} from "@/components/ui/dialog";
-import {cn, STAGE_COLORS, toISODate, isSameDay} from "@/lib/utils";
+import {cn, STAGE_COLORS, toISODate, isSameDay, getStageColor} from "@/lib/utils";
 import InterviewForm, { InterviewFormValues } from "@/components/InterviewForm";
 import {useRouter} from "next/navigation";
 
@@ -19,6 +19,7 @@ interface Interview {
   stage: string
   // Optional UI-only metadata (not persisted yet)
   companyName?: string
+  clientCompany?: string
   jobTitle?: string
   jobPostingLink?: string
   interviewer?: string
@@ -127,7 +128,7 @@ export default function Calendar() {
         {dayInterviews.length > 0 && (
           <div className="absolute bottom-0.5 left-1/2 -translate-x-1/2 flex gap-0.5">
             {dayInterviews.slice(0, 2).map((interview) => (
-              <div key={interview.id} className={cn("w-1 h-1 rounded-full", interview.color)} />
+              <div key={interview.id} className={cn("w-1 h-1 rounded-full", getStageColor(interview.stage))} />
             ))}
           </div>
         )}
@@ -195,6 +196,7 @@ export default function Calendar() {
                     body: JSON.stringify({
                       stage: values.stage,
                       companyName: values.companyName,
+                      clientCompany: values.clientCompany,
                       jobTitle: values.jobTitle,
                       jobPostingLink: values.jobPostingLink,
                       date: dateWithTime.toISOString(),
@@ -216,6 +218,7 @@ export default function Calendar() {
                       color: STAGE_COLORS[values.stage],
                       stage: values.stage,
                       companyName: created.company?.name ?? values.companyName,
+                      clientCompany: created.clientCompany ?? values.clientCompany,
                       jobTitle: created.jobTitle ?? values.jobTitle,
                       jobPostingLink: values.jobPostingLink,
                       interviewer: created.interviewer ?? values.interviewer,
