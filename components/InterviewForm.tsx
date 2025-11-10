@@ -68,12 +68,13 @@ export default function InterviewForm({ initialValues, onSubmit, submitLabel = "
 
   const { data: companies } = useQuery({ queryKey: ["companies"], queryFn: getCompanies });
 
-  const isEarlyStage = stage === "First Stage" || stage === "Initial Interview";
+  // All stages except "Applied" and "Offer" require scheduling (time, interviewer, etc.)
+  const requiresScheduling = stage !== "Applied" && stage !== "Offer";
 
   const handleSubmit = () => {
     // Basic validation (mirrors Calendar.tsx rules)
     if (!companyName.trim() || !jobTitle.trim()) return;
-    if (isEarlyStage) {
+    if (requiresScheduling) {
       if (!time || !interviewer.trim()) return;
       if (locationType === "link" && !interviewLink.trim()) return;
     }
@@ -85,9 +86,9 @@ export default function InterviewForm({ initialValues, onSubmit, submitLabel = "
       jobTitle,
       jobPostingLink: jobPostingLink || undefined,
       time,
-      interviewer: isEarlyStage ? interviewer : undefined,
-      locationType: isEarlyStage ? locationType : undefined,
-      interviewLink: isEarlyStage && locationType === "link" ? interviewLink : undefined,
+      interviewer: requiresScheduling ? interviewer : undefined,
+      locationType: requiresScheduling ? locationType : undefined,
+      interviewLink: requiresScheduling && locationType === "link" ? interviewLink : undefined,
     });
   };
 
@@ -173,7 +174,7 @@ export default function InterviewForm({ initialValues, onSubmit, submitLabel = "
         </div>
       </div>
 
-      {isEarlyStage && (
+      {requiresScheduling && (
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2 md:col-span-1">
             <Label htmlFor="interview-time">Interview time</Label>
