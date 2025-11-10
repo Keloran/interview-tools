@@ -36,8 +36,8 @@ export default function RootLayout({
               <div className="mx-auto max-w-6xl">
                 <div className="mb-8 flex items-start justify-between gap-4">
                   <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-balance">Calendar</h1>
-                    <p className="text-muted-foreground mt-2">Manage your schedule and events</p>
+                    <h1 className="text-3xl font-bold tracking-tight text-balance">Interview Planner</h1>
+                    <p className="text-muted-foreground mt-2">Manage your interview schedule, and see what companies you have applied with in the past</p>
                   </div>
                   <Navbar />
                 </div>
