@@ -85,7 +85,8 @@ export default function InterviewsList() {
   const month = currentDate.getMonth();
 
   const firstDayOfMonth = new Date(year, month, 1);
-  const startingDayOfWeek = firstDayOfMonth.getDay();
+  // Adjust for Monday start (0 = Monday, 6 = Sunday)
+  const startingDayOfWeek = (firstDayOfMonth.getDay() + 6) % 7;
 
   // console.info("InterviewData", interviewData);
 

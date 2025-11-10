@@ -27,7 +27,7 @@ interface Interview {
   interviewLink?: string
 }
 
-const DAYS = ["S", "M", "T", "W", "T", "F", "S"]
+const DAYS = ["M", "T", "W", "T", "F", "S", "S"]
 const MONTHS = [
   "January",
   "February",
@@ -61,7 +61,8 @@ export default function Calendar() {
   const firstDayOfMonth = new Date(year, month, 1)
   const lastDayOfMonth = new Date(year, month + 1, 0)
   const daysInMonth = lastDayOfMonth.getDate()
-  const startingDayOfWeek = firstDayOfMonth.getDay()
+  // Adjust for Monday start (0 = Monday, 6 = Sunday)
+  const startingDayOfWeek = (firstDayOfMonth.getDay() + 6) % 7
   const router = useRouter()
 
 

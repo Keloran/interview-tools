@@ -205,6 +205,10 @@ export async function POST(request: NextRequest) {
     if (locationType === "phone") metadata.location = "phone"
     if (locationType === "link") metadata.location = "link"
 
+    // Determine status based on whether interview is scheduled
+    // If there's an interviewer, it means a specific interview is scheduled
+    const status = interviewer ? "SCHEDULED" : "APPLIED"
+
     const created = await prisma.interview.create({
       data: {
         companyId: company.id,
@@ -217,6 +221,7 @@ export async function POST(request: NextRequest) {
         userId: effectiveUserId,
         date: interviewDate,
         deadline: null,
+        status,
         notes: null,
         metadata: Object.keys(metadata).length ? metadata : undefined,
         link: interviewLink || null,
