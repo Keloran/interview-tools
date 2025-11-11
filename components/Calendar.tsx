@@ -1,16 +1,16 @@
 "use client";
 
-import { useAppStore } from "@/lib/store";
-import {useState, MouseEvent, useEffect} from "react";
+import {useAppStore} from "@/lib/store";
+import {MouseEvent, useEffect, useState} from "react";
 import {Button} from "@/components/ui/button";
 import {ChevronLeft, ChevronRight, Plus} from "lucide-react";
 import {Card} from "@/components/ui/card";
 import {Dialog, DialogContent, DialogHeader, DialogTitle} from "@/components/ui/dialog";
-import {cn, toISODate, isSameDay, getStageColor} from "@/lib/utils";
-import InterviewForm, { InterviewFormValues } from "@/components/InterviewForm";
+import {cn, getStageColor, isSameDay, toISODate} from "@/lib/utils";
+import InterviewForm, {InterviewFormValues} from "@/components/InterviewForm";
 import {useRouter} from "next/navigation";
-import { useUser } from "@clerk/nextjs";
-import { addGuestInterview, listGuestInterviews } from "@/lib/guestStorage";
+import {useUser} from "@clerk/nextjs";
+import {addGuestInterview, listGuestInterviews} from "@/lib/guestStorage";
 
 
 interface Interview {
@@ -108,8 +108,9 @@ export default function Calendar() {
         }));
         setInterviews(mappedNow);
       };
-      window.addEventListener("guest:interviews:changed", onChanged as any);
-      return () => window.removeEventListener("guest:interviews:changed", onChanged as any);
+      const handleGuestChanged = () => onChanged();
+      window.addEventListener("guest:interviews:changed", handleGuestChanged);
+      return () => window.removeEventListener("guest:interviews:changed", handleGuestChanged);
     }
   }, [user]);
 

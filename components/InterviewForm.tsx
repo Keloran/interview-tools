@@ -1,6 +1,6 @@
 "use client";
 
-import {useEffect, useState} from "react";
+import {useState} from "react";
 import {Button} from "@/components/ui/button";
 import {Label} from "@/components/ui/label";
 import {Input} from "@/components/ui/input";
@@ -89,16 +89,17 @@ export default function InterviewForm({ initialValues, onSubmit, submitLabel = "
 
   const effectiveStages: Stage[] | undefined = user ? stages : guestStages;
 
-  // Default stage selection from fetched or guest stages
-  useEffect(() => {
-    if (!stage && effectiveStages && effectiveStages.length > 0) {
-      const applied = effectiveStages.find(s => s.stage.toLowerCase() === "applied");
-      setStage(applied ? applied.stage : effectiveStages[0].stage);
-    }
-  }, [effectiveStages, stage]);
+  // Compute a default stage without causing setState inside an effect
+  const defaultStage = ((): string => {
+    if (!effectiveStages || effectiveStages.length === 0) return "Applied";
+    const applied = effectiveStages.find((s) => s.stage.toLowerCase() === "applied");
+    return applied ? applied.stage : effectiveStages[0].stage;
+  })();
+
+  const selectedStage = stage || defaultStage;
 
   // All stages except "Applied" and "Offer" require scheduling (time, interviewer, etc.)
-  const requiresScheduling = stage !== "Applied" && stage !== "Offer";
+  const requiresScheduling = selectedStage !== "Applied" && selectedStage !== "Offer";
 
   const handleSubmit = () => {
     // Basic validation (mirrors Calendar.tsx rules)
@@ -110,7 +111,7 @@ export default function InterviewForm({ initialValues, onSubmit, submitLabel = "
     }
 
     onSubmit({
-      stage,
+      stage: selectedStage,
       companyName,
       clientCompany: clientCompany || undefined,
       jobTitle,
@@ -127,7 +128,7 @@ export default function InterviewForm({ initialValues, onSubmit, submitLabel = "
     <div className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="interview-stage">Interview Stage</Label>
-        <Select value={stage} onValueChange={(v) => setStage(v as InterviewFormValues["stage"])}>
+        <Select value={selectedStage} onValueChange={(v) => setStage(v as InterviewFormValues["stage"])}>
           <SelectTrigger id="interview-stage">
             <SelectValue placeholder={effectiveStages ? "Select a stage" : "Loading..."} />
           </SelectTrigger>

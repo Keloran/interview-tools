@@ -138,8 +138,9 @@ export default function InterviewsList() {
         }));
         setGuestInterviews(mappedNow);
       };
-      window.addEventListener("guest:interviews:changed", onChanged as any);
-      return () => window.removeEventListener("guest:interviews:changed", onChanged as any);
+      const handleGuestChanged = () => onChanged();
+      window.addEventListener("guest:interviews:changed", handleGuestChanged);
+      return () => window.removeEventListener("guest:interviews:changed", handleGuestChanged);
     }
   }, [user]);
 

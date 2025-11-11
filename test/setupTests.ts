@@ -77,7 +77,6 @@ if (!('matchMedia' in window)) {
 
 // Polyfill ResizeObserver for cmdk / UI libs in jsdom
 declare global {
-  // eslint-disable-next-line no-var
   var ResizeObserver: any
 }
 
