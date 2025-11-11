@@ -26,7 +26,7 @@ function inferStageMethodName(locationType?: string | null, interviewLink?: stri
     { re: /meet\.google\.com|hangouts\.google\.com|google\.com\/hangouts|workspace\.google\.com\/products\/meet/i, name: "Google Meet" },
   ];
   const raw = String(interviewLink);
-  let host = "";
+  let host: string;
   try { host = new URL(raw).hostname; } catch { try { host = new URL(`https://${raw}`).hostname; } catch { host = ""; } }
   const normalizedHost = host.replace(/^www\./i, "");
   const match = candidates.find((c) => c.re.test(normalizedHost) || c.re.test(raw));

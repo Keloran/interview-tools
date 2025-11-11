@@ -136,8 +136,8 @@ export default function InterviewForm({ initialValues, onSubmit, submitLabel = "
             {effectiveStages
               ?.filter((s) => {
                 // When progressing, exclude "Applied" since we've already passed that stage
-                if (isProgressing && s.stage === "Applied") return false;
-                return true;
+                return !(isProgressing && s.stage === "Applied");
+
               })
               .map((s) => (
                 <SelectItem key={s.id} value={s.stage}>{s.stage}</SelectItem>
