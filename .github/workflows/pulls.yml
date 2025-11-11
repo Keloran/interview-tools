@@ -20,6 +20,7 @@ jobs:
         with:
           version: 9
       - run: pnpm install --frozen-lockfile
+      - run: SKIP_ENV_VALIDATION=true pnpm build
       - run: SKIP_ENV_VALIDATION=true pnpm lint
       - run: SKIP_ENV_VALIDATION=true pnpm test
   automerge:
