@@ -124,11 +124,10 @@ export default function InterviewsList() {
           outcome: "REJECTED",
         }),
       });
-
-      // Refresh the page to get updated data
-      router.refresh();
     } catch (error) {
       console.error("Failed to reject interview:", error);
+    } finally {
+      router.refresh()
     }
   };
 
@@ -175,12 +174,13 @@ export default function InterviewsList() {
 
       if (res.ok) {
         // Refresh the page to get updated data
-        router.refresh();
         setProgressDialogOpen(false);
         setSelectedInterview(null);
       }
     } catch (error) {
       console.error("Failed to progress interview:", error);
+    } finally {
+      router.refresh();
     }
   };
 
@@ -320,7 +320,7 @@ export default function InterviewsList() {
                       </div>
                     </div>
                   </div>
-                  <Button variant={"ghost"} size={"sm"} className={"cursor-pointer"}><Pencil /></Button>
+                  {/*<Button variant={"ghost"} size={"sm"} className={"cursor-pointer"}><Pencil /></Button>*/}
                   <Button variant={"ghost"} size={"sm"} className={"cursor-pointer"} onClick={() => handleProgressInterview(interview)}><CornerUpRight /></Button>
                   <Button variant={"ghost"} size={"sm"} className={"cursor-pointer"} onClick={() => handleRejectInterview(interview.id)}><X /></Button>
                 </div>
