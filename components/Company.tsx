@@ -1,14 +1,7 @@
 "use client"
 
-import {
-  CommandDialog,
-  CommandEmpty,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command"
+import {CommandDialog, CommandEmpty, CommandInput, CommandItem, CommandList,} from "@/components/ui/command"
 import {useUser} from "@clerk/nextjs";
-import {useFlags} from "@flags-gg/react-library";
 import {useQuery} from "@tanstack/react-query";
 import {useState} from "react";
 import {Input} from "@/components/ui/input";
@@ -34,7 +27,6 @@ async function getCompanies() {
 
 export function Companies() {
   const {user} = useUser()
-  const {is} = useFlags()
   const [searchOpen, setSearchOpen] = useState(false)
   const setFilteredCompany = useAppStore((s) => s.setFilteredCompany)
 
@@ -44,7 +36,7 @@ export function Companies() {
     }
   }
 
-  const {data, error} = useQuery({
+  const {data} = useQuery({
     queryKey: ["companies", user?.id],
     queryFn: getCompanies,
     enabled: !!user?.id,

@@ -1,6 +1,7 @@
-import { currentUser } from "@clerk/nextjs/server"
-import { NextRequest, NextResponse } from "next/server"
+import {currentUser} from "@clerk/nextjs/server"
+import {NextRequest, NextResponse} from "next/server"
 import prisma from "@/lib/prisma"
+import type {$Enums, Prisma} from "@/app/generated/prisma/client"
 
 export async function GET(request: NextRequest) {
   const user = await currentUser()
@@ -59,7 +60,7 @@ export async function GET(request: NextRequest) {
 
     // Build one dynamic where
     // Dev override: use userId 12 in development
-    const where: any = { user: { clerkId: user.id } }
+    const where: Prisma.InterviewWhereInput = {user: {clerkId: user.id}}
 
     // Date filters
     if (date) {
@@ -93,7 +94,7 @@ export async function GET(request: NextRequest) {
 
     // Enum filters
     // status enum deprecated in favor of Stage table; ignore any status filters
-    if (outcomes.length) where.outcome = { in: outcomes as any }
+    if (outcomes.length) where.outcome = {in: outcomes as unknown as string[]}
 
     // Free-text search across jobTitle, interviewer, company.name, and clientCompany
     if (q) {
@@ -244,7 +245,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Compose metadata
-    const metadata: Record<string, any> = {}
+    const metadata: Record<string, unknown> = {}
     if (jobPostingLink) metadata.jobListing = jobPostingLink
     if (locationType === "phone") metadata.location = "phone"
     if (locationType === "link") metadata.location = "link"
@@ -264,7 +265,7 @@ export async function POST(request: NextRequest) {
         userId: effectiveUserId,
         date: interviewDate,
         deadline: null,
-        outcome: outcome as any,
+        outcome: outcome as $Enums.InterviewOutcome,
         notes: null,
         metadata: Object.keys(metadata).length ? metadata : undefined,
         link: interviewLink || null,
@@ -323,7 +324,7 @@ export async function PATCH(request: NextRequest) {
     // Update the interview
     const updated = await prisma.interview.update({
       where: { id: Number(id) },
-      data: { outcome: outcome as any },
+      data: {outcome: outcome as $Enums.InterviewOutcome},
       select: {
         id: true,
         outcome: true,

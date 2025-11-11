@@ -246,7 +246,7 @@ export default function InterviewForm({ initialValues, onSubmit, submitLabel = "
           </div>
           <div className="space-y-2 md:col-span-1">
             <Label htmlFor="location-type">Interview location</Label>
-            <Select value={locationType} onValueChange={(v) => setLocationType(v as any)}>
+            <Select value={locationType} onValueChange={(v) => setLocationType(v as LocationType)}>
               <SelectTrigger id="location-type">
                 <SelectValue />
               </SelectTrigger>
