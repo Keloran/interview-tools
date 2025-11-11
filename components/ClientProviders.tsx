@@ -4,6 +4,7 @@ import {ReactNode, useState} from "react";
 import {QueryClientProvider, QueryClient} from "@tanstack/react-query";
 import {FlagsProvider} from "@flags-gg/react-library";
 import {env} from "@/lib/env"
+import GuestSync from "@/components/GuestSync";
 
 export default function ClientProviders({children}: {children: ReactNode}) {
   const [queryClient] = useState(() => new QueryClient())
@@ -15,6 +16,7 @@ export default function ClientProviders({children}: {children: ReactNode}) {
 
   return <QueryClientProvider client={queryClient}>
     <FlagsProvider options={flagConfig}>
+      <GuestSync />
       {children}
     </FlagsProvider>
   </QueryClientProvider>

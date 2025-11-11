@@ -9,6 +9,7 @@ import {Popover, PopoverContent, PopoverTrigger} from "@/components/ui/popover";
 import {Command, CommandEmpty, CommandGroup, CommandInput, CommandItem} from "@/components/ui/command";
 import {ChevronsUpDown, Plus} from "lucide-react";
 import {useQuery} from "@tanstack/react-query";
+import {useUser} from "@clerk/nextjs";
 
 export type LocationType = "phone" | "link";
 
@@ -42,6 +43,19 @@ interface Stage {
   stage: string;
 }
 
+// Fallback stages for unsigned (guest) users
+const guestStages: Stage[] = [
+  { id: 1, stage: "Phone Screen" },
+  { id: 2, stage: "First Stage" },
+  { id: 3, stage: "Second Stage" },
+  { id: 4, stage: "Technical Test" },
+  { id: 5, stage: "Third Stage" },
+  { id: 6, stage: "Fourth Stage" },
+  { id: 7, stage: "Final Stage" },
+  { id: 8, stage: "Applied" },
+  { id: 9, stage: "Technical Interview" },
+];
+
 async function getCompanies() {
   const res = await fetch(`/api/companies`, { method: "GET" });
   if (!res.ok) throw new Error("Failed to fetch companies from client");
@@ -69,16 +83,19 @@ export default function InterviewForm({ initialValues, onSubmit, submitLabel = "
   const [companyOpen, setCompanyOpen] = useState(false);
   const [searchCompanyValue, setSearchCompanyValue] = useState("");
 
-  const { data: companies } = useQuery({ queryKey: ["companies"], queryFn: getCompanies });
-  const { data: stages } = useQuery({ queryKey: ["stages"], queryFn: getStages });
+  const { user } = useUser();
+  const { data: companies } = useQuery({ queryKey: ["companies"], queryFn: getCompanies, enabled: !!user?.id });
+  const { data: stages } = useQuery({ queryKey: ["stages"], queryFn: getStages, enabled: !!user?.id });
 
-  // Default stage selection from fetched stages
+  const effectiveStages: Stage[] | undefined = user ? stages : guestStages;
+
+  // Default stage selection from fetched or guest stages
   useEffect(() => {
-    if (!stage && stages && stages.length > 0) {
-      const applied = stages.find(s => s.stage.toLowerCase() === "applied");
-      setStage(applied ? applied.stage : stages[0].stage);
+    if (!stage && effectiveStages && effectiveStages.length > 0) {
+      const applied = effectiveStages.find(s => s.stage.toLowerCase() === "applied");
+      setStage(applied ? applied.stage : effectiveStages[0].stage);
     }
-  }, [stages, stage]);
+  }, [effectiveStages, stage]);
 
   // All stages except "Applied" and "Offer" require scheduling (time, interviewer, etc.)
   const requiresScheduling = stage !== "Applied" && stage !== "Offer";
@@ -112,10 +129,10 @@ export default function InterviewForm({ initialValues, onSubmit, submitLabel = "
         <Label htmlFor="interview-stage">Interview Stage</Label>
         <Select value={stage} onValueChange={(v) => setStage(v as InterviewFormValues["stage"])}>
           <SelectTrigger id="interview-stage">
-            <SelectValue placeholder={stages ? "Select a stage" : "Loading..."} />
+            <SelectValue placeholder={effectiveStages ? "Select a stage" : "Loading..."} />
           </SelectTrigger>
           <SelectContent>
-            {stages
+            {effectiveStages
               ?.filter((s) => {
                 // When progressing, exclude "Applied" since we've already passed that stage
                 if (isProgressing && s.stage === "Applied") return false;

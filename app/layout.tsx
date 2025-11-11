@@ -41,6 +41,11 @@ export default function RootLayout({
                   </div>
                   <Navbar />
                 </div>
+                <SignedOut>
+                  <div className="mb-4 rounded-md border border-dashed p-3 text-sm text-muted-foreground bg-muted/30">
+                    You are using Guest Mode. Your interviews are saved to this browser only and will sync to your account after you sign in.
+                  </div>
+                </SignedOut>
                 {children}
               </div>
             </main>

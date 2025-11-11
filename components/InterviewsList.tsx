@@ -15,6 +15,24 @@ import {Tooltip, TooltipContent, TooltipTrigger} from "@/components/ui/tooltip";
 import {Dialog, DialogContent, DialogHeader, DialogTitle} from "@/components/ui/dialog";
 import InterviewForm, { InterviewFormValues } from "@/components/InterviewForm";
 import {useRouter} from "next/navigation";
+import { listGuestInterviews, removeGuestInterview } from "@/lib/guestStorage";
+
+function inferStageMethodName(locationType?: string | null, interviewLink?: string | null): string {
+  if (locationType === "phone") return "Phone";
+  if (!interviewLink) return "Link";
+  const candidates: { re: RegExp; name: string }[] = [
+    { re: /zoom\.us|zoom\.com/i, name: "Zoom" },
+    { re: /zoomgov\.com/i, name: "ZoomGov" },
+    { re: /teams\.microsoft\.com|microsoft\.teams|live\.com\/meet/i, name: "Teams" },
+    { re: /meet\.google\.com|hangouts\.google\.com|google\.com\/hangouts|workspace\.google\.com\/products\/meet/i, name: "Google Meet" },
+  ];
+  const raw = String(interviewLink);
+  let host = "";
+  try { host = new URL(raw).hostname; } catch { try { host = new URL(`https://${raw}`).hostname; } catch { host = ""; } }
+  const normalizedHost = host.replace(/^www\./i, "");
+  const match = candidates.find((c) => c.re.test(normalizedHost) || c.re.test(raw));
+  return match ? match.name : "Link";
+}
 
 interface Interview {
   id: string;
@@ -72,6 +90,46 @@ export default function InterviewsList() {
   const [futureOnly, setFutureOnly] = useState(false);
   const [progressDialogOpen, setProgressDialogOpen] = useState(false);
   const [selectedInterview, setSelectedInterview] = useState<Interview | null>(null);
+  const [guestInterviews, setGuestInterviews] = useState<Interview[]>([]);
+
+  // Load guest interviews and subscribe to changes when signed out
+  useEffect(() => {
+    if (!user) {
+      const locals = listGuestInterviews();
+      const mapped = locals.map((g) => ({
+        id: g.id,
+        title: g.jobTitle,
+        date: g.date ? new Date(g.date) : new Date(),
+        stage: g.stage,
+        stageMethod: inferStageMethodName(g.locationType, g.interviewLink),
+        link: g.interviewLink || "",
+        company: { name: g.companyName, id: 0 },
+        clientCompany: g.clientCompany,
+        outcome: g.stage !== "Applied" ? "SCHEDULED" : "AWAITING_RESPONSE",
+        jobPostingLink: g.jobPostingLink,
+      }));
+      setGuestInterviews(mapped);
+
+      const onChanged = () => {
+        const localsNow = listGuestInterviews();
+        const mappedNow = localsNow.map((g) => ({
+          id: g.id,
+          title: g.jobTitle,
+          date: g.date ? new Date(g.date) : new Date(),
+          stage: g.stage,
+          stageMethod: inferStageMethodName(g.locationType, g.interviewLink),
+          link: g.interviewLink || "",
+          company: { name: g.companyName, id: 0 },
+          clientCompany: g.clientCompany,
+          outcome: g.stage !== "Applied" ? "SCHEDULED" : "AWAITING_RESPONSE",
+          jobPostingLink: g.jobPostingLink,
+        }));
+        setGuestInterviews(mappedNow);
+      };
+      window.addEventListener("guest:interviews:changed", onChanged as any);
+      return () => window.removeEventListener("guest:interviews:changed", onChanged as any);
+    }
+  }, [user]);
 
   const {data: interviewData, error} = useQuery({
     queryKey: ["interviews", user?.id, filteredDateISO, companyFilter, futureOnly],
@@ -115,6 +173,13 @@ export default function InterviewsList() {
   }));
 
   const handleRejectInterview = async (interviewId: string) => {
+    // If this is a guest interview, remove it locally
+    if (interviewId.startsWith("guest_")) {
+      removeGuestInterview(interviewId);
+      setGuestInterviews((prev) => prev.filter((i) => i.id !== interviewId));
+      return;
+    }
+
     try {
       await fetch("/api/interviews", {
         method: "PATCH",
@@ -184,9 +249,12 @@ export default function InterviewsList() {
     }
   };
 
-  const displayedInterviews = dateFilter
-    ? interviews.filter((interview) => isSameDay(interview.date, dateFilter))
-    : interviews;
+  const baseList = user ? interviews : guestInterviews;
+  const displayedInterviews = baseList.filter((interview) => {
+    const matchDate = dateFilter ? isSameDay(interview.date, dateFilter) : true;
+    const matchCompany = companyFilter ? interview.company.name === companyFilter : true;
+    return matchDate && matchCompany;
+  });
 
   const days = [];
   for (let i = 0; i < startingDayOfWeek; i++) {
@@ -320,9 +388,19 @@ export default function InterviewsList() {
                       </div>
                     </div>
                   </div>
-                  <Button variant={"ghost"} size={"sm"} className={"cursor-pointer"}><Pencil /></Button>
-                  <Button variant={"ghost"} size={"sm"} className={"cursor-pointer"} onClick={() => handleProgressInterview(interview)}><CornerUpRight /></Button>
-                  <Button variant={"ghost"} size={"sm"} className={"cursor-pointer"} onClick={() => handleRejectInterview(interview.id)}><X /></Button>
+                  {(!user || String(interview.id).startsWith("guest_")) ? (
+                    // Guest entries: allow local delete only
+                    <Button variant={"ghost"} size={"sm"} className={"cursor-pointer"} onClick={() => handleRejectInterview(interview.id)}>
+                      <X />
+                    </Button>
+                  ) : (
+                    // Signed-in entries: full actions
+                    <>
+                      <Button variant={"ghost"} size={"sm"} className={"cursor-pointer"}><Pencil /></Button>
+                      <Button variant={"ghost"} size={"sm"} className={"cursor-pointer"} onClick={() => handleProgressInterview(interview)}><CornerUpRight /></Button>
+                      <Button variant={"ghost"} size={"sm"} className={"cursor-pointer"} onClick={() => handleRejectInterview(interview.id)}><X /></Button>
+                    </>
+                  )}
                 </div>
               ))}
           </div>

@@ -47,6 +47,7 @@ export function Companies() {
   const {data, error} = useQuery({
     queryKey: ["companies", user?.id],
     queryFn: getCompanies,
+    enabled: !!user?.id,
   })
 
   if (!user) {
