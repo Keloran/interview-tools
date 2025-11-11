@@ -252,8 +252,11 @@ export async function POST(request: NextRequest) {
 
     // Compose metadata as a plain object, cast at use site to Prisma.InputJsonValue
     const metadata: Record<string, unknown> = {}
+    /* eslint-disable  @typescript-eslint/no-explicit-any */
     if (jobPostingLink) (metadata as any).jobListing = jobPostingLink
+    /* eslint-disable  @typescript-eslint/no-explicit-any */
     if (locationType === "phone") (metadata as any).location = "phone"
+    /* eslint-disable  @typescript-eslint/no-explicit-any */
     if (locationType === "link") (metadata as any).location = "link"
 
     // Set outcome based on stage

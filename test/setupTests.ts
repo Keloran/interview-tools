@@ -92,7 +92,7 @@ if (typeof (globalThis as any).ResizeObserver === 'undefined') {
 
 // scrollIntoView polyfill for cmdk list focusing
 if (!(Element.prototype as any).scrollIntoView) {
-  // @ts-ignore - jsdom polyfill for Element.prototype.scrollIntoView
+  // @ts-expect-error - jsdom polyfill for Element.prototype.scrollIntoView
   Element.prototype.scrollIntoView = () => {
   }
 }
