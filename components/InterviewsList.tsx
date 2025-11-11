@@ -12,6 +12,9 @@ import {useUser} from "@clerk/nextjs";
 import {SiGooglemeet, SiZoom} from "react-icons/si";
 import {PiMicrosoftTeamsLogoFill} from "react-icons/pi";
 import {Tooltip, TooltipContent, TooltipTrigger} from "@/components/ui/tooltip";
+import {Dialog, DialogContent, DialogHeader, DialogTitle} from "@/components/ui/dialog";
+import InterviewForm, { InterviewFormValues } from "@/components/InterviewForm";
+import {useRouter} from "next/navigation";
 
 interface Interview {
   id: string;
@@ -26,6 +29,7 @@ interface Interview {
     id: number
   };
   clientCompany?: string;
+  jobPostingLink?: string;
 }
 
 async function getInterviews(date: Date | string | null, company?: string | null, futureOnly?: boolean) {
@@ -59,12 +63,15 @@ async function getInterviews(date: Date | string | null, company?: string | null
 export default function InterviewsList() {
   const {user} = useUser()
   const {is} = useFlags()
+  const router = useRouter()
   const filteredDateISO = useAppStore((s) => s.filteredDate);
   const setFilteredDate = useAppStore((s) => s.setFilteredDate);
   const setCompanyFilter = useAppStore((s) => s.setFilteredCompany)
   const dateFilter = filteredDateISO ? new Date(filteredDateISO + "T00:00:00") : null;
   const companyFilter = useAppStore((s) => s.filteredCompany);
   const [futureOnly, setFutureOnly] = useState(false);
+  const [progressDialogOpen, setProgressDialogOpen] = useState(false);
+  const [selectedInterview, setSelectedInterview] = useState<Interview | null>(null);
 
   const {data: interviewData, error} = useQuery({
     queryKey: ["interviews", user?.id, filteredDateISO, companyFilter, futureOnly],
@@ -104,11 +111,51 @@ export default function InterviewsList() {
     },
     clientCompany: item.clientCompany,
     outcome: item.outcome,
+    jobPostingLink: item.metadata?.jobListing,
   }));
 
   const handleDeleteInterview = (interviewId: string) => {
     // TODO: Implement delete API call and invalidate query
     console.log("Delete interview", interviewId);
+  };
+
+  const handleProgressInterview = (interview: Interview) => {
+    setSelectedInterview(interview);
+    setProgressDialogOpen(true);
+  };
+
+  const handleProgressSubmit = async (values: InterviewFormValues) => {
+    try {
+      // Combine date and time into ISO string
+      const dateTimeStr = values.date && values.time
+        ? `${values.date}T${values.time}`
+        : new Date().toISOString();
+
+      const res = await fetch("/api/interviews", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          stage: values.stage,
+          companyName: values.companyName,
+          clientCompany: values.clientCompany,
+          jobTitle: values.jobTitle,
+          jobPostingLink: values.jobPostingLink,
+          date: dateTimeStr,
+          interviewer: values.interviewer,
+          locationType: values.locationType,
+          interviewLink: values.interviewLink,
+        }),
+      });
+
+      if (res.ok) {
+        // Refresh the page to get updated data
+        router.refresh();
+        setProgressDialogOpen(false);
+        setSelectedInterview(null);
+      }
+    } catch (error) {
+      console.error("Failed to create interview:", error);
+    }
   };
 
   const displayedInterviews = dateFilter
@@ -248,7 +295,7 @@ export default function InterviewsList() {
                     </div>
                   </div>
                   <Button variant={"ghost"} size={"sm"} className={"cursor-pointer"}><Pencil /></Button>
-                  <Button variant={"ghost"} size={"sm"} className={"cursor-pointer"}><CornerUpRight /></Button>
+                  <Button variant={"ghost"} size={"sm"} className={"cursor-pointer"} onClick={() => handleProgressInterview(interview)}><CornerUpRight /></Button>
                   {/*<Button variant="ghost" size="sm" className={"cursor-pointer"} onClick={() => handleDeleteInterview(interview.id)}>*/}
                   {/*  <X />*/}
                   {/*</Button>*/}
@@ -264,6 +311,28 @@ export default function InterviewsList() {
           </div>
         )}
       </Card>
+
+      <Dialog open={progressDialogOpen} onOpenChange={setProgressDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Progress Interview - {selectedInterview?.title}</DialogTitle>
+          </DialogHeader>
+          {selectedInterview && (
+            <InterviewForm
+              initialValues={{
+                companyName: selectedInterview.company.name,
+                clientCompany: selectedInterview.clientCompany,
+                jobTitle: selectedInterview.title,
+                jobPostingLink: selectedInterview.jobPostingLink,
+                stage: selectedInterview.stage,
+              }}
+              onSubmit={handleProgressSubmit}
+              submitLabel="Schedule Next Stage"
+              isProgressing={true}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

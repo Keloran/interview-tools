@@ -18,6 +18,7 @@ export type InterviewFormValues = {
   clientCompany?: string;
   jobTitle: string;
   jobPostingLink?: string;
+  date?: string; // YYYY-MM-DD
   time?: string; // HH:mm:ss
   interviewer?: string;
   locationType?: LocationType;
@@ -28,6 +29,7 @@ export type InterviewFormProps = {
   initialValues?: Partial<InterviewFormValues>;
   onSubmit: (values: InterviewFormValues) => void;
   submitLabel?: string;
+  isProgressing?: boolean; // When true, shows date picker for scheduling next stage
 };
 
 interface Company {
@@ -52,12 +54,13 @@ async function getStages() {
   return (await res.json()) as Stage[];
 }
 
-export default function InterviewForm({ initialValues, onSubmit, submitLabel = "Add Interview Stage" }: InterviewFormProps) {
+export default function InterviewForm({ initialValues, onSubmit, submitLabel = "Add Interview Stage", isProgressing = false }: InterviewFormProps) {
   const [stage, setStage] = useState<InterviewFormValues["stage"]>(initialValues?.stage || "Applied");
   const [companyName, setCompanyName] = useState(initialValues?.companyName || "");
   const [clientCompany, setClientCompany] = useState(initialValues?.clientCompany || "");
   const [jobTitle, setJobTitle] = useState(initialValues?.jobTitle || "");
   const [jobPostingLink, setJobPostingLink] = useState(initialValues?.jobPostingLink || "");
+  const [date, setDate] = useState(initialValues?.date || "");
   const [time, setTime] = useState(initialValues?.time || "09:00:00");
   const [interviewer, setInterviewer] = useState(initialValues?.interviewer || "");
   const [locationType, setLocationType] = useState<LocationType>(initialValues?.locationType || "phone");
@@ -85,6 +88,7 @@ export default function InterviewForm({ initialValues, onSubmit, submitLabel = "
     if (!companyName.trim() || !jobTitle.trim()) return;
     if (requiresScheduling) {
       if (!time || !interviewer.trim()) return;
+      if (isProgressing && !date) return; // Require date when progressing
       if (locationType === "link" && !interviewLink.trim()) return;
     }
 
@@ -94,6 +98,7 @@ export default function InterviewForm({ initialValues, onSubmit, submitLabel = "
       clientCompany: clientCompany || undefined,
       jobTitle,
       jobPostingLink: jobPostingLink || undefined,
+      date: date || undefined,
       time,
       interviewer: requiresScheduling ? interviewer : undefined,
       locationType: requiresScheduling ? locationType : undefined,
@@ -110,9 +115,15 @@ export default function InterviewForm({ initialValues, onSubmit, submitLabel = "
             <SelectValue placeholder={stages ? "Select a stage" : "Loading..."} />
           </SelectTrigger>
           <SelectContent>
-            {stages?.map((s) => (
-              <SelectItem key={s.id} value={s.stage}>{s.stage}</SelectItem>
-            ))}
+            {stages
+              ?.filter((s) => {
+                // When progressing, exclude "Applied" since we've already passed that stage
+                if (isProgressing && s.stage === "Applied") return false;
+                return true;
+              })
+              .map((s) => (
+                <SelectItem key={s.id} value={s.stage}>{s.stage}</SelectItem>
+              ))}
           </SelectContent>
         </Select>
       </div>
@@ -185,6 +196,17 @@ export default function InterviewForm({ initialValues, onSubmit, submitLabel = "
 
       {requiresScheduling && (
         <div className="grid gap-4 md:grid-cols-2">
+          {isProgressing && (
+            <div className="space-y-2 md:col-span-1">
+              <Label htmlFor="interview-date">Interview date</Label>
+              <Input
+                id="interview-date"
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+              />
+            </div>
+          )}
           <div className="space-y-2 md:col-span-1">
             <Label htmlFor="interview-time">Interview time</Label>
             <Input

@@ -6,7 +6,7 @@ import {Button} from "@/components/ui/button";
 import {ChevronLeft, ChevronRight, Plus} from "lucide-react";
 import {Card} from "@/components/ui/card";
 import {Dialog, DialogContent, DialogHeader, DialogTitle} from "@/components/ui/dialog";
-import {cn, STAGE_COLORS, toISODate, isSameDay, getStageColor} from "@/lib/utils";
+import {cn, toISODate, isSameDay, getStageColor} from "@/lib/utils";
 import InterviewForm, { InterviewFormValues } from "@/components/InterviewForm";
 import {useRouter} from "next/navigation";
 
