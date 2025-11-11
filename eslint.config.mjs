@@ -12,7 +12,28 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    "app/generated/**",
   ]),
+  // Test overrides
+  {
+    files: ["test/**/*.{ts,tsx}", "**/*.test.{ts,tsx}"],
+    rules: {
+      "@typescript-eslint/no-explicit-any": "off",
+    },
+    languageOptions: {
+      globals: {
+        vi: "readonly",
+        describe: "readonly",
+        it: "readonly",
+        test: "readonly",
+        expect: "readonly",
+        beforeAll: "readonly",
+        afterAll: "readonly",
+        beforeEach: "readonly",
+        afterEach: "readonly",
+      },
+    },
+  },
 ]);
 
 export default eslintConfig;

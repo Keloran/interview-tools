@@ -1,6 +1,6 @@
 "use client";
 
-import {useEffect, useState} from "react";
+import {useState} from "react";
 import {Button} from "@/components/ui/button";
 import {Label} from "@/components/ui/label";
 import {Input} from "@/components/ui/input";
@@ -73,12 +73,7 @@ export default function InterviewForm({ initialValues, onSubmit, submitLabel = "
   const { data: stages } = useQuery({ queryKey: ["stages"], queryFn: getStages });
 
   // Default stage selection from fetched stages
-  useEffect(() => {
-    if (!stage && stages && stages.length > 0) {
-      const applied = stages.find(s => s.stage.toLowerCase() === "applied");
-      setStage(applied ? applied.stage : stages[0].stage);
-    }
-  }, [stages, stage]);
+  // Stage defaults to "Applied" from initial state; no effect needed to set state here.
 
   // All stages except "Applied" and "Offer" require scheduling (time, interviewer, etc.)
   const requiresScheduling = stage !== "Applied" && stage !== "Offer";
@@ -229,7 +224,7 @@ export default function InterviewForm({ initialValues, onSubmit, submitLabel = "
           </div>
           <div className="space-y-2 md:col-span-1">
             <Label htmlFor="location-type">Interview location</Label>
-            <Select value={locationType} onValueChange={(v) => setLocationType(v as any)}>
+            <Select value={locationType} onValueChange={(v) => setLocationType(v as LocationType)}>
               <SelectTrigger id="location-type">
                 <SelectValue />
               </SelectTrigger>
