@@ -249,6 +249,9 @@ export async function POST(request: NextRequest) {
     if (locationType === "phone") metadata.location = "phone"
     if (locationType === "link") metadata.location = "link"
 
+    // Set outcome based on stage
+    const outcome = stage !== "Applied" ? "SCHEDULED" : "AWAITING_RESPONSE"
+
     const created = await prisma.interview.create({
       data: {
         companyId: company.id,
@@ -261,6 +264,7 @@ export async function POST(request: NextRequest) {
         userId: effectiveUserId,
         date: interviewDate,
         deadline: null,
+        outcome: outcome as any,
         notes: null,
         metadata: Object.keys(metadata).length ? metadata : undefined,
         link: interviewLink || null,
@@ -286,6 +290,49 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(created, { status: 201 })
   } catch (error) {
     console.error("POST /api/interviews error", error)
+    return NextResponse.json({ message: "Internal Server Error" }, { status: 500 })
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  const user = await currentUser()
+  if (!user) {
+    return NextResponse.json({ message: "unauthorized" }, { status: 401 })
+  }
+
+  try {
+    const body = await request.json()
+    const { id, outcome } = body ?? {}
+
+    if (!id) {
+      return NextResponse.json({ message: "Missing interview id" }, { status: 400 })
+    }
+
+    // Verify the interview belongs to the user
+    const interview = await prisma.interview.findFirst({
+      where: {
+        id: Number(id),
+        user: { clerkId: user.id },
+      },
+    })
+
+    if (!interview) {
+      return NextResponse.json({ message: "Interview not found" }, { status: 404 })
+    }
+
+    // Update the interview
+    const updated = await prisma.interview.update({
+      where: { id: Number(id) },
+      data: { outcome: outcome as any },
+      select: {
+        id: true,
+        outcome: true,
+      },
+    })
+
+    return NextResponse.json(updated)
+  } catch (error) {
+    console.error("PATCH /api/interviews error", error)
     return NextResponse.json({ message: "Internal Server Error" }, { status: 500 })
   }
 }

@@ -74,6 +74,7 @@ model StageMethod {
 
 
 enum InterviewOutcome {
+  SCHEDULED // Interview is scheduled
   PASSED // You progressed to next stage
   REJECTED // You didn't get through
   AWAITING_RESPONSE // Waiting to hear back

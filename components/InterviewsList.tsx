@@ -126,6 +126,19 @@ export default function InterviewsList() {
 
   const handleProgressSubmit = async (values: InterviewFormValues) => {
     try {
+      // First, update the current interview's outcome to "PASSED"
+      if (selectedInterview) {
+        await fetch("/api/interviews", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: selectedInterview.id,
+            outcome: "PASSED",
+          }),
+        });
+      }
+
+      // Then create the new interview for the next stage
       // Combine date and time into ISO string
       const dateTimeStr = values.date && values.time
         ? `${values.date}T${values.time}`
@@ -154,7 +167,7 @@ export default function InterviewsList() {
         setSelectedInterview(null);
       }
     } catch (error) {
-      console.error("Failed to create interview:", error);
+      console.error("Failed to progress interview:", error);
     }
   };
 
