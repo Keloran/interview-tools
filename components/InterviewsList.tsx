@@ -4,10 +4,9 @@ import { useAppStore } from "@/lib/store";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {cn, getStageColor, isSameDay} from "@/lib/utils";
-import { useState, useEffect } from "react";
-import {CornerUpRight, Pencil, X} from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import {CornerUpRight, X} from "lucide-react";
 import {useQuery} from "@tanstack/react-query";
-import {useFlags} from "@flags-gg/react-library";
 import {useUser} from "@clerk/nextjs";
 import {SiGooglemeet, SiZoom} from "react-icons/si";
 import {PiMicrosoftTeamsLogoFill} from "react-icons/pi";
@@ -15,6 +14,19 @@ import {Tooltip, TooltipContent, TooltipTrigger} from "@/components/ui/tooltip";
 import {Dialog, DialogContent, DialogHeader, DialogTitle} from "@/components/ui/dialog";
 import InterviewForm, { InterviewFormValues } from "@/components/InterviewForm";
 import {useRouter} from "next/navigation";
+
+interface InterviewApiItem {
+  id: string | number;
+  jobTitle: string;
+  date: string | Date;
+  stage?: { stage: string } | null;
+  stageMethod?: { method: string } | null;
+  link?: string | null;
+  company: { name: string; id: number };
+  clientCompany?: string | null;
+  jobPostingLink?: string | null;
+  outcome?: string | null;
+}
 
 interface Interview {
   id: string;
@@ -62,18 +74,17 @@ async function getInterviews(date: Date | string | null, company?: string | null
 
 export default function InterviewsList() {
   const {user} = useUser()
-  const {is} = useFlags()
   const router = useRouter()
   const filteredDateISO = useAppStore((s) => s.filteredDate);
   const setFilteredDate = useAppStore((s) => s.setFilteredDate);
   const setCompanyFilter = useAppStore((s) => s.setFilteredCompany)
-  const dateFilter = filteredDateISO ? new Date(filteredDateISO + "T00:00:00") : null;
+  const dateFilter = useMemo(() => (filteredDateISO ? new Date(filteredDateISO + "T00:00:00") : null), [filteredDateISO]);
   const companyFilter = useAppStore((s) => s.filteredCompany);
   const [futureOnly, setFutureOnly] = useState(false);
   const [progressDialogOpen, setProgressDialogOpen] = useState(false);
   const [selectedInterview, setSelectedInterview] = useState<Interview | null>(null);
 
-  const {data: interviewData, error} = useQuery({
+  const {data: interviewData} = useQuery({
     queryKey: ["interviews", user?.id, filteredDateISO, companyFilter, futureOnly],
     queryFn: () => getInterviews(dateFilter, companyFilter, futureOnly),
     enabled: !!user?.id,
@@ -98,7 +109,7 @@ export default function InterviewsList() {
   // console.info("InterviewData", interviewData);
 
   // Map API data to component interface
-  const interviews: Interview[] = (interviewData || []).map((item: any) => ({
+  const interviews: Interview[] = (interviewData || []).map((item: InterviewApiItem) => ({
     id: item.id,
     title: item.jobTitle,
     date: new Date(item.date),
