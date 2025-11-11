@@ -121,6 +121,49 @@ export async function GET(request: NextRequest) {
   }
 }
 
+// Infer StageMethod from locationType and meeting link
+function inferStageMethodName(locationType?: string | null, interviewLink?: string | null): string {
+  if (locationType === "phone") return "Phone";
+  if (!interviewLink) return "Link";
+
+  const candidates: { re: RegExp; name: string }[] = [
+    { re: /zoom\.us|zoom\.com/i, name: "Zoom" },
+    { re: /zoomgov\.com/i, name: "ZoomGov" },
+    { re: /teams\.microsoft\.com|microsoft\.teams|live\.com\/meet/i, name: "Teams" },
+    { re: /meet\.google\.com|hangouts\.google\.com|google\.com\/hangouts|workspace\.google\.com\/products\/meet/i, name: "Google Meet" },
+    { re: /webex\.com|webex/i, name: "Webex" },
+    { re: /skype\.com/i, name: "Skype" },
+    { re: /bluejeans\.com/i, name: "BlueJeans" },
+    { re: /whereby\.com/i, name: "Whereby" },
+    { re: /jitsi\.org|meet\.jit\.si/i, name: "Jitsi" },
+    { re: /gotomeet|gotowebinar|goto\.com/i, name: "GoToMeeting" },
+    { re: /chime\.aws|amazonchime\.com/i, name: "Amazon Chime" },
+    { re: /slack\.com/i, name: "Slack" },
+    { re: /discord\.(gg|com)/i, name: "Discord" },
+    { re: /facetime|apple\.com\/facetime/i, name: "FaceTime" },
+    { re: /whatsapp\.com/i, name: "WhatsApp" },
+    { re: /(^|\.)8x8\.vc/i, name: "8x8" },
+    { re: /telegram\.(me|org)|(^|\/)t\.me\//i, name: "Telegram" },
+    { re: /signal\.org/i, name: "Signal" },
+  ];
+
+  const raw = String(interviewLink);
+  let host = "";
+  try {
+    host = new URL(raw).hostname;
+  } catch {
+    try {
+      host = new URL(`https://${raw}`).hostname;
+    } catch {
+      host = "";
+    }
+  }
+  const normalizedHost = host.replace(/^www\./i, "");
+
+  const match = candidates.find((c) => c.re.test(normalizedHost) || c.re.test(raw));
+  return match ? match.name : "Link";
+}
+
 export async function POST(request: NextRequest) {
   const user = await currentUser()
   if (!user) {
@@ -188,13 +231,17 @@ export async function POST(request: NextRequest) {
       update: {},
     })
 
-    // StageMethod derived from locationType (fallback to "Phone" if not provided)
-    const methodName = locationType === "link" ? "Link" : "Phone"
-    const stageMethod = await prisma.stageMethod.upsert({
-      where: { method: methodName },
-      create: { method: methodName },
-      update: {},
+    // StageMethod inferred from locationType and/or meeting link
+    const methodName = inferStageMethodName(locationType, interviewLink)
+
+    // Case-insensitive lookup to match any existing record (e.g., "zoom" vs "Zoom")
+    let stageMethod = await prisma.stageMethod.findFirst({
+      where: { method: { equals: methodName, mode: "insensitive" } },
+      select: { id: true, method: true },
     })
+    if (!stageMethod) {
+      stageMethod = await prisma.stageMethod.create({ data: { method: methodName }, select: { id: true, method: true } })
+    }
 
     // Compose metadata
     const metadata: Record<string, any> = {}
