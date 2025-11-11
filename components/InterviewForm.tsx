@@ -1,6 +1,6 @@
 "use client";
 
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import {Button} from "@/components/ui/button";
 import {Label} from "@/components/ui/label";
 import {Input} from "@/components/ui/input";
@@ -10,21 +10,10 @@ import {Command, CommandEmpty, CommandGroup, CommandInput, CommandItem} from "@/
 import {ChevronsUpDown, Plus} from "lucide-react";
 import {useQuery} from "@tanstack/react-query";
 
-export const INTERVIEW_STAGES = [
-  "Applied",
-  "First Stage",
-  "Initial Interview",
-  "Phone Screen",
-  "Technical Interview",
-  "Onsite Interview",
-  "Final Round",
-  "Offer",
-] as const;
-
 export type LocationType = "phone" | "link";
 
 export type InterviewFormValues = {
-  stage: typeof INTERVIEW_STAGES[number];
+  stage: string;
   companyName: string;
   clientCompany?: string;
   jobTitle: string;
@@ -46,10 +35,21 @@ interface Company {
   id: number;
 }
 
+interface Stage {
+  id: number;
+  stage: string;
+}
+
 async function getCompanies() {
   const res = await fetch(`/api/companies`, { method: "GET" });
   if (!res.ok) throw new Error("Failed to fetch companies from client");
   return (await res.json()) as Company[];
+}
+
+async function getStages() {
+  const res = await fetch(`/api/stages`, { method: "GET" });
+  if (!res.ok) throw new Error("Failed to fetch stages from client");
+  return (await res.json()) as Stage[];
 }
 
 export default function InterviewForm({ initialValues, onSubmit, submitLabel = "Add Interview Stage" }: InterviewFormProps) {
@@ -67,6 +67,15 @@ export default function InterviewForm({ initialValues, onSubmit, submitLabel = "
   const [searchCompanyValue, setSearchCompanyValue] = useState("");
 
   const { data: companies } = useQuery({ queryKey: ["companies"], queryFn: getCompanies });
+  const { data: stages } = useQuery({ queryKey: ["stages"], queryFn: getStages });
+
+  // Default stage selection from fetched stages
+  useEffect(() => {
+    if (!stage && stages && stages.length > 0) {
+      const applied = stages.find(s => s.stage.toLowerCase() === "applied");
+      setStage(applied ? applied.stage : stages[0].stage);
+    }
+  }, [stages, stage]);
 
   // All stages except "Applied" and "Offer" require scheduling (time, interviewer, etc.)
   const requiresScheduling = stage !== "Applied" && stage !== "Offer";
@@ -98,11 +107,11 @@ export default function InterviewForm({ initialValues, onSubmit, submitLabel = "
         <Label htmlFor="interview-stage">Interview Stage</Label>
         <Select value={stage} onValueChange={(v) => setStage(v as InterviewFormValues["stage"])}>
           <SelectTrigger id="interview-stage">
-            <SelectValue />
+            <SelectValue placeholder={stages ? "Select a stage" : "Loading..."} />
           </SelectTrigger>
           <SelectContent>
-            {INTERVIEW_STAGES.map((s) => (
-              <SelectItem key={s} value={s}>{s}</SelectItem>
+            {stages?.map((s) => (
+              <SelectItem key={s.id} value={s.stage}>{s.stage}</SelectItem>
             ))}
           </SelectContent>
         </Select>

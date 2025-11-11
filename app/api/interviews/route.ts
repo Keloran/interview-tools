@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     const stageMethodId = searchParams.get("stageMethodId")
 
     // Multi-value enums
-    const statuses = searchParams.getAll("status") // e.g. status=SCHEDULED&status=COMPLETED
+    // const statuses = searchParams.getAll("status") // e.g. status=SCHEDULED&status=COMPLETED
     const outcomes = searchParams.getAll("outcome")
 
     // Free-text search
@@ -51,7 +51,6 @@ export async function GET(request: NextRequest) {
       applicationDate: true,
       date: true,
       deadline: true,
-      status: true,
       outcome: true,
       notes: true,
       metadata: true,
@@ -60,9 +59,7 @@ export async function GET(request: NextRequest) {
 
     // Build one dynamic where
     // Dev override: use userId 12 in development
-    const where: any /* Prisma.InterviewWhereInput */ = process.env.NODE_ENV === 'development'
-      ? { userId: 12 }
-      : { user: { clerkId: user.id } }
+    const where: any = { user: { clerkId: user.id } }
 
     // Date filters
     if (date) {
@@ -95,7 +92,7 @@ export async function GET(request: NextRequest) {
     if (stageMethodId) where.stageMethodId = Number(stageMethodId)
 
     // Enum filters
-    if (statuses.length) where.status = { in: statuses }
+    // status enum deprecated in favor of Stage table; ignore any status filters
     if (outcomes.length) where.outcome = { in: outcomes as any }
 
     // Free-text search across jobTitle, interviewer, company.name, and clientCompany
@@ -175,7 +172,7 @@ export async function POST(request: NextRequest) {
     })
 
     // Dev override: use userId 12 in development
-    const effectiveUserId = process.env.NODE_ENV === 'development' ? 12 : dbUser.id
+    const effectiveUserId = dbUser.id
 
     // Company connect or create (unique per userId+name)
     const company = await prisma.company.upsert({
@@ -205,10 +202,6 @@ export async function POST(request: NextRequest) {
     if (locationType === "phone") metadata.location = "phone"
     if (locationType === "link") metadata.location = "link"
 
-    // Determine status based on whether interview is scheduled
-    // If there's an interviewer, it means a specific interview is scheduled
-    const status = interviewer ? "SCHEDULED" : "APPLIED"
-
     const created = await prisma.interview.create({
       data: {
         companyId: company.id,
@@ -221,7 +214,6 @@ export async function POST(request: NextRequest) {
         userId: effectiveUserId,
         date: interviewDate,
         deadline: null,
-        status,
         notes: null,
         metadata: Object.keys(metadata).length ? metadata : undefined,
         link: interviewLink || null,
@@ -237,7 +229,6 @@ export async function POST(request: NextRequest) {
         applicationDate: true,
         date: true,
         deadline: true,
-        status: true,
         outcome: true,
         notes: true,
         metadata: true,
