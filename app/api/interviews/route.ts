@@ -1,7 +1,8 @@
 import {currentUser} from "@clerk/nextjs/server"
 import {NextRequest, NextResponse} from "next/server"
 import prisma from "@/lib/prisma"
-import type {$Enums, Prisma} from "@/app/generated/prisma/client"
+import type {$Enums} from "@/app/generated/prisma/client"
+import {Prisma} from "@/app/generated/prisma/client"
 
 export async function GET(request: NextRequest) {
   const user = await currentUser()
@@ -85,7 +86,7 @@ export async function GET(request: NextRequest) {
       // Your schema has companyId on Interview, so use the FK directly
       where.companyId = Number(companyId)
     } else if (companyName) {
-      where.company = { name: { contains: companyName, mode: "insensitive" } }
+      where.company = {name: {contains: companyName, mode: Prisma.QueryMode.insensitive}}
     }
 
     // Stage filters
@@ -94,17 +95,22 @@ export async function GET(request: NextRequest) {
 
     // Enum filters
     // status enum deprecated in favor of Stage table; ignore any status filters
-    if (outcomes.length) where.outcome = {in: outcomes as unknown as string[]}
+    if (outcomes.length) where.outcome = {in: outcomes as unknown as $Enums.InterviewOutcome[]}
 
     // Free-text search across jobTitle, interviewer, company.name, and clientCompany
     if (q) {
       const or = [
-        { jobTitle: { contains: q, mode: "insensitive" } },
-        { interviewer: { contains: q, mode: "insensitive" } },
-        { company: { name: { contains: q, mode: "insensitive" } } },
-        { clientCompany: { contains: q, mode: "insensitive" } },
+        {jobTitle: {contains: q, mode: Prisma.QueryMode.insensitive}},
+        {interviewer: {contains: q, mode: Prisma.QueryMode.insensitive}},
+        {company: {name: {contains: q, mode: Prisma.QueryMode.insensitive}}},
+        {clientCompany: {contains: q, mode: Prisma.QueryMode.insensitive}},
       ]
-      where.AND = where.AND ? [...where.AND, { OR: or }] : [{ OR: or }]
+      const andArray = Array.isArray(where.AND)
+        ? where.AND
+        : where.AND
+          ? [where.AND]
+          : []
+      where.AND = [...andArray, {OR: or}]
     }
 
     const interviews = await prisma.interview.findMany({
@@ -237,18 +243,18 @@ export async function POST(request: NextRequest) {
 
     // Case-insensitive lookup to match any existing record (e.g., "zoom" vs "Zoom")
     let stageMethod = await prisma.stageMethod.findFirst({
-      where: { method: { equals: methodName, mode: "insensitive" } },
+      where: {method: {equals: methodName, mode: Prisma.QueryMode.insensitive}},
       select: { id: true, method: true },
     })
     if (!stageMethod) {
       stageMethod = await prisma.stageMethod.create({ data: { method: methodName }, select: { id: true, method: true } })
     }
 
-    // Compose metadata
+    // Compose metadata as a plain object, cast at use site to Prisma.InputJsonValue
     const metadata: Record<string, unknown> = {}
-    if (jobPostingLink) metadata.jobListing = jobPostingLink
-    if (locationType === "phone") metadata.location = "phone"
-    if (locationType === "link") metadata.location = "link"
+    if (jobPostingLink) (metadata as any).jobListing = jobPostingLink
+    if (locationType === "phone") (metadata as any).location = "phone"
+    if (locationType === "link") (metadata as any).location = "link"
 
     // Set outcome based on stage
     const outcome = stage !== "Applied" ? "SCHEDULED" : "AWAITING_RESPONSE"
@@ -267,7 +273,7 @@ export async function POST(request: NextRequest) {
         deadline: null,
         outcome: outcome as $Enums.InterviewOutcome,
         notes: null,
-        metadata: Object.keys(metadata).length ? metadata : undefined,
+        metadata: Object.keys(metadata).length ? (metadata as Prisma.InputJsonValue) : undefined,
         link: interviewLink || null,
       },
       select: {

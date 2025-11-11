@@ -76,10 +76,6 @@ if (!('matchMedia' in window)) {
 }
 
 // Polyfill ResizeObserver for cmdk / UI libs in jsdom
-declare global {
-  var ResizeObserver: any
-}
-
 if (typeof (globalThis as any).ResizeObserver === 'undefined') {
   class ResizeObserver {
     observe() {
@@ -96,7 +92,7 @@ if (typeof (globalThis as any).ResizeObserver === 'undefined') {
 
 // scrollIntoView polyfill for cmdk list focusing
 if (!(Element.prototype as any).scrollIntoView) {
-  // @ts-expect-error - jsdom polyfill for Element.prototype.scrollIntoView
+  // @ts-ignore - jsdom polyfill for Element.prototype.scrollIntoView
   Element.prototype.scrollIntoView = () => {
   }
 }
