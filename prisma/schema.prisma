@@ -50,7 +50,6 @@ model Interview {
   user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   date            DateTime // When this specific interview stage is scheduled
   deadline        DateTime? // For take-home tests
-  status          InterviewStatus   @default(APPLIED)
   outcome         InterviewOutcome?
   notes           String?           @db.Text // Your notes about the interview
   metadata        Json? // Job posting URL, salary expectations, etc.
@@ -73,13 +72,6 @@ model StageMethod {
   interviews Interview[]
 }
 
-enum InterviewStatus {
-  APPLIED // Application submitted, no interview scheduled yet
-  SCHEDULED // Upcoming interview
-  COMPLETED // You've done the interview
-  CANCELLED // Interview was cancelled
-  NO_SHOW // You or they didn't show up
-}
 
 enum InterviewOutcome {
   PASSED // You progressed to next stage
