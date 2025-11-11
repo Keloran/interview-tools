@@ -1,14 +1,16 @@
 "use client";
 
-import { useAppStore } from "@/lib/store";
-import {useState, MouseEvent} from "react";
+import {useAppStore} from "@/lib/store";
+import {MouseEvent, useEffect, useState} from "react";
 import {Button} from "@/components/ui/button";
 import {ChevronLeft, ChevronRight, Plus} from "lucide-react";
 import {Card} from "@/components/ui/card";
 import {Dialog, DialogContent, DialogHeader, DialogTitle} from "@/components/ui/dialog";
-import {cn, toISODate, isSameDay, getStageColor} from "@/lib/utils";
-import InterviewForm, { InterviewFormValues } from "@/components/InterviewForm";
+import {cn, getStageColor, isSameDay, toISODate} from "@/lib/utils";
+import InterviewForm, {InterviewFormValues} from "@/components/InterviewForm";
 import {useRouter} from "next/navigation";
+import {useUser} from "@clerk/nextjs";
+import {addGuestInterview, listGuestInterviews} from "@/lib/guestStorage";
 
 
 interface Interview {
@@ -54,6 +56,7 @@ export default function Calendar() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [interviews, setInterviews] = useState<Interview[]>([])
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const { user } = useUser()
 
   const year = currentDate.getFullYear()
   const month = currentDate.getMonth()
@@ -65,6 +68,51 @@ export default function Calendar() {
   const startingDayOfWeek = (firstDayOfMonth.getDay() + 6) % 7
   const router = useRouter()
 
+
+  useEffect(() => {
+    if (!user) {
+      const locals = listGuestInterviews();
+      if (locals.length) {
+        const mapped: Interview[] = locals.map((g) => ({
+          id: g.id,
+          title: `${g.companyName} — ${g.jobTitle}`,
+          date: g.date ? new Date(g.date) : new Date(),
+          color: getStageColor(g.stage),
+          stage: g.stage,
+          companyName: g.companyName,
+          clientCompany: g.clientCompany,
+          jobTitle: g.jobTitle,
+          jobPostingLink: g.jobPostingLink,
+          interviewer: g.interviewer,
+          locationType: g.locationType,
+          interviewLink: g.interviewLink,
+        }));
+        setInterviews(mapped);
+      }
+
+      const onChanged = () => {
+        const localsNow = listGuestInterviews();
+        const mappedNow: Interview[] = localsNow.map((g) => ({
+          id: g.id,
+          title: `${g.companyName} — ${g.jobTitle}`,
+          date: g.date ? new Date(g.date) : new Date(),
+          color: getStageColor(g.stage),
+          stage: g.stage,
+          companyName: g.companyName,
+          clientCompany: g.clientCompany,
+          jobTitle: g.jobTitle,
+          jobPostingLink: g.jobPostingLink,
+          interviewer: g.interviewer,
+          locationType: g.locationType,
+          interviewLink: g.interviewLink,
+        }));
+        setInterviews(mappedNow);
+      };
+      const handleGuestChanged = () => onChanged();
+      window.addEventListener("guest:interviews:changed", handleGuestChanged);
+      return () => window.removeEventListener("guest:interviews:changed", handleGuestChanged);
+    }
+  }, [user]);
 
   const previousMonth = () => {
     setCurrentDate(new Date(year, month - 1, 1))
@@ -189,7 +237,41 @@ export default function Calendar() {
                 const [hours, minutes, seconds] = (values.time || "00:00:00").split(":").map(Number);
                 dateWithTime.setHours(hours || 0, minutes || 0, seconds || 0, 0);
 
-                // Send to API
+                // If signed out, save to localStorage (guest mode)
+                if (!user) {
+                  const saved = addGuestInterview({
+                    stage: values.stage,
+                    companyName: values.companyName,
+                    clientCompany: values.clientCompany,
+                    jobTitle: values.jobTitle,
+                    jobPostingLink: values.jobPostingLink,
+                    date: dateWithTime.toISOString(),
+                    time: values.time,
+                    interviewer: values.interviewer,
+                    locationType: values.locationType,
+                    interviewLink: values.interviewLink,
+                  });
+
+                  const newInterview: Interview = {
+                    id: saved.id,
+                    title: `${values.companyName} — ${values.jobTitle}`,
+                    date: new Date(dateWithTime),
+                    color: getStageColor(values.stage),
+                    stage: values.stage,
+                    companyName: values.companyName,
+                    clientCompany: values.clientCompany,
+                    jobTitle: values.jobTitle,
+                    jobPostingLink: values.jobPostingLink,
+                    interviewer: values.interviewer,
+                    locationType: values.locationType,
+                    interviewLink: values.interviewLink,
+                  };
+                  setInterviews([...interviews, newInterview]);
+                  setIsDialogOpen(false);
+                  return;
+                }
+
+                // Signed in: send to API
                 try {
                   const res = await fetch("/api/interviews", {
                     method: "POST",

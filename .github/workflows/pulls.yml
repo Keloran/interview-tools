@@ -11,6 +11,23 @@ jobs:
   test:
     timeout-minutes: 5
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: interview_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/interview_test
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -20,6 +37,8 @@ jobs:
         with:
           version: 9
       - run: pnpm install --frozen-lockfile
+      - run: pnpm dlx prisma migrate deploy
+      - run: SKIP_ENV_VALIDATION=true pnpm build
       - run: SKIP_ENV_VALIDATION=true pnpm lint
       - run: SKIP_ENV_VALIDATION=true pnpm test
   automerge:

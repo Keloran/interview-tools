@@ -1,15 +1,15 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import {beforeEach, describe, expect, it, vi} from 'vitest'
+import {render, screen, waitFor} from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { Companies } from '@/components/Company'
-import { Providers } from './utils'
-import { useAppStore } from '@/lib/store'
+import {Companies} from '@/components/Company'
+import {Providers} from './utils'
+import {useAppStore} from '@/lib/store'
 
 describe('Components/Company', () => {
   beforeEach(() => {
     vi.resetAllMocks()
     // reset store between tests
-    useAppStore.setState({ filteredCompany: null })
+    useAppStore.setState({filteredCompany: null})
   })
 
   it('loads and lists companies; selecting sets filteredCompany and closes dialog', async () => {
@@ -18,14 +18,14 @@ describe('Components/Company', () => {
     global.fetch = vi.fn(async () => ({
       ok: true,
       json: async () => [
-        { id: 1, name: 'Acme' },
-        { id: 2, name: 'Beta' },
+        {id: 1, name: 'Acme'},
+        {id: 2, name: 'Beta'},
       ],
     })) as any
 
     render(
       <Providers>
-        <Companies />
+        <Companies/>
       </Providers>
     )
 

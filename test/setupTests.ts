@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom'
-import { afterEach, vi } from 'vitest'
-import { cleanup } from '@testing-library/react'
+import {afterEach, vi} from 'vitest'
+import {cleanup} from '@testing-library/react'
 
 // Auto-cleanup after each test
 afterEach(() => {
@@ -25,20 +25,20 @@ vi.mock('next/navigation', () => {
 // Mock Clerk client/server
 vi.mock('@clerk/nextjs', () => {
   return {
-    useUser: () => ({ user: { id: 'user_123', emailAddresses: [] } }),
+    useUser: () => ({user: {id: 'user_123', emailAddresses: []}}),
   }
 })
 
 vi.mock('@clerk/nextjs/server', () => {
   return {
-    currentUser: vi.fn(async () => ({ id: 'user_123' })),
+    currentUser: vi.fn(async () => ({id: 'user_123'})),
   }
 })
 
 // Mock flags lib
 vi.mock('@flags-gg/react-library', () => {
   return {
-    useFlags: () => ({ is: () => true }),
+    useFlags: () => ({is: () => true}),
   }
 })
 
@@ -47,11 +47,11 @@ vi.mock('@/lib/prisma', () => {
   const fn = vi.fn
   return {
     default: {
-      user: { upsert: fn() },
-      company: { findMany: fn(), upsert: fn() },
-      stage: { findMany: fn(), upsert: fn() },
-      stageMethod: { findFirst: fn(), create: fn() },
-      interview: { findMany: fn(), create: fn(), update: fn() },
+      user: {upsert: fn()},
+      company: {findMany: fn(), upsert: fn()},
+      stage: {findMany: fn(), upsert: fn()},
+      stageMethod: {findFirst: fn(), create: fn()},
+      interview: {findMany: fn(), create: fn(), update: fn()},
     },
   }
 })
@@ -63,31 +63,35 @@ if (!('matchMedia' in window)) {
     matches: false,
     media: '',
     onchange: null,
-    addListener: () => {},
-    removeListener: () => {},
-    addEventListener: () => {},
-    removeEventListener: () => {},
+    addListener: () => {
+    },
+    removeListener: () => {
+    },
+    addEventListener: () => {
+    },
+    removeEventListener: () => {
+    },
     dispatchEvent: () => false,
   })
 }
 
 // Polyfill ResizeObserver for cmdk / UI libs in jsdom
-declare global {
-  // eslint-disable-next-line no-var
-  var ResizeObserver: any
-}
-
 if (typeof (globalThis as any).ResizeObserver === 'undefined') {
   class ResizeObserver {
-    observe() {}
-    unobserve() {}
-    disconnect() {}
+    observe() {
+    }
+
+    unobserve() {
+    }
+
+    disconnect() {
+    }
   }
   ;(globalThis as any).ResizeObserver = ResizeObserver
 }
 
 // scrollIntoView polyfill for cmdk list focusing
 if (!(Element.prototype as any).scrollIntoView) {
-  // @ts-expect-error - jsdom polyfill for Element.prototype.scrollIntoView
-  Element.prototype.scrollIntoView = () => {}
+  ;(Element.prototype as any).scrollIntoView = () => {
+  }
 }

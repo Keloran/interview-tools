@@ -1,12 +1,6 @@
 "use client"
 
-import {
-  CommandDialog,
-  CommandEmpty,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command"
+import {CommandDialog, CommandEmpty, CommandInput, CommandItem, CommandList,} from "@/components/ui/command"
 import {useUser} from "@clerk/nextjs";
 import {useQuery} from "@tanstack/react-query";
 import {useState} from "react";
@@ -45,6 +39,7 @@ export function Companies() {
   const {data} = useQuery({
     queryKey: ["companies", user?.id],
     queryFn: getCompanies,
+    enabled: !!user?.id,
   })
 
   if (!user) {

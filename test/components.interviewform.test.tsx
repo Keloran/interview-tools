@@ -1,23 +1,23 @@
-import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import {describe, expect, it, vi} from 'vitest'
+import {render, screen} from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import InterviewForm from '@/components/InterviewForm'
-import { Providers } from './utils'
+import {Providers} from './utils'
 
 // Mock fetch for companies and stages used by InterviewForm
 const mockStages = [
-  { id: 1, stage: 'Applied' },
-  { id: 2, stage: 'Phone Screen' },
+  {id: 1, stage: 'Applied'},
+  {id: 2, stage: 'Phone Screen'},
 ]
 const mockCompanies = [
-  { id: 1, name: 'Acme' },
+  {id: 1, name: 'Acme'},
 ]
 
 function mockFetchOnce() {
   global.fetch = vi.fn()
   ;(global.fetch as any)
-    .mockResolvedValueOnce({ ok: true, json: async () => mockCompanies }) // /api/companies
-    .mockResolvedValueOnce({ ok: true, json: async () => mockStages }) // /api/stages
+    .mockResolvedValueOnce({ok: true, json: async () => mockCompanies}) // /api/companies
+    .mockResolvedValueOnce({ok: true, json: async () => mockStages}) // /api/stages
 }
 
 describe('Components/InterviewForm', () => {
@@ -29,14 +29,14 @@ describe('Components/InterviewForm', () => {
     render(
       <Providers>
         <InterviewForm
-          initialValues={{ stage: 'Applied', companyName: 'Acme', jobTitle: 'SE' }}
+          initialValues={{stage: 'Applied', companyName: 'Acme', jobTitle: 'SE'}}
           onSubmit={onSubmit}
         />
       </Providers>
     )
 
     // Click submit
-    const btn = await screen.findByRole('button', { name: /add interview stage/i })
+    const btn = await screen.findByRole('button', {name: /add interview stage/i})
     await user.click(btn)
 
     expect(onSubmit).toHaveBeenCalledWith(
@@ -56,7 +56,14 @@ describe('Components/InterviewForm', () => {
     render(
       <Providers>
         <InterviewForm
-          initialValues={{ stage: 'Phone Screen', companyName: 'Acme', jobTitle: 'SE', time: '09:00:00', interviewer: 'Jane', locationType: 'phone' }}
+          initialValues={{
+            stage: 'Phone Screen',
+            companyName: 'Acme',
+            jobTitle: 'SE',
+            time: '09:00:00',
+            interviewer: 'Jane',
+            locationType: 'phone'
+          }}
           onSubmit={onSubmit}
           isProgressing
           submitLabel="Schedule Next Stage"
@@ -65,7 +72,7 @@ describe('Components/InterviewForm', () => {
     )
 
     // Without date, submit should be ignored
-    const btn = await screen.findByRole('button', { name: /schedule next stage/i })
+    const btn = await screen.findByRole('button', {name: /schedule next stage/i})
     await user.click(btn)
     expect(onSubmit).not.toHaveBeenCalled()
   })

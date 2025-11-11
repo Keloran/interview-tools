@@ -9,6 +9,7 @@ import {Popover, PopoverContent, PopoverTrigger} from "@/components/ui/popover";
 import {Command, CommandEmpty, CommandGroup, CommandInput, CommandItem} from "@/components/ui/command";
 import {ChevronsUpDown, Plus} from "lucide-react";
 import {useQuery} from "@tanstack/react-query";
+import {useUser} from "@clerk/nextjs";
 
 export type LocationType = "phone" | "link";
 
@@ -42,6 +43,19 @@ interface Stage {
   stage: string;
 }
 
+// Fallback stages for unsigned (guest) users
+const guestStages: Stage[] = [
+  { id: 1, stage: "Phone Screen" },
+  { id: 2, stage: "First Stage" },
+  { id: 3, stage: "Second Stage" },
+  { id: 4, stage: "Technical Test" },
+  { id: 5, stage: "Third Stage" },
+  { id: 6, stage: "Fourth Stage" },
+  { id: 7, stage: "Final Stage" },
+  { id: 8, stage: "Applied" },
+  { id: 9, stage: "Technical Interview" },
+];
+
 async function getCompanies() {
   const res = await fetch(`/api/companies`, { method: "GET" });
   if (!res.ok) throw new Error("Failed to fetch companies from client");
@@ -69,14 +83,23 @@ export default function InterviewForm({ initialValues, onSubmit, submitLabel = "
   const [companyOpen, setCompanyOpen] = useState(false);
   const [searchCompanyValue, setSearchCompanyValue] = useState("");
 
-  const { data: companies } = useQuery({ queryKey: ["companies"], queryFn: getCompanies });
-  const { data: stages } = useQuery({ queryKey: ["stages"], queryFn: getStages });
+  const { user } = useUser();
+  const { data: companies } = useQuery({ queryKey: ["companies"], queryFn: getCompanies, enabled: !!user?.id });
+  const { data: stages } = useQuery({ queryKey: ["stages"], queryFn: getStages, enabled: !!user?.id });
 
-  // Default stage selection from fetched stages
-  // Stage defaults to "Applied" from initial state; no effect needed to set state here.
+  const effectiveStages: Stage[] | undefined = user ? stages : guestStages;
+
+  // Compute a default stage without causing setState inside an effect
+  const defaultStage = ((): string => {
+    if (!effectiveStages || effectiveStages.length === 0) return "Applied";
+    const applied = effectiveStages.find((s) => s.stage.toLowerCase() === "applied");
+    return applied ? applied.stage : effectiveStages[0].stage;
+  })();
+
+  const selectedStage = stage || defaultStage;
 
   // All stages except "Applied" and "Offer" require scheduling (time, interviewer, etc.)
-  const requiresScheduling = stage !== "Applied" && stage !== "Offer";
+  const requiresScheduling = selectedStage !== "Applied" && selectedStage !== "Offer";
 
   const handleSubmit = () => {
     // Basic validation (mirrors Calendar.tsx rules)
@@ -88,7 +111,7 @@ export default function InterviewForm({ initialValues, onSubmit, submitLabel = "
     }
 
     onSubmit({
-      stage,
+      stage: selectedStage,
       companyName,
       clientCompany: clientCompany || undefined,
       jobTitle,
@@ -105,16 +128,16 @@ export default function InterviewForm({ initialValues, onSubmit, submitLabel = "
     <div className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="interview-stage">Interview Stage</Label>
-        <Select value={stage} onValueChange={(v) => setStage(v as InterviewFormValues["stage"])}>
+        <Select value={selectedStage} onValueChange={(v) => setStage(v as InterviewFormValues["stage"])}>
           <SelectTrigger id="interview-stage">
-            <SelectValue placeholder={stages ? "Select a stage" : "Loading..."} />
+            <SelectValue placeholder={effectiveStages ? "Select a stage" : "Loading..."} />
           </SelectTrigger>
           <SelectContent>
-            {stages
+            {effectiveStages
               ?.filter((s) => {
                 // When progressing, exclude "Applied" since we've already passed that stage
-                if (isProgressing && s.stage === "Applied") return false;
-                return true;
+                return !(isProgressing && s.stage === "Applied");
+
               })
               .map((s) => (
                 <SelectItem key={s.id} value={s.stage}>{s.stage}</SelectItem>
