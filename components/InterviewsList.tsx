@@ -114,9 +114,22 @@ export default function InterviewsList() {
     jobPostingLink: item.metadata?.jobListing,
   }));
 
-  const handleDeleteInterview = (interviewId: string) => {
-    // TODO: Implement delete API call and invalidate query
-    console.log("Delete interview", interviewId);
+  const handleRejectInterview = async (interviewId: string) => {
+    try {
+      await fetch("/api/interviews", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: interviewId,
+          outcome: "REJECTED",
+        }),
+      });
+
+      // Refresh the page to get updated data
+      router.refresh();
+    } catch (error) {
+      console.error("Failed to reject interview:", error);
+    }
   };
 
   const handleProgressInterview = (interview: Interview) => {
@@ -309,9 +322,7 @@ export default function InterviewsList() {
                   </div>
                   <Button variant={"ghost"} size={"sm"} className={"cursor-pointer"}><Pencil /></Button>
                   <Button variant={"ghost"} size={"sm"} className={"cursor-pointer"} onClick={() => handleProgressInterview(interview)}><CornerUpRight /></Button>
-                  {/*<Button variant="ghost" size="sm" className={"cursor-pointer"} onClick={() => handleDeleteInterview(interview.id)}>*/}
-                  {/*  <X />*/}
-                  {/*</Button>*/}
+                  <Button variant={"ghost"} size={"sm"} className={"cursor-pointer"} onClick={() => handleRejectInterview(interview.id)}><X /></Button>
                 </div>
               ))}
           </div>
