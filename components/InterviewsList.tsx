@@ -12,7 +12,7 @@ import {SiGooglemeet, SiZoom} from "react-icons/si";
 import {PiMicrosoftTeamsLogoFill} from "react-icons/pi";
 import {Tooltip, TooltipContent, TooltipTrigger} from "@/components/ui/tooltip";
 import {Dialog, DialogContent, DialogHeader, DialogTitle} from "@/components/ui/dialog";
-import InterviewForm, {InterviewFormValues} from "@/components/InterviewForm";
+import InterviewForm from "@/components/InterviewForm";
 import {useRouter} from "next/navigation";
 import {listGuestInterviews, removeGuestInterview} from "@/lib/guestStorage";
 import Link from "next/link";
@@ -216,75 +216,6 @@ export default function InterviewsList() {
     setProgressDialogOpen(true);
   };
 
-  const handleProgressSubmit = async (values: InterviewFormValues) => {
-    try {
-      // First, update the current interview's outcome to "PASSED"
-      if (selectedInterview) {
-        await fetch("/api/interviews", {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            id: selectedInterview.id,
-            outcome: "PASSED",
-          }),
-        });
-      }
-
-      // Then create the new interview for the next stage
-      // Combine date and time into ISO string
-      const dateTimeStr = values.date && values.time
-        ? `${values.date}T${values.time}`
-        : new Date().toISOString();
-
-      type PostInterviewBody = {
-        stage?: string;
-        companyName?: string;
-        clientCompany?: string;
-        jobTitle?: string;
-        jobPostingLink?: string;
-        date?: string;
-        deadline?: string;
-        interviewer?: string;
-        locationType?: "phone" | "link";
-        interviewLink?: string;
-        notes?: string;
-      };
-      const isTechnicalTest = values.stage === "Technical Test";
-      const body: PostInterviewBody = {
-        stage: values.stage,
-        companyName: values.companyName,
-        clientCompany: values.clientCompany,
-        jobTitle: values.jobTitle,
-        jobPostingLink: values.jobPostingLink,
-      };
-      if (isTechnicalTest) {
-        body.deadline = dateTimeStr;
-        body.notes = values.notes;
-      } else {
-        body.date = dateTimeStr;
-        body.interviewer = values.interviewer;
-        body.locationType = values.locationType;
-        body.interviewLink = values.interviewLink;
-      }
-
-      const res = await fetch("/api/interviews", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify(body),
-      });
-
-      if (res.ok) {
-        // Refresh the page to get updated data
-        setProgressDialogOpen(false);
-        setSelectedInterview(null);
-      }
-    } catch (error) {
-      console.error("Failed to progress interview:", error);
-    } finally {
-      router.refresh();
-    }
-  };
-
   const baseList = user ? interviews : guestInterviews;
   const displayedInterviews = baseList.filter((interview) => {
     const matchDate = dateFilter ? isSameDay(interview.date, dateFilter) : true;
@@ -467,7 +398,12 @@ export default function InterviewsList() {
                 jobPostingLink: selectedInterview.jobPostingLink,
                 stage: selectedInterview.stage,
               }}
-              onSubmit={handleProgressSubmit}
+              previousInterviewId={selectedInterview.id}
+              onSuccess={() => {
+                setProgressDialogOpen(false);
+                setSelectedInterview(null);
+                router.refresh();
+              }}
               submitLabel="Schedule Next Stage"
               isProgressing={true}
             />
