@@ -16,6 +16,7 @@ import InterviewForm from "@/components/InterviewForm";
 import {useRouter} from "next/navigation";
 import {listGuestInterviews, removeGuestInterview} from "@/lib/guestStorage";
 import Link from "next/link";
+import InterviewInfo from "@/components/InterviewInfo";
 
 function inferStageMethodName(locationType?: string | null, interviewLink?: string | null): string {
   if (locationType === "phone") return "Phone";
@@ -103,6 +104,7 @@ export default function InterviewsList() {
   const companyFilter = useAppStore((s) => s.filteredCompany);
   const [futureOnly, setFutureOnly] = useState(false);
   const [progressDialogOpen, setProgressDialogOpen] = useState(false);
+  const [infoDialogOpen, setInfoDialogOpen] = useState(false);
   const [selectedInterview, setSelectedInterview] = useState<Interview | null>(null);
   const [guestInterviews, setGuestInterviews] = useState<Interview[]>([]);
 
@@ -383,6 +385,12 @@ export default function InterviewsList() {
           </div>
         )}
       </Card>
+
+      <Dialog open={infoDialogOpen} onOpenChange={setInfoDialogOpen}>
+        <DialogContent>
+          {selectedInterview && <InterviewInfo interviewId={selectedInterview.id} />}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={progressDialogOpen} onOpenChange={setProgressDialogOpen}>
         <DialogContent>
