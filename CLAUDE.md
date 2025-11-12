@@ -31,12 +31,24 @@ pnpm start
 # Lint code
 pnpm lint
 
+# Run tests
+pnpm test
+
 # Database commands
 npx prisma generate        # Generate Prisma client
 npx prisma migrate dev     # Create and apply migrations
 npx prisma studio          # Open Prisma Studio GUI
 npx prisma db push         # Push schema changes without migrations
 ```
+
+## Code Quality Requirements
+
+**IMPORTANT**: Before marking any task as complete, you MUST:
+1. Run `pnpm lint` and ensure there are no errors
+2. Run `pnpm test` and ensure all tests pass
+3. Only mark tasks complete after both checks pass
+
+This ensures code quality and prevents breaking changes from being merged.
 
 ## Architecture
 
