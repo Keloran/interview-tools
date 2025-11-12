@@ -15,6 +15,7 @@ import {Dialog, DialogContent, DialogHeader, DialogTitle} from "@/components/ui/
 import InterviewForm, {InterviewFormValues} from "@/components/InterviewForm";
 import {useRouter} from "next/navigation";
 import {listGuestInterviews, removeGuestInterview} from "@/lib/guestStorage";
+import Link from "next/link";
 
 function inferStageMethodName(locationType?: string | null, interviewLink?: string | null): string {
   if (locationType === "phone") return "Phone";
@@ -416,9 +417,12 @@ export default function InterviewsList() {
                         })}
                       </p>
                       <div className="mt-2">
+                        {interview.jobPostingLink && (
+                          <Link href={interview.jobPostingLink}><Button variant={"outline"}>Job Posting</Button></Link>
+                        )}&nbsp;
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary">
                           {interview.stage}
-                        </span>
+                        </span> &nbsp;
                         {getStageMethodButton(interview.stageMethod, interview.link)}
                       </div>
                     </div>
