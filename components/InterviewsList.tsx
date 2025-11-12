@@ -36,7 +36,8 @@ function inferStageMethodName(locationType?: string | null, interviewLink?: stri
 interface InterviewApiItem {
   id: string | number;
   jobTitle: string;
-  date: string | Date;
+  date?: string | Date | null;
+  deadline?: string | Date | null;
   stage?: { stage: string } | null;
   stageMethod?: { method: string } | null;
   link?: string | null;
@@ -170,19 +171,19 @@ export default function InterviewsList() {
 
   // Map API data to component interface
   const interviews: Interview[] = (interviewData || []).map((item: InterviewApiItem) => ({
-    id: item.id,
+    id: item.id as string,
     title: item.jobTitle,
-    date: new Date(item.date),
+    date: new Date((item.date ?? item.deadline) as string),
     stage: item.stage?.stage || "Unknown",
     stageMethod: item.stageMethod?.method || "Unknown",
-    link: item.link,
+    link: item.link as string,
     company: {
       name: item.company.name,
       id: item.company.id,
     },
-    clientCompany: item.clientCompany,
-    outcome: item.outcome,
-    jobPostingLink: item.metadata?.jobListing,
+    clientCompany: item.clientCompany ?? undefined,
+    outcome: (item.outcome as string) ?? "",
+    jobPostingLink: (item.metadata as any)?.jobListing as string | undefined,
   }));
 
   const handleRejectInterview = async (interviewId: string) => {
@@ -234,20 +235,28 @@ export default function InterviewsList() {
         ? `${values.date}T${values.time}`
         : new Date().toISOString();
 
+      const isTechnicalTest = values.stage === "Technical Test";
+      const body: any = {
+        stage: values.stage,
+        companyName: values.companyName,
+        clientCompany: values.clientCompany,
+        jobTitle: values.jobTitle,
+        jobPostingLink: values.jobPostingLink,
+      };
+      if (isTechnicalTest) {
+        body.deadline = dateTimeStr;
+        body.notes = values.notes;
+      } else {
+        body.date = dateTimeStr;
+        body.interviewer = values.interviewer;
+        body.locationType = values.locationType;
+        body.interviewLink = values.interviewLink;
+      }
+
       const res = await fetch("/api/interviews", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          stage: values.stage,
-          companyName: values.companyName,
-          clientCompany: values.clientCompany,
-          jobTitle: values.jobTitle,
-          jobPostingLink: values.jobPostingLink,
-          date: dateTimeStr,
-          interviewer: values.interviewer,
-          locationType: values.locationType,
-          interviewLink: values.interviewLink,
-        }),
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(body),
       });
 
       if (res.ok) {

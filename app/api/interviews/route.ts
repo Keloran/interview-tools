@@ -63,22 +63,38 @@ export async function GET(request: NextRequest) {
     // Dev override: use userId 12 in development
     const where: Prisma.InterviewWhereInput = {user: {clerkId: user.id}}
 
-    // Date filters
+    // Date filters (consider both scheduled date and deadline)
     if (date) {
       const start = new Date(`${date}T00:00:00Z`)
       const end = new Date(start)
       end.setDate(end.getDate() + 1)
-      where.date = { gte: start, lt: end }
+      where.OR = [
+        {date: {gte: start, lt: end}},
+        {deadline: {gte: start, lt: end}},
+      ]
     } else if (dateFrom || dateTo) {
-      const range: { gte?: Date; lte?: Date } = {}
-      if (dateFrom) range.gte = new Date(`${dateFrom}T00:00:00Z`)
-      if (dateTo) range.lte = new Date(`${dateTo}T23:59:59.999Z`)
-      where.date = range
+      const rangeDate: { gte?: Date; lte?: Date } = {}
+      const rangeDeadline: { gte?: Date; lte?: Date } = {}
+      if (dateFrom) {
+        rangeDate.gte = new Date(`${dateFrom}T00:00:00Z`)
+        rangeDeadline.gte = new Date(`${dateFrom}T00:00:00Z`)
+      }
+      if (dateTo) {
+        rangeDate.lte = new Date(`${dateTo}T23:59:59.999Z`)
+        rangeDeadline.lte = new Date(`${dateTo}T23:59:59.999Z`)
+      }
+      where.OR = [
+        {date: rangeDate},
+        {deadline: rangeDeadline},
+      ]
     } else if (!includePast) {
-      // Show only future interviews
+      // Show only future interviews (scheduled date or deadline)
       const today = new Date()
       today.setHours(0, 0, 0, 0)
-      where.date = { gte: today }
+      where.OR = [
+        {date: {gte: today}},
+        {deadline: {gte: today}},
+      ]
     }
 
     // Company filters
@@ -116,7 +132,10 @@ export async function GET(request: NextRequest) {
     const interviews = await prisma.interview.findMany({
       where,
       select,
-      orderBy: { date: "asc" },
+      orderBy: [
+        {date: "asc"},
+        {deadline: "asc"},
+      ],
       take,
       skip,
     })
@@ -186,9 +205,11 @@ export async function POST(request: NextRequest) {
       jobTitle,
       jobPostingLink,
       date, // ISO string
+      deadline, // ISO string for Technical Test
       interviewer,
       locationType, // "phone" | "link"
       interviewLink,
+      notes,
     } = body ?? {}
 
     // Basic validations
@@ -196,15 +217,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: "Missing required fields" }, { status: 400 })
     }
 
-    // Parse date
+    // Parse date/deadline
     let interviewDate: Date | null = null
+    let deadlineDate: Date | null = null
     if (date) {
       const d = new Date(date)
       if (!isNaN(d.getTime())) interviewDate = d
     }
+    if (deadline) {
+      const d = new Date(deadline)
+      if (!isNaN(d.getTime())) deadlineDate = d
+    }
 
-    // Fallback to today at 09:00 if not provided
-    if (!interviewDate) {
+    // Fallbacks
+    if (!interviewDate && !deadlineDate) {
       const now = new Date()
       now.setHours(9, 0, 0, 0)
       interviewDate = now
@@ -262,22 +288,24 @@ export async function POST(request: NextRequest) {
     // Set outcome based on stage
     const outcome = stage !== "Applied" ? "SCHEDULED" : "AWAITING_RESPONSE"
 
+    const isTechnicalTest = String(stage).toLowerCase() === "technical test".toLowerCase()
+
     const created = await prisma.interview.create({
       data: {
         companyId: company.id,
         clientCompany: clientCompany || null,
         jobTitle,
         applicationDate: new Date(),
-        interviewer: interviewer || null,
+        interviewer: isTechnicalTest ? null : (interviewer || null),
         stageId: stageRecord.id,
         stageMethodId: stageMethod.id,
         userId: effectiveUserId,
-        date: interviewDate,
-        deadline: null,
+        date: isTechnicalTest ? null : interviewDate,
+        deadline: isTechnicalTest ? (deadlineDate ?? interviewDate) : null,
         outcome: outcome as $Enums.InterviewOutcome,
-        notes: null,
+        notes: notes || null,
         metadata: Object.keys(metadata).length ? (metadata as Prisma.InputJsonValue) : undefined,
-        link: interviewLink || null,
+        link: isTechnicalTest ? null : (interviewLink || null),
       },
       select: {
         id: true,

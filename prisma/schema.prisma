@@ -48,7 +48,7 @@ model Interview {
   stageMethod     StageMethod       @relation(fields: [stageMethodId], references: [id])
   userId          Int
   user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  date            DateTime // When this specific interview stage is scheduled
+  date            DateTime? // When this specific interview stage is scheduled (nullable for Technical Test)
   deadline        DateTime? // For take-home tests
   outcome         InterviewOutcome?
   notes           String?           @db.Text // Your notes about the interview
@@ -71,7 +71,6 @@ model StageMethod {
   method     String      @unique
   interviews Interview[]
 }
-
 
 enum InterviewOutcome {
   SCHEDULED // Interview is scheduled

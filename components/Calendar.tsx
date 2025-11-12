@@ -239,6 +239,7 @@ export default function Calendar() {
 
                 // If signed out, save to localStorage (guest mode)
                 if (!user) {
+                  const isTechnicalTest = values.stage === "Technical Test";
                   const saved = addGuestInterview({
                     stage: values.stage,
                     companyName: values.companyName,
@@ -246,10 +247,11 @@ export default function Calendar() {
                     jobTitle: values.jobTitle,
                     jobPostingLink: values.jobPostingLink,
                     date: dateWithTime.toISOString(),
-                    time: values.time,
-                    interviewer: values.interviewer,
-                    locationType: values.locationType,
-                    interviewLink: values.interviewLink,
+                    time: isTechnicalTest ? undefined : values.time,
+                    interviewer: isTechnicalTest ? undefined : values.interviewer,
+                    locationType: isTechnicalTest ? undefined : values.locationType,
+                    interviewLink: isTechnicalTest ? undefined : values.interviewLink,
+                    notes: isTechnicalTest ? values.notes : undefined,
                   });
 
                   const newInterview: Interview = {
@@ -262,9 +264,9 @@ export default function Calendar() {
                     clientCompany: values.clientCompany,
                     jobTitle: values.jobTitle,
                     jobPostingLink: values.jobPostingLink,
-                    interviewer: values.interviewer,
-                    locationType: values.locationType,
-                    interviewLink: values.interviewLink,
+                    interviewer: isTechnicalTest ? undefined : values.interviewer,
+                    locationType: isTechnicalTest ? undefined : values.locationType,
+                    interviewLink: isTechnicalTest ? undefined : values.interviewLink,
                   };
                   setInterviews([...interviews, newInterview]);
                   setIsDialogOpen(false);
@@ -273,20 +275,28 @@ export default function Calendar() {
 
                 // Signed in: send to API
                 try {
+                  const isTechnicalTest = values.stage === "Technical Test";
+                  const body: any = {
+                    stage: values.stage,
+                    companyName: values.companyName,
+                    clientCompany: values.clientCompany,
+                    jobTitle: values.jobTitle,
+                    jobPostingLink: values.jobPostingLink,
+                    interviewer: isTechnicalTest ? undefined : values.interviewer,
+                    locationType: isTechnicalTest ? undefined : values.locationType,
+                    interviewLink: isTechnicalTest ? undefined : values.interviewLink,
+                    notes: isTechnicalTest ? values.notes : undefined,
+                  };
+                  if (isTechnicalTest) {
+                    body.deadline = dateWithTime.toISOString();
+                  } else {
+                    body.date = dateWithTime.toISOString();
+                  }
+
                   const res = await fetch("/api/interviews", {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      stage: values.stage,
-                      companyName: values.companyName,
-                      clientCompany: values.clientCompany,
-                      jobTitle: values.jobTitle,
-                      jobPostingLink: values.jobPostingLink,
-                      date: dateWithTime.toISOString(),
-                      interviewer: values.interviewer,
-                      locationType: values.locationType,
-                      interviewLink: values.interviewLink,
-                    }),
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify(body),
                   });
 
                   if (!res.ok) {
@@ -297,7 +307,7 @@ export default function Calendar() {
                     const newInterview: Interview = {
                       id: String(created.id ?? Math.random().toString(36).substring(2, 9)),
                       title: composedTitle,
-                      date: new Date(created.date ?? dateWithTime),
+                      date: new Date(created.date ?? created.deadline ?? dateWithTime),
                       color: getStageColor(values.stage),
                       stage: values.stage,
                       companyName: created.company?.name ?? values.companyName,

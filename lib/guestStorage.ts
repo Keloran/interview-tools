@@ -8,11 +8,12 @@ export type GuestInterview = {
   clientCompany?: string;
   jobTitle: string;
   jobPostingLink?: string;
-  date?: string; // ISO
+  date?: string; // ISO (for Technical Test this represents the deadline)
   time?: string; // HH:mm:ss
   interviewer?: string;
   locationType?: "phone" | "link";
   interviewLink?: string;
+  notes?: string;
   createdAt: string; // ISO
   // Simple dedupe hash: companyName|jobTitle|date|time
   hash: string;
