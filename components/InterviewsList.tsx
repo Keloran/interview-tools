@@ -191,18 +191,17 @@ export default function InterviewsList() {
 
   const handleRejectInterview = async (interviewId: string) => {
     // If this is a guest interview, remove it locally
-    if (interviewId.startsWith("guest_")) {
+    if (typeof interviewId === "string" && interviewId.startsWith("guest_")) {
       removeGuestInterview(interviewId);
       setGuestInterviews((prev) => prev.filter((i) => i.id !== interviewId));
       return;
     }
 
     try {
-      await fetch("/api/interviews", {
-        method: "PATCH",
+      await fetch(`/api/interview/${interviewId}`, {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          id: interviewId,
           outcome: "REJECTED",
         }),
       });
