@@ -7,10 +7,10 @@ import {ChevronLeft, ChevronRight, Plus} from "lucide-react";
 import {Card} from "@/components/ui/card";
 import {Dialog, DialogContent, DialogHeader, DialogTitle} from "@/components/ui/dialog";
 import {cn, getStageColor, isSameDay, toISODate} from "@/lib/utils";
-import InterviewForm, {InterviewFormValues} from "@/components/InterviewForm";
+import InterviewForm from "@/components/InterviewForm";
 import {useRouter} from "next/navigation";
 import {useUser} from "@clerk/nextjs";
-import {addGuestInterview, listGuestInterviews} from "@/lib/guestStorage";
+import {listGuestInterviews} from "@/lib/guestStorage";
 
 
 interface Interview {
@@ -231,114 +231,10 @@ export default function Calendar() {
           <div className="space-y-4 pt-4">
             <InterviewForm
               submitLabel="Add Interview Stage"
-              onSubmit={async (values: InterviewFormValues) => {
-                if (!selectedDate) return;
-                const dateWithTime = new Date(selectedDate);
-                const [hours, minutes, seconds] = (values.time || "00:00:00").split(":").map(Number);
-                dateWithTime.setHours(hours || 0, minutes || 0, seconds || 0, 0);
-
-                // If signed out, save to localStorage (guest mode)
-                if (!user) {
-                  const isTechnicalTest = values.stage === "Technical Test";
-                  const saved = addGuestInterview({
-                    stage: values.stage,
-                    companyName: values.companyName,
-                    clientCompany: values.clientCompany,
-                    jobTitle: values.jobTitle,
-                    jobPostingLink: values.jobPostingLink,
-                    date: dateWithTime.toISOString(),
-                    time: isTechnicalTest ? undefined : values.time,
-                    interviewer: isTechnicalTest ? undefined : values.interviewer,
-                    locationType: isTechnicalTest ? undefined : values.locationType,
-                    interviewLink: isTechnicalTest ? undefined : values.interviewLink,
-                    notes: isTechnicalTest ? values.notes : undefined,
-                  });
-
-                  const newInterview: Interview = {
-                    id: saved.id,
-                    title: `${values.companyName} — ${values.jobTitle}`,
-                    date: new Date(dateWithTime),
-                    color: getStageColor(values.stage),
-                    stage: values.stage,
-                    companyName: values.companyName,
-                    clientCompany: values.clientCompany,
-                    jobTitle: values.jobTitle,
-                    jobPostingLink: values.jobPostingLink,
-                    interviewer: isTechnicalTest ? undefined : values.interviewer,
-                    locationType: isTechnicalTest ? undefined : values.locationType,
-                    interviewLink: isTechnicalTest ? undefined : values.interviewLink,
-                  };
-                  setInterviews([...interviews, newInterview]);
-                  setIsDialogOpen(false);
-                  return;
-                }
-
-                // Signed in: send to API
-                try {
-                  const isTechnicalTest = values.stage === "Technical Test";
-                  type PostInterviewBody = {
-                    stage?: string;
-                    companyName?: string;
-                    clientCompany?: string;
-                    jobTitle?: string;
-                    jobPostingLink?: string;
-                    date?: string;
-                    deadline?: string;
-                    interviewer?: string;
-                    locationType?: "phone" | "link";
-                    interviewLink?: string;
-                    notes?: string;
-                  };
-                  const body: PostInterviewBody = {
-                    stage: values.stage,
-                    companyName: values.companyName,
-                    clientCompany: values.clientCompany,
-                    jobTitle: values.jobTitle,
-                    jobPostingLink: values.jobPostingLink,
-                    interviewer: isTechnicalTest ? undefined : values.interviewer,
-                    locationType: isTechnicalTest ? undefined : values.locationType,
-                    interviewLink: isTechnicalTest ? undefined : values.interviewLink,
-                    notes: isTechnicalTest ? values.notes : undefined,
-                  };
-                  if (isTechnicalTest) {
-                    body.deadline = dateWithTime.toISOString();
-                  } else {
-                    body.date = dateWithTime.toISOString();
-                  }
-
-                  const res = await fetch("/api/interviews", {
-                    method: "POST",
-                    headers: {"Content-Type": "application/json"},
-                    body: JSON.stringify(body),
-                  });
-
-                  if (!res.ok) {
-                    console.error("Failed to create interview", await res.text());
-                  } else {
-                    const created = await res.json();
-                    const composedTitle = `${created.company?.name ?? values.companyName} — ${created.jobTitle ?? values.jobTitle}`;
-                    const newInterview: Interview = {
-                      id: String(created.id ?? Math.random().toString(36).substring(2, 9)),
-                      title: composedTitle,
-                      date: new Date(created.date ?? created.deadline ?? dateWithTime),
-                      color: getStageColor(values.stage),
-                      stage: values.stage,
-                      companyName: created.company?.name ?? values.companyName,
-                      clientCompany: created.clientCompany ?? values.clientCompany,
-                      jobTitle: created.jobTitle ?? values.jobTitle,
-                      jobPostingLink: values.jobPostingLink,
-                      interviewer: created.interviewer ?? values.interviewer,
-                      locationType: values.locationType,
-                      interviewLink: created.link ?? values.interviewLink,
-                    };
-                    setInterviews([...interviews, newInterview]);
-                  }
-                } catch (e) {
-                  console.error(e);
-                } finally {
-                  setIsDialogOpen(false);
-                  router.refresh()
-                }
+              initialDate={selectedDate || undefined}
+              onSuccess={() => {
+                setIsDialogOpen(false);
+                router.refresh();
               }}
             />
           </div>

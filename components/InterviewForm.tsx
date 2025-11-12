@@ -1,6 +1,6 @@
 "use client";
 
-import {useState} from "react";
+import {useState, useEffect} from "react";
 import {Button} from "@/components/ui/button";
 import {Label} from "@/components/ui/label";
 import {Input} from "@/components/ui/input";
@@ -10,6 +10,8 @@ import {Command, CommandEmpty, CommandGroup, CommandInput, CommandItem} from "@/
 import {ChevronsUpDown, Plus} from "lucide-react";
 import {useQuery} from "@tanstack/react-query";
 import {useUser} from "@clerk/nextjs";
+import {useRouter} from "next/navigation";
+import {addGuestInterview} from "@/lib/guestStorage";
 
 export type LocationType = "phone" | "link";
 
@@ -29,9 +31,13 @@ export type InterviewFormValues = {
 
 export type InterviewFormProps = {
   initialValues?: Partial<InterviewFormValues>;
-  onSubmit: (values: InterviewFormValues) => void;
+  initialDate?: Date; // When set from calendar, pre-populate the date field
+  interviewId?: string; // When provided, fetch interview data and auto-enable progress mode
+  onSubmit?: (values: InterviewFormValues) => void; // Legacy callback mode
+  onSuccess?: () => void; // Called after successful save (new self-contained mode)
   submitLabel?: string;
-  isProgressing?: boolean; // When true, shows date picker for scheduling next stage
+  isProgressing?: boolean; // Deprecated: auto-detected from interviewId
+  previousInterviewId?: string; // Deprecated: use interviewId instead
 };
 
 interface Company {
@@ -69,25 +75,63 @@ async function getStages() {
   return (await res.json()) as Stage[];
 }
 
-export default function InterviewForm({ initialValues, onSubmit, submitLabel = "Add Interview Stage", isProgressing = false }: InterviewFormProps) {
+export default function InterviewForm({ initialValues, initialDate, interviewId, onSubmit, onSuccess, submitLabel = "Add Interview Stage", isProgressing: isProgressingProp = false, previousInterviewId }: InterviewFormProps) {
+  const router = useRouter();
+  const { user } = useUser();
+
+  // Auto-detect progress mode from interviewId
+  const isProgressing = !!interviewId || isProgressingProp;
+  const effectiveInterviewId = interviewId || previousInterviewId;
+
+  // Fetch interview data if interviewId is provided
+  const { data: interviewData } = useQuery({
+    queryKey: ["interview", effectiveInterviewId],
+    queryFn: async () => {
+      if (!effectiveInterviewId) return null;
+      const url = new URL('/api/interviews', window.location.origin);
+      url.searchParams.set('id', effectiveInterviewId);
+      const res = await fetch(url.toString());
+      if (!res.ok) throw new Error("Failed to fetch interview");
+      const data = await res.json();
+      return data[0]; // API returns array, get first item
+    },
+    enabled: !!effectiveInterviewId && !!user,
+  });
+
+  // Convert initialDate to YYYY-MM-DD format if provided
+  const initialDateStr = initialDate
+    ? initialDate.toISOString().split('T')[0]
+    : initialValues?.date || "";
+
   const [stage, setStage] = useState<InterviewFormValues["stage"]>(initialValues?.stage || "Applied");
   const [companyName, setCompanyName] = useState(initialValues?.companyName || "");
   const [clientCompany, setClientCompany] = useState(initialValues?.clientCompany || "");
   const [jobTitle, setJobTitle] = useState(initialValues?.jobTitle || "");
   const [jobPostingLink, setJobPostingLink] = useState(initialValues?.jobPostingLink || "");
-  const [date, setDate] = useState(initialValues?.date || "");
+  const [date, setDate] = useState(initialDateStr);
   const [time, setTime] = useState(initialValues?.time || "09:00:00");
   const [interviewer, setInterviewer] = useState(initialValues?.interviewer || "");
   const [locationType, setLocationType] = useState<LocationType>(initialValues?.locationType || "phone");
   const [interviewLink, setInterviewLink] = useState(initialValues?.interviewLink || "");
   const [notes, setNotes] = useState(initialValues?.notes || "");
+  const [hasPopulatedFromData, setHasPopulatedFromData] = useState(false);
 
   const [companyOpen, setCompanyOpen] = useState(false);
   const [searchCompanyValue, setSearchCompanyValue] = useState("");
 
-  const { user } = useUser();
   const { data: companies } = useQuery({ queryKey: ["companies"], queryFn: getCompanies, enabled: !!user?.id });
   const { data: stages } = useQuery({ queryKey: ["stages"], queryFn: getStages, enabled: !!user?.id });
+
+  // Populate form from fetched interview data (only once when data first loads)
+  useEffect(() => {
+    if (interviewData && !hasPopulatedFromData) {
+      setCompanyName(interviewData.company?.name || "");
+      setClientCompany(interviewData.clientCompany || "");
+      setJobTitle(interviewData.jobTitle || "");
+      setJobPostingLink((interviewData.metadata as { jobListing?: string })?.jobListing || "");
+      setHasPopulatedFromData(true);
+    }
+  }, [interviewData, hasPopulatedFromData]);
 
   const effectiveStages: Stage[] | undefined = user ? stages : guestStages;
 
@@ -104,8 +148,8 @@ export default function InterviewForm({ initialValues, onSubmit, submitLabel = "
   const isTechnicalTest = selectedStage === "Technical Test";
   const requiresScheduling = selectedStage !== "Applied" && selectedStage !== "Offer";
 
-  const handleSubmit = () => {
-    // Basic validation (mirrors Calendar.tsx rules)
+  const handleSubmit = async () => {
+    // Basic validation
     if (!companyName.trim() || !jobTitle.trim()) return;
     if (requiresScheduling) {
       if (!isTechnicalTest) {
@@ -115,7 +159,7 @@ export default function InterviewForm({ initialValues, onSubmit, submitLabel = "
       if (isProgressing && !date) return; // Require date when progressing (deadline for Technical Test)
     }
 
-    onSubmit({
+    const values: InterviewFormValues = {
       stage: selectedStage,
       companyName,
       clientCompany: clientCompany || undefined,
@@ -127,7 +171,108 @@ export default function InterviewForm({ initialValues, onSubmit, submitLabel = "
       locationType: requiresScheduling && !isTechnicalTest ? locationType : undefined,
       interviewLink: requiresScheduling && !isTechnicalTest && locationType === "link" ? interviewLink : undefined,
       notes: isTechnicalTest ? (notes || undefined) : undefined,
-    });
+    };
+
+    // Legacy mode: just call the callback
+    if (onSubmit) {
+      onSubmit(values);
+      return;
+    }
+
+    // New self-contained mode: handle save internally
+    if (onSuccess) {
+      // Build date with time
+      const dateWithTime = new Date(date || new Date());
+      const [hours, minutes, seconds] = (time || "00:00:00").split(":").map(Number);
+      dateWithTime.setHours(hours || 0, minutes || 0, seconds || 0, 0);
+
+      // Guest mode: save to localStorage
+      if (!user) {
+        addGuestInterview({
+          stage: selectedStage,
+          companyName,
+          clientCompany: clientCompany || undefined,
+          jobTitle,
+          jobPostingLink: jobPostingLink || undefined,
+          date: dateWithTime.toISOString(),
+          time: isTechnicalTest ? undefined : time,
+          interviewer: isTechnicalTest ? undefined : interviewer,
+          locationType: isTechnicalTest ? undefined : locationType,
+          interviewLink: isTechnicalTest ? undefined : interviewLink,
+          notes: isTechnicalTest ? notes : undefined,
+        });
+        onSuccess();
+        return;
+      }
+
+      // Authenticated mode: save to API
+      try {
+        // If progressing, mark the previous interview as PASSED first
+        if (effectiveInterviewId) {
+          const updateRes = await fetch("/api/interviews", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              id: effectiveInterviewId,
+              outcome: "PASSED",
+            }),
+          });
+
+          if (!updateRes.ok) {
+            console.error("Failed to update previous interview", await updateRes.text());
+            return;
+          }
+        }
+
+        type PostInterviewBody = {
+          stage?: string;
+          companyName?: string;
+          clientCompany?: string;
+          jobTitle?: string;
+          jobPostingLink?: string;
+          date?: string;
+          deadline?: string;
+          interviewer?: string;
+          locationType?: "phone" | "link";
+          interviewLink?: string;
+          notes?: string;
+        };
+
+        const body: PostInterviewBody = {
+          stage: selectedStage,
+          companyName,
+          clientCompany: clientCompany || undefined,
+          jobTitle,
+          jobPostingLink: jobPostingLink || undefined,
+          interviewer: isTechnicalTest ? undefined : interviewer,
+          locationType: isTechnicalTest ? undefined : locationType,
+          interviewLink: isTechnicalTest ? undefined : interviewLink,
+          notes: isTechnicalTest ? notes : undefined,
+        };
+
+        if (isTechnicalTest) {
+          body.deadline = dateWithTime.toISOString();
+        } else {
+          body.date = dateWithTime.toISOString();
+        }
+
+        const res = await fetch("/api/interviews", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+
+        if (!res.ok) {
+          console.error("Failed to create interview", await res.text());
+          return;
+        }
+
+        router.refresh();
+        onSuccess();
+      } catch (e) {
+        console.error(e);
+      }
+    }
   };
 
   return (

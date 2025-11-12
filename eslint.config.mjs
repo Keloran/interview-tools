@@ -14,6 +14,12 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     "app/generated/**",
   ]),
+  // Disable set-state-in-effect rule (we use it legitimately for synchronizing external data)
+  {
+    rules: {
+      "react-hooks/set-state-in-effect": "off",
+    },
+  },
   // Test overrides
   {
     files: ["test/**/*.{ts,tsx}", "**/*.test.{ts,tsx}"],
