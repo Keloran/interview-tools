@@ -24,6 +24,7 @@ export type InterviewFormValues = {
   interviewer?: string;
   locationType?: LocationType;
   interviewLink?: string;
+  notes?: string;
 };
 
 export type InterviewFormProps = {
@@ -79,6 +80,7 @@ export default function InterviewForm({ initialValues, onSubmit, submitLabel = "
   const [interviewer, setInterviewer] = useState(initialValues?.interviewer || "");
   const [locationType, setLocationType] = useState<LocationType>(initialValues?.locationType || "phone");
   const [interviewLink, setInterviewLink] = useState(initialValues?.interviewLink || "");
+  const [notes, setNotes] = useState(initialValues?.notes || "");
 
   const [companyOpen, setCompanyOpen] = useState(false);
   const [searchCompanyValue, setSearchCompanyValue] = useState("");
@@ -99,15 +101,18 @@ export default function InterviewForm({ initialValues, onSubmit, submitLabel = "
   const selectedStage = stage || defaultStage;
 
   // All stages except "Applied" and "Offer" require scheduling (time, interviewer, etc.)
+  const isTechnicalTest = selectedStage === "Technical Test";
   const requiresScheduling = selectedStage !== "Applied" && selectedStage !== "Offer";
 
   const handleSubmit = () => {
     // Basic validation (mirrors Calendar.tsx rules)
     if (!companyName.trim() || !jobTitle.trim()) return;
     if (requiresScheduling) {
-      if (!time || !interviewer.trim()) return;
-      if (isProgressing && !date) return; // Require date when progressing
-      if (locationType === "link" && !interviewLink.trim()) return;
+      if (!isTechnicalTest) {
+        if (!time || !interviewer.trim()) return;
+        if (locationType === "link" && !interviewLink.trim()) return;
+      }
+      if (isProgressing && !date) return; // Require date when progressing (deadline for Technical Test)
     }
 
     onSubmit({
@@ -118,9 +123,10 @@ export default function InterviewForm({ initialValues, onSubmit, submitLabel = "
       jobPostingLink: jobPostingLink || undefined,
       date: date || undefined,
       time,
-      interviewer: requiresScheduling ? interviewer : undefined,
-      locationType: requiresScheduling ? locationType : undefined,
-      interviewLink: requiresScheduling && locationType === "link" ? interviewLink : undefined,
+      interviewer: requiresScheduling && !isTechnicalTest ? interviewer : undefined,
+      locationType: requiresScheduling && !isTechnicalTest ? locationType : undefined,
+      interviewLink: requiresScheduling && !isTechnicalTest && locationType === "link" ? interviewLink : undefined,
+      notes: isTechnicalTest ? (notes || undefined) : undefined,
     });
   };
 
@@ -216,7 +222,7 @@ export default function InterviewForm({ initialValues, onSubmit, submitLabel = "
         <div className="grid gap-4 md:grid-cols-2">
           {isProgressing && (
             <div className="space-y-2 md:col-span-1">
-              <Label htmlFor="interview-date">Interview date</Label>
+              <Label htmlFor="interview-date">{isTechnicalTest ? "Deadline" : "Interview date"}</Label>
               <Input
                 id="interview-date"
                 type="date"
@@ -225,47 +231,65 @@ export default function InterviewForm({ initialValues, onSubmit, submitLabel = "
               />
             </div>
           )}
-          <div className="space-y-2 md:col-span-1">
-            <Label htmlFor="interview-time">Interview time</Label>
-            <Input
-              id="interview-time"
-              step={1}
-              type="time"
-              placeholder="09:00:00"
-              value={time}
-              onChange={(e) => setTime(e.target.value)}
-            />
-          </div>
-          <div className="space-y-2 md:col-span-1">
-            <Label htmlFor="interviewer">Interviewer</Label>
-            <Input
-              id="interviewer"
-              placeholder="Who are you meeting?"
-              value={interviewer}
-              onChange={(e) => setInterviewer(e.target.value)}
-            />
-          </div>
-          <div className="space-y-2 md:col-span-1">
-            <Label htmlFor="location-type">Interview location</Label>
-            <Select value={locationType} onValueChange={(v) => setLocationType(v as LocationType)}>
-              <SelectTrigger id="location-type">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="phone">Phone</SelectItem>
-                <SelectItem value="link">Link (online meeting)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          {locationType === "link" && (
-            <div className="space-y-2 md:col-span-1">
-              <Label htmlFor="interview-link">Interview link</Label>
-              <Input
-                id="interview-link"
-                type="url"
-                placeholder="https://meet..."
-                value={interviewLink}
-                onChange={(e) => setInterviewLink(e.target.value)}
+
+          {!isTechnicalTest && (
+            <>
+              <div className="space-y-2 md:col-span-1">
+                <Label htmlFor="interview-time">Interview time</Label>
+                <Input
+                  id="interview-time"
+                  step={1}
+                  type="time"
+                  placeholder="09:00:00"
+                  value={time}
+                  onChange={(e) => setTime(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2 md:col-span-1">
+                <Label htmlFor="interviewer">Interviewer</Label>
+                <Input
+                  id="interviewer"
+                  placeholder="Who are you meeting?"
+                  value={interviewer}
+                  onChange={(e) => setInterviewer(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2 md:col-span-1">
+                <Label htmlFor="location-type">Interview location</Label>
+                <Select value={locationType} onValueChange={(v) => setLocationType(v as LocationType)}>
+                  <SelectTrigger id="location-type">
+                    <SelectValue/>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="phone">Phone</SelectItem>
+                    <SelectItem value="link">Link (online meeting)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {locationType === "link" && (
+                <div className="space-y-2 md:col-span-1">
+                  <Label htmlFor="interview-link">Interview link</Label>
+                  <Input
+                    id="interview-link"
+                    type="url"
+                    placeholder="https://meet..."
+                    value={interviewLink}
+                    onChange={(e) => setInterviewLink(e.target.value)}
+                  />
+                </div>
+              )}
+            </>
+          )}
+
+          {isTechnicalTest && (
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="notes">Notes</Label>
+              <textarea
+                id="notes"
+                className="w-full min-h-[100px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                placeholder="Anything you need to remember for the test (requirements, repo link to submit, etc.)"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
               />
             </div>
           )}
