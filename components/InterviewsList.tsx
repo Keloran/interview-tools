@@ -183,7 +183,7 @@ export default function InterviewsList() {
     },
     clientCompany: item.clientCompany ?? undefined,
     outcome: (item.outcome as string) ?? "",
-    jobPostingLink: (item.metadata as any)?.jobListing as string | undefined,
+    jobPostingLink: (item.metadata as { jobListing?: string } | null | undefined)?.jobListing ?? undefined,
   }));
 
   const handleRejectInterview = async (interviewId: string) => {
@@ -235,8 +235,21 @@ export default function InterviewsList() {
         ? `${values.date}T${values.time}`
         : new Date().toISOString();
 
+      type PostInterviewBody = {
+        stage?: string;
+        companyName?: string;
+        clientCompany?: string;
+        jobTitle?: string;
+        jobPostingLink?: string;
+        date?: string;
+        deadline?: string;
+        interviewer?: string;
+        locationType?: "phone" | "link";
+        interviewLink?: string;
+        notes?: string;
+      };
       const isTechnicalTest = values.stage === "Technical Test";
-      const body: any = {
+      const body: PostInterviewBody = {
         stage: values.stage,
         companyName: values.companyName,
         clientCompany: values.clientCompany,

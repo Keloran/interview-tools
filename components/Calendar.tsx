@@ -276,7 +276,20 @@ export default function Calendar() {
                 // Signed in: send to API
                 try {
                   const isTechnicalTest = values.stage === "Technical Test";
-                  const body: any = {
+                  type PostInterviewBody = {
+                    stage?: string;
+                    companyName?: string;
+                    clientCompany?: string;
+                    jobTitle?: string;
+                    jobPostingLink?: string;
+                    date?: string;
+                    deadline?: string;
+                    interviewer?: string;
+                    locationType?: "phone" | "link";
+                    interviewLink?: string;
+                    notes?: string;
+                  };
+                  const body: PostInterviewBody = {
                     stage: values.stage,
                     companyName: values.companyName,
                     clientCompany: values.clientCompany,
