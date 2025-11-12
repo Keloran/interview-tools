@@ -22,7 +22,7 @@ const select = {
   link: true,
 } as const;
 
-export async function GET(_request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const user = await currentUser();
   if (!user) {
     return NextResponse.json({ message: "unauthorized" }, { status: 401 });
@@ -49,7 +49,7 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const user = await currentUser();
   if (!user) {
     return NextResponse.json({ message: "unauthorized" }, { status: 401 });
@@ -108,7 +108,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const user = await currentUser()
   if (!user) {
     return NextResponse.json({ message: "unauthorized" }, { status: 401 })

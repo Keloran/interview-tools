@@ -174,7 +174,7 @@ export default function InterviewsList() {
 
   // Map API data to component interface
   const interviews: Interview[] = (interviewData || []).map((item: InterviewApiItem) => ({
-    id: item.id as string,
+    id: String(item.id),
     title: item.jobTitle,
     date: new Date((item.date ?? item.deadline) as string),
     stage: item.stage?.stage || "Unknown",
@@ -189,7 +189,7 @@ export default function InterviewsList() {
     jobPostingLink: (item.metadata as { jobListing?: string } | null | undefined)?.jobListing ?? undefined,
   }));
 
-  const handleRejectInterview = async (interviewId: string) => {
+  const handleRejectInterview = async (interviewId: string | number) => {
     // If this is a guest interview, remove it locally
     if (typeof interviewId === "string" && interviewId.startsWith("guest_")) {
       removeGuestInterview(interviewId);
