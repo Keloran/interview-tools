@@ -391,21 +391,13 @@ export default function InterviewsList() {
           </DialogHeader>
           {selectedInterview && (
             <InterviewForm
-              initialValues={{
-                companyName: selectedInterview.company.name,
-                clientCompany: selectedInterview.clientCompany,
-                jobTitle: selectedInterview.title,
-                jobPostingLink: selectedInterview.jobPostingLink,
-                stage: selectedInterview.stage,
-              }}
-              previousInterviewId={selectedInterview.id}
+              interviewId={selectedInterview.id}
               onSuccess={() => {
                 setProgressDialogOpen(false);
                 setSelectedInterview(null);
                 router.refresh();
               }}
               submitLabel="Schedule Next Stage"
-              isProgressing={true}
             />
           )}
         </DialogContent>

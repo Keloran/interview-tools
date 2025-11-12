@@ -1,6 +1,6 @@
 "use client";
 
-import {useState} from "react";
+import {useState, useEffect} from "react";
 import {Button} from "@/components/ui/button";
 import {Label} from "@/components/ui/label";
 import {Input} from "@/components/ui/input";
@@ -32,11 +32,12 @@ export type InterviewFormValues = {
 export type InterviewFormProps = {
   initialValues?: Partial<InterviewFormValues>;
   initialDate?: Date; // When set from calendar, pre-populate the date field
+  interviewId?: string; // When provided, fetch interview data and auto-enable progress mode
   onSubmit?: (values: InterviewFormValues) => void; // Legacy callback mode
   onSuccess?: () => void; // Called after successful save (new self-contained mode)
   submitLabel?: string;
-  isProgressing?: boolean; // When true, shows date picker for scheduling next stage
-  previousInterviewId?: string; // When progressing, mark this interview as PASSED
+  isProgressing?: boolean; // Deprecated: auto-detected from interviewId
+  previousInterviewId?: string; // Deprecated: use interviewId instead
 };
 
 interface Company {
@@ -74,7 +75,29 @@ async function getStages() {
   return (await res.json()) as Stage[];
 }
 
-export default function InterviewForm({ initialValues, initialDate, onSubmit, onSuccess, submitLabel = "Add Interview Stage", isProgressing = false, previousInterviewId }: InterviewFormProps) {
+export default function InterviewForm({ initialValues, initialDate, interviewId, onSubmit, onSuccess, submitLabel = "Add Interview Stage", isProgressing: isProgressingProp = false, previousInterviewId }: InterviewFormProps) {
+  const router = useRouter();
+  const { user } = useUser();
+
+  // Auto-detect progress mode from interviewId
+  const isProgressing = !!interviewId || isProgressingProp;
+  const effectiveInterviewId = interviewId || previousInterviewId;
+
+  // Fetch interview data if interviewId is provided
+  const { data: interviewData } = useQuery({
+    queryKey: ["interview", effectiveInterviewId],
+    queryFn: async () => {
+      if (!effectiveInterviewId) return null;
+      const url = new URL('/api/interviews', window.location.origin);
+      url.searchParams.set('id', effectiveInterviewId);
+      const res = await fetch(url.toString());
+      if (!res.ok) throw new Error("Failed to fetch interview");
+      const data = await res.json();
+      return data[0]; // API returns array, get first item
+    },
+    enabled: !!effectiveInterviewId && !!user,
+  });
+
   // Convert initialDate to YYYY-MM-DD format if provided
   const initialDateStr = initialDate
     ? initialDate.toISOString().split('T')[0]
@@ -91,14 +114,24 @@ export default function InterviewForm({ initialValues, initialDate, onSubmit, on
   const [locationType, setLocationType] = useState<LocationType>(initialValues?.locationType || "phone");
   const [interviewLink, setInterviewLink] = useState(initialValues?.interviewLink || "");
   const [notes, setNotes] = useState(initialValues?.notes || "");
+  const [hasPopulatedFromData, setHasPopulatedFromData] = useState(false);
 
   const [companyOpen, setCompanyOpen] = useState(false);
   const [searchCompanyValue, setSearchCompanyValue] = useState("");
 
-  const router = useRouter();
-  const { user } = useUser();
   const { data: companies } = useQuery({ queryKey: ["companies"], queryFn: getCompanies, enabled: !!user?.id });
   const { data: stages } = useQuery({ queryKey: ["stages"], queryFn: getStages, enabled: !!user?.id });
+
+  // Populate form from fetched interview data (only once when data first loads)
+  useEffect(() => {
+    if (interviewData && !hasPopulatedFromData) {
+      setCompanyName(interviewData.company?.name || "");
+      setClientCompany(interviewData.clientCompany || "");
+      setJobTitle(interviewData.jobTitle || "");
+      setJobPostingLink((interviewData.metadata as { jobListing?: string })?.jobListing || "");
+      setHasPopulatedFromData(true);
+    }
+  }, [interviewData, hasPopulatedFromData]);
 
   const effectiveStages: Stage[] | undefined = user ? stages : guestStages;
 
@@ -175,12 +208,12 @@ export default function InterviewForm({ initialValues, initialDate, onSubmit, on
       // Authenticated mode: save to API
       try {
         // If progressing, mark the previous interview as PASSED first
-        if (previousInterviewId) {
+        if (effectiveInterviewId) {
           const updateRes = await fetch("/api/interviews", {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              id: previousInterviewId,
+              id: effectiveInterviewId,
               outcome: "PASSED",
             }),
           });
