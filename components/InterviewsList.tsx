@@ -346,7 +346,11 @@ export default function InterviewsList() {
               .map((interview) => (
                 <div
                   key={interview.id}
-                  className="flex items-start justify-between p-4 rounded-lg border border-border hover:bg-accent transition-colors"
+                  className="flex items-start justify-between p-4 rounded-lg border border-border hover:bg-accent transition-colors cursor-pointer"
+                  onClick={() => {
+                    setSelectedInterview(interview)
+                    setInfoDialogOpen(true)
+                  }}
                 >
                   <div className="flex items-start gap-4 flex-1">
                     <Tooltip>
@@ -435,7 +439,13 @@ export default function InterviewsList() {
 
       <Dialog open={infoDialogOpen} onOpenChange={setInfoDialogOpen}>
         <DialogContent>
-          {selectedInterview && <InterviewInfo interviewId={selectedInterview.id} />}
+          <DialogHeader>
+            <DialogTitle>{selectedInterview?.title}</DialogTitle>
+          </DialogHeader>
+          {selectedInterview && (
+            <InterviewInfo
+              interviewId={selectedInterview.id} />
+          )}
         </DialogContent>
       </Dialog>
 
