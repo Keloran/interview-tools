@@ -11,7 +11,7 @@ import {useUser} from "@clerk/nextjs";
 import {SiGooglemeet, SiZoom} from "react-icons/si";
 import {PiMicrosoftTeamsLogoFill} from "react-icons/pi";
 import {Tooltip, TooltipContent, TooltipTrigger} from "@/components/ui/tooltip";
-import {Dialog, DialogContent, DialogHeader, DialogTitle} from "@/components/ui/dialog";
+import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle} from "@/components/ui/dialog";
 import InterviewForm from "@/components/InterviewForm";
 import {useRouter} from "next/navigation";
 import {listGuestInterviews, removeGuestInterview} from "@/lib/guestStorage";
@@ -347,6 +347,10 @@ export default function InterviewsList() {
                 <div
                   key={interview.id}
                   className="flex items-start justify-between p-4 rounded-lg border border-border hover:bg-accent transition-colors"
+                  onClick={(e) => {
+                    setSelectedInterview(interview)
+                    setInfoDialogOpen(true)
+                  }}
                 >
                   <div className="flex items-start gap-4 flex-1">
                     <Tooltip>
@@ -435,7 +439,13 @@ export default function InterviewsList() {
 
       <Dialog open={infoDialogOpen} onOpenChange={setInfoDialogOpen}>
         <DialogContent>
-          {selectedInterview && <InterviewInfo interviewId={selectedInterview.id} />}
+          <DialogHeader>
+            <DialogTitle>{selectedInterview?.title}</DialogTitle>
+          </DialogHeader>
+          {selectedInterview && (
+            <InterviewInfo
+              interviewId={selectedInterview.id} />
+          )}
         </DialogContent>
       </Dialog>
 
