@@ -31,6 +31,9 @@ vi.mock('@tanstack/react-query', () => ({
     // Default for interviews query
     return { data: [], isLoading: false, error: null };
   }),
+  useQueryClient: vi.fn(() => ({
+    invalidateQueries: vi.fn(),
+  })),
 }));
 
 vi.mock('next/navigation', () => ({

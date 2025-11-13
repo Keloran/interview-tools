@@ -8,7 +8,7 @@ import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/c
 import {Popover, PopoverContent, PopoverTrigger} from "@/components/ui/popover";
 import {Command, CommandEmpty, CommandGroup, CommandInput, CommandItem} from "@/components/ui/command";
 import {ChevronsUpDown, Plus} from "lucide-react";
-import {useQuery} from "@tanstack/react-query";
+import {useQuery, useQueryClient} from "@tanstack/react-query";
 import {useUser} from "@clerk/nextjs";
 import {useRouter} from "next/navigation";
 import {addGuestInterview} from "@/lib/guestStorage";
@@ -78,6 +78,7 @@ async function getStages() {
 export default function InterviewForm({ initialValues, initialDate, interviewId, onSubmit, onSuccess, submitLabel = "Add Interview Stage", isProgressing: isProgressingProp = false, previousInterviewId }: InterviewFormProps) {
   const router = useRouter();
   const { user } = useUser();
+  const queryClient = useQueryClient();
 
   // Auto-detect progress mode from interviewId
   const isProgressing = !!interviewId || isProgressingProp;
@@ -198,6 +199,8 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
           interviewLink: isTechnicalTest ? undefined : interviewLink,
           notes: isTechnicalTest ? notes : undefined,
         });
+        // Invalidate queries to refetch data
+        queryClient.invalidateQueries({ queryKey: ["interviews"] });
         onSuccess();
         return;
       }
@@ -263,6 +266,9 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
           return;
         }
 
+        // Invalidate queries to refetch data
+        queryClient.invalidateQueries({ queryKey: ["interviews"] });
+        queryClient.invalidateQueries({ queryKey: ["interview"] });
         router.refresh();
         onSuccess();
       } catch (e) {
