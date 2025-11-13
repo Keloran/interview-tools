@@ -103,6 +103,8 @@ export default function InterviewsList() {
   const setCompanyFilter = useAppStore((s) => s.setFilteredCompany)
   const dateFilter = useMemo(() => (filteredDateISO ? new Date(filteredDateISO + "T00:00:00") : null), [filteredDateISO]);
   const companyFilter = useAppStore((s) => s.filteredCompany);
+  const outcomeFilter = useAppStore((s) => s.filteredOutcome);
+  const setOutcomeFilter = useAppStore((s) => s.setFilteredOutcome);
   const [futureOnly, setFutureOnly] = useState(false);
   const [progressDialogOpen, setProgressDialogOpen] = useState(false);
   const [infoDialogOpen, setInfoDialogOpen] = useState(false);
@@ -249,7 +251,8 @@ export default function InterviewsList() {
   const displayedInterviews = baseList.filter((interview) => {
     const matchDate = dateFilter ? isSameDay(interview.date, dateFilter) : true;
     const matchCompany = companyFilter ? interview.company.name === companyFilter : true;
-    return matchDate && matchCompany;
+    const matchOutcome = outcomeFilter ? interview.outcome === outcomeFilter : true;
+    return matchDate && matchCompany && matchOutcome;
   });
 
   const days = [];
@@ -300,7 +303,9 @@ export default function InterviewsList() {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h2 className="text-2xl font-semibold">
-              {companyFilter && dateFilter
+              {outcomeFilter
+                ? `${formatOutcome(outcomeFilter)} Interviews`
+                : companyFilter && dateFilter
                 ? `${companyFilter} Interviews for ${dateFilter.toLocaleDateString("en-US", {
                     month: "long",
                     day: "numeric",
@@ -340,6 +345,12 @@ export default function InterviewsList() {
                   </Button>
                 )}
               </>
+            )}
+            {outcomeFilter && (
+              <Button variant="ghost" onClick={() => setOutcomeFilter(null)} className="mt-2 h-8 cursor-pointer">
+                <X className="h-3 w-3 mr-1" />
+                Clear Outcome filter
+              </Button>
             )}
           </div>
         </div>
