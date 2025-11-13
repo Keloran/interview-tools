@@ -388,7 +388,15 @@ export default function InterviewsList() {
                   </div>
                   {(!user || String(interview.id).startsWith("guest_")) ? (
                     // Guest entries: allow local delete only
-                    <Button variant={"ghost"} size={"sm"} className={"cursor-pointer"} onClick={() => handleRejectInterview(interview)}>
+                    <Button
+                      variant={"ghost"}
+                      size={"sm"}
+                      className={"cursor-pointer"}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRejectInterview(interview);
+                      }}
+                    >
                       <X />
                     </Button>
                   ) : (
@@ -399,13 +407,33 @@ export default function InterviewsList() {
                         <>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Button variant={"ghost"} size={"sm"} className={"cursor-pointer"} onClick={() => handleProgressInterview(interview)}><CornerUpRight /></Button>
+                              <Button
+                                variant={"ghost"}
+                                size={"sm"}
+                                className={"cursor-pointer"}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleProgressInterview(interview);
+                                }}
+                              >
+                                <CornerUpRight />
+                              </Button>
                             </TooltipTrigger>
-                            <TooltipContent>Progress intervieww to next stage</TooltipContent>
+                            <TooltipContent>Progress interview to next stage</TooltipContent>
                           </Tooltip>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Button variant={"ghost"} size={"sm"} className={"cursor-pointer"} onClick={() => handleRejectInterview(interview)}><X /></Button>
+                              <Button
+                                variant={"ghost"}
+                                size={"sm"}
+                                className={"cursor-pointer"}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRejectInterview(interview);
+                                }}
+                              >
+                                <X />
+                              </Button>
                             </TooltipTrigger>
                             <TooltipContent>
                               Rejected
@@ -415,7 +443,17 @@ export default function InterviewsList() {
                           {interview.outcome.toLowerCase() !== "awaiting_response" && (
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <Button variant={"ghost"} size={"sm"} className={"cursor-pointer"} onClick={() => handleAwaiting(interview)}><Clock /></Button>
+                                <Button
+                                  variant={"ghost"}
+                                  size={"sm"}
+                                  className={"cursor-pointer"}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleAwaiting(interview);
+                                  }}
+                                >
+                                  <Clock />
+                                </Button>
                               </TooltipTrigger>
                               <TooltipContent>Set to awaiting response</TooltipContent>
                             </Tooltip>
