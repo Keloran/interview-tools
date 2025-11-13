@@ -404,8 +404,8 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
                     <SelectValue/>
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="phone">Phone</SelectItem>
                     <SelectItem value="link">Link (online meeting)</SelectItem>
+                    <SelectItem value="phone">Phone</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

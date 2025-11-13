@@ -11,7 +11,7 @@ export type GuestInterview = {
   date?: string; // ISO (for Technical Test this represents the deadline)
   time?: string; // HH:mm:ss
   interviewer?: string;
-  locationType?: "phone" | "link";
+  locationType?: "link" | "phone";
   interviewLink?: string;
   notes?: string;
   createdAt: string; // ISO
