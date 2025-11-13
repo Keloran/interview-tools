@@ -88,12 +88,9 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
     queryKey: ["interview", effectiveInterviewId],
     queryFn: async () => {
       if (!effectiveInterviewId) return null;
-      const url = new URL('/api/interviews', window.location.origin);
-      url.searchParams.set('id', effectiveInterviewId);
-      const res = await fetch(url.toString());
+      const res = await fetch(`/api/interview/${effectiveInterviewId}`);
       if (!res.ok) throw new Error("Failed to fetch interview");
-      const data = await res.json();
-      return data[0]; // API returns array, get first item
+      return await res.json();
     },
     enabled: !!effectiveInterviewId && !!user,
   });
@@ -209,11 +206,10 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
       try {
         // If progressing, mark the previous interview as PASSED first
         if (effectiveInterviewId) {
-          const updateRes = await fetch("/api/interviews", {
-            method: "PATCH",
+          const updateRes = await fetch(`/api/interview/${effectiveInterviewId}`, {
+            method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              id: effectiveInterviewId,
               outcome: "PASSED",
             }),
           });
@@ -256,7 +252,7 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
           body.date = dateWithTime.toISOString();
         }
 
-        const res = await fetch("/api/interviews", {
+        const res = await fetch("/api/interview", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
@@ -274,6 +270,8 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
       }
     }
   };
+
+  // console.info("interviewData", interviewData)
 
   return (
     <div className="space-y-4">

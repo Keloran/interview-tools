@@ -16,6 +16,7 @@ import InterviewForm from "@/components/InterviewForm";
 import {useRouter} from "next/navigation";
 import {listGuestInterviews, removeGuestInterview} from "@/lib/guestStorage";
 import Link from "next/link";
+import InterviewInfo from "@/components/InterviewInfo";
 
 function inferStageMethodName(locationType?: string | null, interviewLink?: string | null): string {
   if (locationType === "phone") return "Phone";
@@ -103,6 +104,7 @@ export default function InterviewsList() {
   const companyFilter = useAppStore((s) => s.filteredCompany);
   const [futureOnly, setFutureOnly] = useState(false);
   const [progressDialogOpen, setProgressDialogOpen] = useState(false);
+  const [infoDialogOpen, setInfoDialogOpen] = useState(false);
   const [selectedInterview, setSelectedInterview] = useState<Interview | null>(null);
   const [guestInterviews, setGuestInterviews] = useState<Interview[]>([]);
 
@@ -172,7 +174,7 @@ export default function InterviewsList() {
 
   // Map API data to component interface
   const interviews: Interview[] = (interviewData || []).map((item: InterviewApiItem) => ({
-    id: item.id as string,
+    id: String(item.id),
     title: item.jobTitle,
     date: new Date((item.date ?? item.deadline) as string),
     stage: item.stage?.stage || "Unknown",
@@ -187,20 +189,19 @@ export default function InterviewsList() {
     jobPostingLink: (item.metadata as { jobListing?: string } | null | undefined)?.jobListing ?? undefined,
   }));
 
-  const handleRejectInterview = async (interviewId: string) => {
+  const handleRejectInterview = async (interviewId: string | number) => {
     // If this is a guest interview, remove it locally
-    if (interviewId.startsWith("guest_")) {
+    if (typeof interviewId === "string" && interviewId.startsWith("guest_")) {
       removeGuestInterview(interviewId);
       setGuestInterviews((prev) => prev.filter((i) => i.id !== interviewId));
       return;
     }
 
     try {
-      await fetch("/api/interviews", {
-        method: "PATCH",
+      await fetch(`/api/interview/${interviewId}`, {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          id: interviewId,
           outcome: "REJECTED",
         }),
       });
@@ -383,6 +384,12 @@ export default function InterviewsList() {
           </div>
         )}
       </Card>
+
+      <Dialog open={infoDialogOpen} onOpenChange={setInfoDialogOpen}>
+        <DialogContent>
+          {selectedInterview && <InterviewInfo interviewId={selectedInterview.id} />}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={progressDialogOpen} onOpenChange={setProgressDialogOpen}>
         <DialogContent>
