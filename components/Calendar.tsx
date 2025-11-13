@@ -25,7 +25,7 @@ interface Interview {
   jobTitle?: string
   jobPostingLink?: string
   interviewer?: string
-  locationType?: "phone" | "link"
+  locationType?: "link" | "phone"
   interviewLink?: string
 }
 

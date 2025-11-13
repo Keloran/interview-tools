@@ -5,7 +5,7 @@ import {Card} from "@/components/ui/card";
 import {Button} from "@/components/ui/button";
 import {cn, getStageColor, isSameDay} from "@/lib/utils";
 import {useEffect, useMemo, useState} from "react";
-import {CornerUpRight, X} from "lucide-react";
+import {Clock, CornerUpRight, X} from "lucide-react";
 import {useQuery} from "@tanstack/react-query";
 import {useUser} from "@clerk/nextjs";
 import {SiGooglemeet, SiZoom} from "react-icons/si";
@@ -189,22 +189,23 @@ export default function InterviewsList() {
     jobPostingLink: (item.metadata as { jobListing?: string } | null | undefined)?.jobListing ?? undefined,
   }));
 
-  const handleRejectInterview = async (interviewId: string | number) => {
+  const handleRejectInterview = async (interview: Interview) => {
     // If this is a guest interview, remove it locally
-    if (typeof interviewId === "string" && interviewId.startsWith("guest_")) {
-      removeGuestInterview(interviewId);
-      setGuestInterviews((prev) => prev.filter((i) => i.id !== interviewId));
+    if (interview.id.startsWith("guest_")) {
+      removeGuestInterview(interview.id);
+      setGuestInterviews((prev) => prev.filter((i) => i.id !== interview.id));
       return;
     }
 
     try {
-      await fetch(`/api/interview/${interviewId}`, {
+      await fetch(`/api/interview/${interview.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           outcome: "REJECTED",
         }),
       });
+      interview.outcome = "REJECTED";
     } catch (error) {
       console.error("Failed to reject interview:", error);
     } finally {
@@ -216,6 +217,28 @@ export default function InterviewsList() {
     setSelectedInterview(interview);
     setProgressDialogOpen(true);
   };
+
+  const handleAwaiting = async (interview: Interview)  => {
+    if (interview.id.startsWith("guest_")) {
+      interview.outcome = "AWAITING_RESPONSE";
+      return
+    }
+
+    try {
+      await fetch(`/api/interview/${interview.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          outcome: "AWAITING_RESPONSE",
+        })
+      })
+      interview.outcome = "AWAITING_RESPONSE";
+    } catch (error) {
+      console.error("Failed to set awaiting on interview:", error);
+    } finally {
+      router.refresh()
+    }
+  }
 
   const baseList = user ? interviews : guestInterviews;
   const displayedInterviews = baseList.filter((interview) => {
@@ -361,15 +384,40 @@ export default function InterviewsList() {
                   </div>
                   {(!user || String(interview.id).startsWith("guest_")) ? (
                     // Guest entries: allow local delete only
-                    <Button variant={"ghost"} size={"sm"} className={"cursor-pointer"} onClick={() => handleRejectInterview(interview.id)}>
+                    <Button variant={"ghost"} size={"sm"} className={"cursor-pointer"} onClick={() => handleRejectInterview(interview)}>
                       <X />
                     </Button>
                   ) : (
                     // Signed-in entries: full actions
                     <>
                       {/*<Button variant={"ghost"} size={"sm"} className={"cursor-pointer"}><Pencil /></Button>*/}
-                      <Button variant={"ghost"} size={"sm"} className={"cursor-pointer"} onClick={() => handleProgressInterview(interview)}><CornerUpRight /></Button>
-                      <Button variant={"ghost"} size={"sm"} className={"cursor-pointer"} onClick={() => handleRejectInterview(interview.id)}><X /></Button>
+                      {interview.outcome.toLowerCase() !== "rejected" && interview.outcome.toLowerCase() !== "passed"  && (
+                        <>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button variant={"ghost"} size={"sm"} className={"cursor-pointer"} onClick={() => handleProgressInterview(interview)}><CornerUpRight /></Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Progress intervieww to next stage</TooltipContent>
+                          </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button variant={"ghost"} size={"sm"} className={"cursor-pointer"} onClick={() => handleRejectInterview(interview)}><X /></Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              Rejected
+                            </TooltipContent>
+                          </Tooltip>
+
+                          {interview.outcome.toLowerCase() !== "awaiting_response" && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button variant={"ghost"} size={"sm"} className={"cursor-pointer"} onClick={() => handleAwaiting(interview)}><Clock /></Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Set to awaiting response</TooltipContent>
+                            </Tooltip>
+                          )}
+                        </>
+                      )}
                     </>
                   )}
                 </div>
