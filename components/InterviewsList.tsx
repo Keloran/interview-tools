@@ -11,7 +11,7 @@ import {useUser} from "@clerk/nextjs";
 import {SiGooglemeet, SiZoom} from "react-icons/si";
 import {PiMicrosoftTeamsLogoFill} from "react-icons/pi";
 import {Tooltip, TooltipContent, TooltipTrigger} from "@/components/ui/tooltip";
-import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle} from "@/components/ui/dialog";
+import {Dialog, DialogContent, DialogHeader, DialogTitle} from "@/components/ui/dialog";
 import InterviewForm from "@/components/InterviewForm";
 import {useRouter} from "next/navigation";
 import {listGuestInterviews, removeGuestInterview} from "@/lib/guestStorage";
@@ -346,8 +346,8 @@ export default function InterviewsList() {
               .map((interview) => (
                 <div
                   key={interview.id}
-                  className="flex items-start justify-between p-4 rounded-lg border border-border hover:bg-accent transition-colors"
-                  onClick={(e) => {
+                  className="flex items-start justify-between p-4 rounded-lg border border-border hover:bg-accent transition-colors cursor-pointer"
+                  onClick={() => {
                     setSelectedInterview(interview)
                     setInfoDialogOpen(true)
                   }}
