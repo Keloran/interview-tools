@@ -6,7 +6,7 @@ import {Button} from "@/components/ui/button";
 import {cn, getStageColor, isSameDay} from "@/lib/utils";
 import {useEffect, useMemo, useState} from "react";
 import {Clock, CornerUpRight, X} from "lucide-react";
-import {useQuery} from "@tanstack/react-query";
+import {useQuery, useQueryClient} from "@tanstack/react-query";
 import {useUser} from "@clerk/nextjs";
 import {SiGooglemeet, SiZoom} from "react-icons/si";
 import {PiMicrosoftTeamsLogoFill} from "react-icons/pi";
@@ -97,6 +97,7 @@ async function getInterviews(date: Date | string | null, company?: string | null
 export default function InterviewsList() {
   const {user} = useUser()
   const router = useRouter()
+  const queryClient = useQueryClient()
   const filteredDateISO = useAppStore((s) => s.filteredDate);
   const setFilteredDate = useAppStore((s) => s.setFilteredDate);
   const setCompanyFilter = useAppStore((s) => s.setFilteredCompany)
@@ -206,6 +207,8 @@ export default function InterviewsList() {
         }),
       });
       interview.outcome = "REJECTED";
+      // Invalidate queries to refetch data
+      queryClient.invalidateQueries({ queryKey: ["interviews"] });
     } catch (error) {
       console.error("Failed to reject interview:", error);
     } finally {
@@ -233,6 +236,8 @@ export default function InterviewsList() {
         })
       })
       interview.outcome = "AWAITING_RESPONSE";
+      // Invalidate queries to refetch data
+      queryClient.invalidateQueries({ queryKey: ["interviews"] });
     } catch (error) {
       console.error("Failed to set awaiting on interview:", error);
     } finally {

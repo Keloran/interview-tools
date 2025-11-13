@@ -102,7 +102,17 @@ export async function GET(request: NextRequest) {
       // Your schema has companyId on Interview, so use the FK directly
       where.companyId = Number(companyId)
     } else if (companyName) {
-      where.company = {name: {contains: companyName, mode: Prisma.QueryMode.insensitive}}
+      // Search both company name and clientCompany field
+      const companyOr = [
+        {company: {name: {contains: companyName, mode: Prisma.QueryMode.insensitive}}},
+        {clientCompany: {contains: companyName, mode: Prisma.QueryMode.insensitive}},
+      ]
+      const andArray = Array.isArray(where.AND)
+        ? where.AND
+        : where.AND
+          ? [where.AND]
+          : []
+      where.AND = [...andArray, {OR: companyOr}]
     }
 
     // Stage filters
