@@ -7,11 +7,13 @@ export type ISODate = string; // e.g. "2025-11-06"
 export type AppState = {
   filteredDate: ISODate | null;
   filteredCompany: string | null;
+  filteredOutcome: string | null;
 };
 
 export type AppActions = {
   setFilteredDate: (day: ISODate | null) => void;
   setFilteredCompany: (name: string | null) => void;
+  setFilteredOutcome: (outcome: string | null) => void;
 };
 
 export const useAppStore = create<AppState & AppActions>((set) => ({
@@ -22,4 +24,8 @@ export const useAppStore = create<AppState & AppActions>((set) => ({
   // Company
   filteredCompany: null,
   setFilteredCompany: (name) => set({ filteredCompany: name }),
+
+  // Outcome
+  filteredOutcome: null,
+  setFilteredOutcome: (outcome) => set({ filteredOutcome: outcome }),
 }));
