@@ -5,6 +5,7 @@ import { useUser } from "@clerk/nextjs";
 import { Card } from "@/components/ui/card";
 import { useAppStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
+import {useFlags} from "@flags-gg/react-library";
 
 async function getInterviews() {
   const url = new URL('/api/interviews', window.location.origin);
@@ -45,6 +46,7 @@ export default function Stats() {
   const setFilteredOutcome = useAppStore((s) => s.setFilteredOutcome);
   const setFilteredDate = useAppStore((s) => s.setFilteredDate);
   const setFilteredCompany = useAppStore((s) => s.setFilteredCompany);
+  const {is} = useFlags()
 
   const { data: interviews } = useQuery({
     queryKey: ["interviews", user?.id],
@@ -84,6 +86,10 @@ export default function Stats() {
       setFilteredOutcome(outcome);
     }
   };
+
+  if (is("stats").disabled()) {
+    return <></>
+  }
 
   return (
     <Card className="p-6">

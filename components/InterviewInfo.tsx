@@ -4,6 +4,9 @@ import {useQuery} from "@tanstack/react-query";
 import {useUser} from "@clerk/nextjs";
 import {listGuestInterviews} from "@/lib/guestStorage";
 import {useMemo} from "react";
+import {SiGooglemeet, SiZoom} from "react-icons/si";
+import {Button} from "@/components/ui/button";
+import {PiMicrosoftTeamsLogoFill} from "react-icons/pi";
 
 export default function InterviewInfo(props: {interviewId: string | null}) {
   const {user} = useUser();
@@ -119,6 +122,32 @@ export default function InterviewInfo(props: {interviewId: string | null}) {
     );
   }
 
+  const getStageMethodButton = (stageMethod: string, link: string) => {
+    switch (stageMethod) {
+      case "Zoom": {
+        return (
+          <Button variant={"outline"} className={"cursor-pointer"} onClick={() => window.open(link)}>
+            <SiZoom/>
+          </Button>
+        )
+      }
+      case "Teams": {
+        return (
+          <Button variant={"outline"} className={"cursor-pointer"} onClick={() => window.open(link)}>
+            <PiMicrosoftTeamsLogoFill />
+          </Button>
+        )
+      }
+      case "Google Meet": {
+        return (
+          <Button variant={"outline"} className={"cursor-pointer"} onClick={() => window.open(link)}>
+            <SiGooglemeet />
+          </Button>
+        )
+      }
+    }
+  }
+
   // For authenticated users - display API data
   return (
     <div className="space-y-4">
@@ -188,9 +217,7 @@ export default function InterviewInfo(props: {interviewId: string | null}) {
       {interviewData.link && (
         <div>
           <p className="text-sm font-medium text-muted-foreground">Interview Link</p>
-          <a href={interviewData.link} target="_blank" rel="noopener noreferrer" className="text-base text-blue-600 hover:underline">
-            {interviewData.link}
-          </a>
+          {getStageMethodButton(interviewData.stageMethod.method, interviewData.link)}
         </div>
       )}
 
