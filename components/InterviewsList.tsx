@@ -66,21 +66,30 @@ interface Interview {
   jobPostingLink?: string;
 }
 
-async function getInterviews(date: Date | string | null, company?: string | null, futureOnly?: boolean) {
+async function getInterviews(date: Date | string | null, company?: string | null, futureOnly?: boolean, outcome?: string | null) {
   const url = new URL('/api/interviews', window.location.origin);
-  if (date) {
-    const dateStr = date instanceof Date
-      ? date.toISOString().split('T')[0]
-      : date;
-    url.searchParams.set('date', dateStr);
+
+  // When filtering by outcome, show all interviews (ignore date filters)
+  if (outcome) {
+    url.searchParams.set('includePast', 'true');
+    url.searchParams.set('outcome', outcome);
+  } else {
+    // Normal date/company filtering
+    if (date) {
+      const dateStr = date instanceof Date
+        ? date.toISOString().split('T')[0]
+        : date;
+      url.searchParams.set('date', dateStr);
+    }
+    // Only send includePast when we have a company filter without a date filter
+    // This allows the backend to use smart defaults otherwise
+    if (company && !date) {
+      url.searchParams.set('includePast', (!futureOnly).toString());
+    }
   }
+
   if (company) {
     url.searchParams.set('company', company);
-  }
-  // Only send includePast when we have a company filter without a date filter
-  // This allows the backend to use smart defaults otherwise
-  if (company && !date) {
-    url.searchParams.set('includePast', (!futureOnly).toString());
   }
 
   const res = await fetch(url.toString(), {
@@ -152,8 +161,8 @@ export default function InterviewsList() {
   }, [user]);
 
   const {data: interviewData} = useQuery({
-    queryKey: ["interviews", user?.id, filteredDateISO, companyFilter, futureOnly],
-    queryFn: () => getInterviews(dateFilter, companyFilter, futureOnly),
+    queryKey: ["interviews", user?.id, filteredDateISO, companyFilter, futureOnly, outcomeFilter],
+    queryFn: () => getInterviews(dateFilter, companyFilter, futureOnly, outcomeFilter),
     enabled: !!user?.id,
   })
 
@@ -249,10 +258,14 @@ export default function InterviewsList() {
 
   const baseList = user ? interviews : guestInterviews;
   const displayedInterviews = baseList.filter((interview) => {
+    // When outcome filter is active, API already filtered by outcome, so only apply client-side filters for date/company when not filtering by outcome
+    if (outcomeFilter) {
+      // API already filtered by outcome, no additional filtering needed
+      return true;
+    }
     const matchDate = dateFilter ? isSameDay(interview.date, dateFilter) : true;
     const matchCompany = companyFilter ? interview.company.name === companyFilter : true;
-    const matchOutcome = outcomeFilter ? interview.outcome === outcomeFilter : true;
-    return matchDate && matchCompany && matchOutcome;
+    return matchDate && matchCompany;
   });
 
   const days = [];
