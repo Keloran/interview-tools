@@ -30,7 +30,7 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <ClientProviders>
-        <html lang="en">
+        <html lang="en" className="dark">
           <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
             <main className="min-h-screen bg-background p-4 md:p-8">
               <div className="mx-auto max-w-6xl">
