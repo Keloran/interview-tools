@@ -58,6 +58,11 @@ export default function Stats() {
     return null;
   }
 
+  // Count interviews in "Applied" stage (stageId = 1)
+  const appliedCount = interviews.filter((interview: { stage?: { id: number } }) =>
+    interview.stage?.id === 8
+  ).length;
+
   // Group interviews by outcome
   const outcomeCounts: Record<string, number> = {};
   interviews.forEach((interview: { outcome?: string }) => {
@@ -65,15 +70,23 @@ export default function Stats() {
     outcomeCounts[outcome] = (outcomeCounts[outcome] || 0) + 1;
   });
 
-  // Convert to array of stats
-  const stats: OutcomeStat[] = Object.entries(outcomeCounts)
-    .map(([outcome, count]) => ({
-      outcome,
-      count,
-      label: outcomeConfig[outcome]?.label || outcome,
-      color: outcomeConfig[outcome]?.color || "bg-gray-500",
-    }))
-    .sort((a, b) => b.count - a.count);
+  // Convert to array of stats and add Applied count at the beginning
+  const stats: OutcomeStat[] = [
+    {
+      outcome: "APPLIED",
+      count: appliedCount,
+      label: "Applied",
+      color: "bg-cyan-500",
+    },
+    ...Object.entries(outcomeCounts)
+      .map(([outcome, count]) => ({
+        outcome,
+        count,
+        label: outcomeConfig[outcome]?.label || outcome,
+        color: outcomeConfig[outcome]?.color || "bg-gray-500",
+      }))
+      .sort((a, b) => b.count - a.count),
+  ];
 
   const handleStatClick = (outcome: string) => {
     // If already filtered by this outcome, clear the filter
@@ -95,23 +108,31 @@ export default function Stats() {
     <Card className="p-6">
       <h2 className="text-xl font-semibold mb-4">Interview Stats</h2>
       <div className="grid grid-cols-2 md:grid-cols-1 gap-4">
-        {stats.map((stat) => (
-          <button
-            key={stat.outcome}
-            onClick={() => handleStatClick(stat.outcome)}
-            className={cn(
-              "flex flex-col items-center p-2 rounded-lg border transition-all hover:scale-105 cursor-pointer",
-              filteredOutcome === stat.outcome
-                ? "border-primary bg-accent"
-                : "border-border hover:bg-accent"
-            )}
-          >
-            <div className={cn("w-8 h-8 rounded-full flex items-center justify-center mb-2", stat.color)}>
-              <span className="text-2xl font-bold text-white">{stat.count}</span>
+        {stats.map((stat) => {
+          const isApplied = stat.outcome === "APPLIED";
+          const isClickable = !isApplied;
+
+          return (
+            <div
+              key={stat.outcome}
+              onClick={isClickable ? () => handleStatClick(stat.outcome) : undefined}
+              className={cn(
+                "flex flex-col items-center p-2 rounded-lg border transition-all",
+                isClickable && "hover:scale-105 cursor-pointer",
+                !isClickable && "cursor-default",
+                filteredOutcome === stat.outcome && isClickable
+                  ? "border-primary bg-accent"
+                  : "border-border",
+                isClickable && "hover:bg-accent"
+              )}
+            >
+              <div className={cn("w-8 h-8 rounded-full flex items-center justify-center mb-2", stat.color)}>
+                <span className="text-2xl font-bold text-white">{stat.count}</span>
+              </div>
+              <span className="text-sm text-center font-medium">{stat.label}</span>
             </div>
-            <span className="text-sm text-center font-medium">{stat.label}</span>
-          </button>
-        ))}
+          );
+        })}
       </div>
     </Card>
   );
