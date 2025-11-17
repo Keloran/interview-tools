@@ -28,8 +28,9 @@ export type InterviewFormData = z.infer<typeof interviewFormSchema>;
 // Validation schema for editing interviews
 export const editInterviewSchema = z.object({
   clientCompany: z.string().optional(),
-  date: z.string().min(1, "Date is required"),
-  time: z.string().min(1, "Time is required"),
+  date: z.string().optional(),
+  time: z.string().optional(),
+  deadline: z.string().optional(),
   link: z.string().url("Must be a valid URL").optional().or(z.literal("")),
   interviewer: z.string().optional(),
   notes: z.string().optional(),
@@ -38,6 +39,17 @@ export const editInterviewSchema = z.object({
     .url("Must be a valid URL")
     .optional()
     .or(z.literal("")),
-});
+}).refine(
+  (data) => {
+    // Either deadline OR (date AND time) must be provided
+    const hasDeadline = !!data.deadline;
+    const hasDateTime = !!data.date && !!data.time;
+    return hasDeadline || hasDateTime;
+  },
+  {
+    message: "Either deadline or date/time is required",
+    path: ["date"],
+  }
+);
 
 export type EditInterviewData = z.infer<typeof editInterviewSchema>;
