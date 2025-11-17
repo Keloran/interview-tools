@@ -200,7 +200,7 @@ export default function Calendar() {
             <div className="flex gap-1">
               {is("calendar sync").enabled() && (
                 <Dialog>
-                  <DialogTrigger><CalendarHeart /></DialogTrigger>
+                  <DialogTrigger><CalendarHeart className="h-4 w-4 cursor-pointer" /></DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
                       <DialogTitle>Calendar Sync</DialogTitle>

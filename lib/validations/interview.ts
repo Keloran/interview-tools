@@ -39,6 +39,7 @@ export const editInterviewSchema = z.object({
     .url("Must be a valid URL")
     .optional()
     .or(z.literal("")),
+  stageMethodId: z.number().optional(),
 }).refine(
   (data) => {
     // Either deadline OR (date AND time) must be provided
