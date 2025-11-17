@@ -15,12 +15,13 @@ datasource db {
 }
 
 model User {
-  id         Int         @id @default(autoincrement())
-  clerkId    String      @unique
-  email      String      @unique
-  name       String?
-  companies  Company[]
-  interviews Interview[]
+  id           Int         @id @default(autoincrement())
+  clerkId      String      @unique
+  email        String      @unique
+  name         String?
+  calendarUuid String      @unique @default(uuid())
+  companies    Company[]
+  interviews   Interview[]
 }
 
 model Company {

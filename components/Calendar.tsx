@@ -3,14 +3,16 @@
 import {useAppStore} from "@/lib/store";
 import {MouseEvent, useEffect, useState} from "react";
 import {Button} from "@/components/ui/button";
-import {ChevronLeft, ChevronRight, Plus} from "lucide-react";
+import {CalendarHeart, ChevronLeft, ChevronRight, Plus} from "lucide-react";
 import {Card} from "@/components/ui/card";
-import {Dialog, DialogContent, DialogHeader, DialogTitle} from "@/components/ui/dialog";
+import {Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger} from "@/components/ui/dialog";
 import {cn, getStageColor, isSameDay, toISODate} from "@/lib/utils";
 import InterviewForm from "@/components/InterviewForm";
 import {useRouter} from "next/navigation";
 import {useUser} from "@clerk/nextjs";
 import {listGuestInterviews} from "@/lib/guestStorage";
+import {useFlags} from "@flags-gg/react-library";
+import CalendarSync from "@/components/CalendarSync";
 
 
 interface Interview {
@@ -55,7 +57,7 @@ export default function Calendar() {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [interviews, setInterviews] = useState<Interview[]>([])
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [isAddInterviewOpen, setIsAddInterviewOpen] = useState(false)
   const { user } = useUser()
 
   const year = currentDate.getFullYear()
@@ -67,6 +69,7 @@ export default function Calendar() {
   // Adjust for Monday start (0 = Monday, 6 = Sunday)
   const startingDayOfWeek = (firstDayOfMonth.getDay() + 6) % 7
   const router = useRouter()
+  const {is} = useFlags()
 
 
   useEffect(() => {
@@ -141,7 +144,7 @@ export default function Calendar() {
     e.stopPropagation()
     const date = new Date(year, month, day)
     setSelectedDate(date)
-    setIsDialogOpen(true)
+    setIsAddInterviewOpen(true)
   }
 
 
@@ -195,6 +198,17 @@ export default function Calendar() {
               {MONTHS[month]} {year}
             </h3>
             <div className="flex gap-1">
+              {is("calendar sync").enabled() && (
+                <Dialog>
+                  <DialogTrigger><CalendarHeart /></DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Calendar Sync</DialogTitle>
+                    </DialogHeader>
+                    <CalendarSync />
+                  </DialogContent>
+                </Dialog>
+              )}
               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={previousMonth}>
                 <ChevronLeft className="h-4 w-4" />
               </Button>
@@ -216,7 +230,7 @@ export default function Calendar() {
         </Card>
       </div>
 
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog open={isAddInterviewOpen} onOpenChange={setIsAddInterviewOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
@@ -233,7 +247,7 @@ export default function Calendar() {
               submitLabel="Add Interview Stage"
               initialDate={selectedDate || undefined}
               onSuccess={() => {
-                setIsDialogOpen(false);
+                setIsAddInterviewOpen(false);
                 router.refresh();
               }}
             />
