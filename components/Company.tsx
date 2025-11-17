@@ -7,6 +7,7 @@ import {useState} from "react";
 import {Input} from "@/components/ui/input";
 import {Search} from "lucide-react";
 import {useAppStore} from "@/lib/store";
+import {useFlags} from "@flags-gg/react-library";
 
 interface Company {
   name: string;
@@ -27,6 +28,7 @@ async function getCompanies() {
 
 export function Companies() {
   const {user} = useUser()
+  const {is} = useFlags()
   const [searchOpen, setSearchOpen] = useState(false)
   const setFilteredCompany = useAppStore((s) => s.setFilteredCompany)
 
@@ -43,6 +45,10 @@ export function Companies() {
   })
 
   if (!user) {
+    return null
+  }
+
+  if (is("companies list").disabled()) {
     return null
   }
 

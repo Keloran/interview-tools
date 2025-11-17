@@ -5,7 +5,7 @@ import {Card} from "@/components/ui/card";
 import {Button} from "@/components/ui/button";
 import {cn, getStageColor, isSameDay} from "@/lib/utils";
 import {useEffect, useMemo, useState} from "react";
-import {Clock, CornerUpRight, X} from "lucide-react";
+import {Clock, CornerUpRight, Pencil, X} from "lucide-react";
 import {useQuery, useQueryClient} from "@tanstack/react-query";
 import {useUser} from "@clerk/nextjs";
 import {SiGooglemeet, SiZoom} from "react-icons/si";
@@ -17,6 +17,8 @@ import {useRouter} from "next/navigation";
 import {listGuestInterviews, removeGuestInterview} from "@/lib/guestStorage";
 import Link from "next/link";
 import InterviewInfo from "@/components/InterviewInfo";
+import InterviewEditForm from "@/components/InterviewEditForm";
+import {useFlags} from "@flags-gg/react-library";
 
 function inferStageMethodName(locationType?: string | null, interviewLink?: string | null): string {
   if (locationType === "phone") return "Phone";
@@ -117,8 +119,10 @@ export default function InterviewsList() {
   const [futureOnly, setFutureOnly] = useState(false);
   const [progressDialogOpen, setProgressDialogOpen] = useState(false);
   const [infoDialogOpen, setInfoDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedInterview, setSelectedInterview] = useState<Interview | null>(null);
   const [guestInterviews, setGuestInterviews] = useState<Interview[]>([]);
+  const {is} = useFlags()
 
   // Load guest interviews and subscribe to changes when signed out
   useEffect(() => {
@@ -230,6 +234,11 @@ export default function InterviewsList() {
   const handleProgressInterview = (interview: Interview) => {
     setSelectedInterview(interview);
     setProgressDialogOpen(true);
+  };
+
+  const handleEditInterview = (interview: Interview) => {
+    setSelectedInterview(interview);
+    setEditDialogOpen(true);
   };
 
   const handleAwaiting = async (interview: Interview)  => {
@@ -431,7 +440,24 @@ export default function InterviewsList() {
                   ) : (
                     // Signed-in entries: full actions
                     <>
-                      {/*<Button variant={"ghost"} size={"sm"} className={"cursor-pointer"}><Pencil /></Button>*/}
+                      {is("edit interview").enabled() && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant={"ghost"}
+                              size={"sm"}
+                              className={"cursor-pointer"}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditInterview(interview);
+                              }}
+                            >
+                              <Pencil />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Edit Interview Details</TooltipContent>
+                        </Tooltip>
+                      )}
                       {interview.outcome.toLowerCase() !== "rejected" && interview.outcome.toLowerCase() !== "passed"  && (
                         <>
                           <Tooltip>
@@ -530,6 +556,24 @@ export default function InterviewsList() {
                 router.refresh();
               }}
               submitLabel="Schedule Next Stage"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Interview - {selectedInterview?.title}</DialogTitle>
+          </DialogHeader>
+          {selectedInterview && (
+            <InterviewEditForm
+              interviewId={selectedInterview.id}
+              onSuccess={() => {
+                setEditDialogOpen(false);
+                setSelectedInterview(null);
+                router.refresh();
+              }}
             />
           )}
         </DialogContent>
