@@ -12,6 +12,7 @@ import {useQuery, useQueryClient} from "@tanstack/react-query";
 import {useUser} from "@clerk/nextjs";
 import {useRouter} from "next/navigation";
 import {addGuestInterview} from "@/lib/guestStorage";
+import {interviewFormSchema} from "@/lib/validations/interview";
 
 export type LocationType = "phone" | "link";
 
@@ -116,6 +117,7 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
 
   const [companyOpen, setCompanyOpen] = useState(false);
   const [searchCompanyValue, setSearchCompanyValue] = useState("");
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   const { data: companies } = useQuery({ queryKey: ["companies"], queryFn: getCompanies, enabled: !!user?.id });
   const { data: stages } = useQuery({ queryKey: ["stages"], queryFn: getStages, enabled: !!user?.id });
@@ -147,16 +149,10 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
   const requiresScheduling = selectedStage !== "Applied" && selectedStage !== "Offer";
 
   const handleSubmit = async () => {
-    // Basic validation
-    if (!companyName.trim() || !jobTitle.trim()) return;
-    if (requiresScheduling) {
-      if (!isTechnicalTest) {
-        if (!time || !interviewer.trim()) return;
-        if (locationType === "link" && !interviewLink.trim()) return;
-      }
-      if (isProgressing && !date) return; // Require date when progressing (deadline for Technical Test)
-    }
+    // Clear previous errors
+    setValidationErrors({});
 
+    // Build values object
     const values: InterviewFormValues = {
       stage: selectedStage,
       companyName,
@@ -170,6 +166,41 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
       interviewLink: requiresScheduling && !isTechnicalTest && locationType === "link" ? interviewLink : undefined,
       notes: isTechnicalTest ? (notes || undefined) : undefined,
     };
+
+    // Validate with Zod
+    const validation = interviewFormSchema.safeParse(values);
+    if (!validation.success) {
+      const errors: Record<string, string> = {};
+      validation.error.errors.forEach((err) => {
+        if (err.path[0]) {
+          errors[err.path[0].toString()] = err.message;
+        }
+      });
+      setValidationErrors(errors);
+      return;
+    }
+
+    // Additional conditional validation
+    if (requiresScheduling) {
+      if (!isTechnicalTest) {
+        if (!time || !interviewer.trim()) {
+          setValidationErrors(prev => ({
+            ...prev,
+            time: !time ? "Time is required" : "",
+            interviewer: !interviewer.trim() ? "Interviewer is required" : "",
+          }));
+          return;
+        }
+        if (locationType === "link" && !interviewLink.trim()) {
+          setValidationErrors({ interviewLink: "Interview link is required for link type" });
+          return;
+        }
+      }
+      if (isProgressing && !date) {
+        setValidationErrors({ date: "Date is required when progressing" });
+        return;
+      }
+    }
 
     // Legacy mode: just call the callback
     if (onSubmit) {
@@ -336,6 +367,9 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
               </Command>
             </PopoverContent>
           </Popover>
+          {validationErrors.companyName && (
+            <p className="text-xs text-destructive mt-1">{validationErrors.companyName}</p>
+          )}
         </div>
         <div className="space-y-2 md:col-span-1">
           <Label htmlFor="client-company">Client company (optional)</Label>
@@ -354,6 +388,9 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
             value={jobTitle}
             onChange={(e) => setJobTitle(e.target.value)}
           />
+          {validationErrors.jobTitle && (
+            <p className="text-xs text-destructive mt-1">{validationErrors.jobTitle}</p>
+          )}
         </div>
         <div className="space-y-2 md:col-span-2">
           <Label htmlFor="job-posting-link">Job posting link</Label>
@@ -364,6 +401,9 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
             value={jobPostingLink}
             onChange={(e) => setJobPostingLink(e.target.value)}
           />
+          {validationErrors.jobPostingLink && (
+            <p className="text-xs text-destructive mt-1">{validationErrors.jobPostingLink}</p>
+          )}
         </div>
       </div>
 
@@ -378,6 +418,9 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
               />
+              {validationErrors.date && (
+                <p className="text-xs text-destructive mt-1">{validationErrors.date}</p>
+              )}
             </div>
           )}
 
@@ -393,6 +436,9 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
                   value={time}
                   onChange={(e) => setTime(e.target.value)}
                 />
+                {validationErrors.time && (
+                  <p className="text-xs text-destructive mt-1">{validationErrors.time}</p>
+                )}
               </div>
               <div className="space-y-2 md:col-span-1">
                 <Label htmlFor="interviewer">Interviewer</Label>
@@ -402,6 +448,9 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
                   value={interviewer}
                   onChange={(e) => setInterviewer(e.target.value)}
                 />
+                {validationErrors.interviewer && (
+                  <p className="text-xs text-destructive mt-1">{validationErrors.interviewer}</p>
+                )}
               </div>
               <div className="space-y-2 md:col-span-1">
                 <Label htmlFor="location-type">Interview location</Label>
@@ -425,6 +474,9 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
                     value={interviewLink}
                     onChange={(e) => setInterviewLink(e.target.value)}
                   />
+                  {validationErrors.interviewLink && (
+                    <p className="text-xs text-destructive mt-1">{validationErrors.interviewLink}</p>
+                  )}
                 </div>
               )}
             </>

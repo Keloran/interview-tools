@@ -2,11 +2,15 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { editInterviewSchema, type EditInterviewData } from "@/lib/validations/interview";
+
+type EditFormValues = EditInterviewData;
 
 interface InterviewEditFormProps {
   interviewId: string;
@@ -28,16 +32,6 @@ interface InterviewData {
   metadata: Record<string, unknown> | null;
 }
 
-interface EditFormValues {
-  clientCompany: string;
-  date: string;
-  time: string;
-  link: string;
-  interviewer: string;
-  notes: string;
-  jobPostingLink: string;
-}
-
 async function getInterview(id: string) {
   const res = await fetch(`/api/interview/${id}`);
   if (!res.ok) {
@@ -57,6 +51,7 @@ export default function InterviewEditForm({ interviewId, onSuccess }: InterviewE
   });
 
   const { register, handleSubmit, formState: { errors }, reset } = useForm<EditFormValues>({
+    resolver: zodResolver(editInterviewSchema),
     defaultValues: {
       clientCompany: "",
       date: "",
@@ -215,6 +210,9 @@ export default function InterviewEditForm({ interviewId, onSuccess }: InterviewE
           {...register("link")}
           placeholder="Zoom, Teams, or Google Meet link"
         />
+        {errors.link && (
+          <p className="text-xs text-destructive mt-1">{errors.link.message}</p>
+        )}
       </div>
 
       <div>
@@ -225,6 +223,9 @@ export default function InterviewEditForm({ interviewId, onSuccess }: InterviewE
           {...register("jobPostingLink")}
           placeholder="Link to job posting"
         />
+        {errors.jobPostingLink && (
+          <p className="text-xs text-destructive mt-1">{errors.jobPostingLink.message}</p>
+        )}
       </div>
 
       <div>
