@@ -56,6 +56,7 @@ export default function InterviewEditForm({ interviewId, onSuccess }: InterviewE
       clientCompany: "",
       date: "",
       time: "",
+      deadline: "",
       link: "",
       interviewer: "",
       notes: "",
@@ -63,10 +64,14 @@ export default function InterviewEditForm({ interviewId, onSuccess }: InterviewE
     },
   });
 
+  // Track if this interview has a deadline
+  const hasDeadline = !!interview?.deadline;
+
   // Reset form when interview data loads
   useEffect(() => {
     if (interview) {
       const interviewDate = interview.date ? new Date(interview.date) : null;
+      const deadlineDate = interview.deadline ? new Date(interview.deadline) : null;
 
       // Format date as YYYY-MM-DD for date input
       const formattedDate = interviewDate
@@ -78,10 +83,16 @@ export default function InterviewEditForm({ interviewId, onSuccess }: InterviewE
         ? interviewDate.toTimeString().slice(0, 5)
         : "";
 
+      // Format deadline as YYYY-MM-DDTHH:MM for datetime-local input
+      const formattedDeadline = deadlineDate
+        ? deadlineDate.toISOString().slice(0, 16)
+        : "";
+
       reset({
         clientCompany: interview.clientCompany || "",
         date: formattedDate,
         time: formattedTime,
+        deadline: formattedDeadline,
         link: interview.link || "",
         interviewer: interview.interviewer || "",
         notes: interview.notes || "",
@@ -93,9 +104,13 @@ export default function InterviewEditForm({ interviewId, onSuccess }: InterviewE
   const onSubmit = async (values: EditFormValues) => {
     setIsSubmitting(true);
     try {
-      // Combine date and time
+      // Combine date and time OR use deadline
       const dateTime = values.date && values.time
         ? new Date(`${values.date}T${values.time}`)
+        : null;
+
+      const deadline = values.deadline
+        ? new Date(values.deadline)
         : null;
 
       const metadata = {
@@ -108,7 +123,8 @@ export default function InterviewEditForm({ interviewId, onSuccess }: InterviewE
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           clientCompany: values.clientCompany || null,
-          date: dateTime?.toISOString(),
+          date: dateTime?.toISOString() || null,
+          deadline: deadline?.toISOString() || null,
           link: values.link || null,
           interviewer: values.interviewer || null,
           notes: values.notes || null,
@@ -121,8 +137,8 @@ export default function InterviewEditForm({ interviewId, onSuccess }: InterviewE
       }
 
       // Invalidate queries to refetch data
-      queryClient.invalidateQueries({ queryKey: ["interviews"] });
-      queryClient.invalidateQueries({ queryKey: ["interview", interviewId] });
+      await queryClient.invalidateQueries({ queryKey: ["interviews"] });
+      await queryClient.invalidateQueries({ queryKey: ["interview", interviewId] });
 
       if (onSuccess) {
         onSuccess();
@@ -168,30 +184,45 @@ export default function InterviewEditForm({ interviewId, onSuccess }: InterviewE
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      {/* Show deadline OR date/time based on interview type */}
+      {hasDeadline ? (
         <div>
-          <Label htmlFor="date">Date</Label>
+          <Label htmlFor="deadline">Deadline</Label>
           <Input
-            id="date"
-            type="date"
-            {...register("date", { required: "Date is required" })}
+            id="deadline"
+            type="datetime-local"
+            {...register("deadline")}
           />
-          {errors.date && (
-            <p className="text-xs text-destructive mt-1">{errors.date.message}</p>
+          {errors.deadline && (
+            <p className="text-xs text-destructive mt-1">{errors.deadline.message}</p>
           )}
         </div>
-        <div>
-          <Label htmlFor="time">Time</Label>
-          <Input
-            id="time"
-            type="time"
-            {...register("time", { required: "Time is required" })}
-          />
-          {errors.time && (
-            <p className="text-xs text-destructive mt-1">{errors.time.message}</p>
-          )}
+      ) : (
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="date">Date</Label>
+            <Input
+              id="date"
+              type="date"
+              {...register("date")}
+            />
+            {errors.date && (
+              <p className="text-xs text-destructive mt-1">{errors.date.message}</p>
+            )}
+          </div>
+          <div>
+            <Label htmlFor="time">Time</Label>
+            <Input
+              id="time"
+              type="time"
+              {...register("time")}
+            />
+            {errors.time && (
+              <p className="text-xs text-destructive mt-1">{errors.time.message}</p>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       <div>
         <Label htmlFor="interviewer">Interviewer Name</Label>
