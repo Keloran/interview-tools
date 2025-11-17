@@ -25,7 +25,7 @@ export async function GET() {
 
     return NextResponse.json({
       calendarUuid: user.calendarUuid,
-      calendarUrl: `${baseUrl}/api/calendar/${user.calendarUuid}/route.ics`,
+      calendarUrl: `${baseUrl}/api/calendar/${user.calendarUuid}`,
     });
   } catch (error) {
     console.error("Error fetching calendar settings:", error);
@@ -65,7 +65,7 @@ export async function POST() {
 
     return NextResponse.json({
       calendarUuid: updatedUser.calendarUuid,
-      calendarUrl: `${baseUrl}/api/calendar/${updatedUser.calendarUuid}/route.ics`,
+      calendarUrl: `${baseUrl}/api/calendar/${updatedUser.calendarUuid}`,
     });
   } catch (error) {
     console.error("Error regenerating calendar UUID:", error);

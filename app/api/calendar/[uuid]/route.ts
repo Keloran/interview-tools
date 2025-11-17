@@ -103,7 +103,7 @@ function generateICalEvent(interview: InterviewWithRelations): string {
 }
 
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ uuid: string }> }
 ) {
   try {
