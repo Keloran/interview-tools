@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {useFlags} from "@flags-gg/react-library";
+import {useUser} from "@clerk/nextjs";
 
 interface CalendarSettings {
   calendarUuid: string;
@@ -35,6 +36,7 @@ export default function CalendarSync() {
   const [copied, setCopied] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const {is} = useFlags()
+  const {user} = useUser()
 
   const { data, isLoading } = useQuery({
     queryKey: ["calendar-settings"],
@@ -67,6 +69,10 @@ export default function CalendarSync() {
 
   if (is("calendar sync").disabled()) {
     return null
+  }
+
+  if (user == null) {
+    return null;
   }
 
   return (
