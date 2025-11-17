@@ -5,7 +5,7 @@ import {Card} from "@/components/ui/card";
 import {Button} from "@/components/ui/button";
 import {cn, getStageColor, isSameDay} from "@/lib/utils";
 import {useEffect, useMemo, useState} from "react";
-import {Clock, CornerUpRight, X} from "lucide-react";
+import {Clock, CornerUpRight, Pencil, X} from "lucide-react";
 import {useQuery, useQueryClient} from "@tanstack/react-query";
 import {useUser} from "@clerk/nextjs";
 import {SiGooglemeet, SiZoom} from "react-icons/si";
@@ -17,6 +17,7 @@ import {useRouter} from "next/navigation";
 import {listGuestInterviews, removeGuestInterview} from "@/lib/guestStorage";
 import Link from "next/link";
 import InterviewInfo from "@/components/InterviewInfo";
+import {useFlags} from "@flags-gg/react-library";
 
 function inferStageMethodName(locationType?: string | null, interviewLink?: string | null): string {
   if (locationType === "phone") return "Phone";
@@ -119,6 +120,7 @@ export default function InterviewsList() {
   const [infoDialogOpen, setInfoDialogOpen] = useState(false);
   const [selectedInterview, setSelectedInterview] = useState<Interview | null>(null);
   const [guestInterviews, setGuestInterviews] = useState<Interview[]>([]);
+  const {is} = useFlags()
 
   // Load guest interviews and subscribe to changes when signed out
   useEffect(() => {
@@ -431,6 +433,14 @@ export default function InterviewsList() {
                   ) : (
                     // Signed-in entries: full actions
                     <>
+                      {is("edit interview").enabled() && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant={"ghost"} size={"sm"} className={"cursor-pointer"}><Pencil /></Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Edit Interview Details</TooltipContent>
+                        </Tooltip>
+                      )}
                       {/*<Button variant={"ghost"} size={"sm"} className={"cursor-pointer"}><Pencil /></Button>*/}
                       {interview.outcome.toLowerCase() !== "rejected" && interview.outcome.toLowerCase() !== "passed"  && (
                         <>
