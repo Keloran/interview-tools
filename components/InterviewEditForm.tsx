@@ -1,13 +1,14 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { editInterviewSchema, type EditInterviewData } from "@/lib/validations/interview";
 
 type EditFormValues = EditInterviewData;
@@ -32,12 +33,25 @@ interface InterviewData {
   metadata: Record<string, unknown> | null;
 }
 
+interface StageMethod {
+  id: number;
+  method: string;
+}
+
 async function getInterview(id: string) {
   const res = await fetch(`/api/interview/${id}`);
   if (!res.ok) {
     throw new Error("Failed to fetch interview");
   }
   return await res.json();
+}
+
+async function getStageMethods() {
+  const res = await fetch("/api/stage-methods");
+  if (!res.ok) {
+    throw new Error("Failed to fetch stage methods");
+  }
+  return await res.json() as StageMethod[];
 }
 
 export default function InterviewEditForm({ interviewId, onSuccess }: InterviewEditFormProps) {
@@ -50,7 +64,12 @@ export default function InterviewEditForm({ interviewId, onSuccess }: InterviewE
     enabled: !!interviewId,
   });
 
-  const { register, handleSubmit, formState: { errors }, reset } = useForm<EditFormValues>({
+  const { data: stageMethods } = useQuery<StageMethod[]>({
+    queryKey: ["stage-methods"],
+    queryFn: getStageMethods,
+  });
+
+  const { register, handleSubmit, formState: { errors }, reset, control } = useForm<EditFormValues>({
     resolver: zodResolver(editInterviewSchema),
     defaultValues: {
       clientCompany: "",
@@ -61,6 +80,7 @@ export default function InterviewEditForm({ interviewId, onSuccess }: InterviewE
       interviewer: "",
       notes: "",
       jobPostingLink: "",
+      stageMethodId: undefined,
     },
   });
 
@@ -97,6 +117,7 @@ export default function InterviewEditForm({ interviewId, onSuccess }: InterviewE
         interviewer: interview.interviewer || "",
         notes: interview.notes || "",
         jobPostingLink: (interview.metadata as { jobListing?: string })?.jobListing || "",
+        stageMethodId: interview.stageMethod?.id,
       });
     }
   }, [interview, reset]);
@@ -129,6 +150,7 @@ export default function InterviewEditForm({ interviewId, onSuccess }: InterviewE
           interviewer: values.interviewer || null,
           notes: values.notes || null,
           metadata,
+          stageMethodId: values.stageMethodId || null,
         }),
       });
 
@@ -231,6 +253,34 @@ export default function InterviewEditForm({ interviewId, onSuccess }: InterviewE
           {...register("interviewer")}
           placeholder="Name of the interviewer"
         />
+      </div>
+
+      <div>
+        <Label htmlFor="stageMethod">Interview Method</Label>
+        <Controller
+          name="stageMethodId"
+          control={control}
+          render={({ field }) => (
+            <Select
+              value={field.value?.toString()}
+              onValueChange={(value) => field.onChange(parseInt(value, 10))}
+            >
+              <SelectTrigger id="stageMethod">
+                <SelectValue placeholder="Select method" />
+              </SelectTrigger>
+              <SelectContent>
+                {stageMethods?.map((method) => (
+                  <SelectItem key={method.id} value={method.id.toString()}>
+                    {method.method}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        />
+        {errors.stageMethodId && (
+          <p className="text-xs text-destructive mt-1">{errors.stageMethodId.message}</p>
+        )}
       </div>
 
       <div>
