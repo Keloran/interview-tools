@@ -38,7 +38,12 @@ vi.mock('@clerk/nextjs/server', () => {
 // Mock flags lib
 vi.mock('@flags-gg/react-library', () => {
   return {
-    useFlags: () => ({is: () => true}),
+    useFlags: () => ({
+      is: () => ({
+        enabled: () => true,
+        disabled: () => false,
+      }),
+    }),
   }
 })
 

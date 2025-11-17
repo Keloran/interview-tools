@@ -17,6 +17,7 @@ import {useRouter} from "next/navigation";
 import {listGuestInterviews, removeGuestInterview} from "@/lib/guestStorage";
 import Link from "next/link";
 import InterviewInfo from "@/components/InterviewInfo";
+import InterviewEditForm from "@/components/InterviewEditForm";
 import {useFlags} from "@flags-gg/react-library";
 
 function inferStageMethodName(locationType?: string | null, interviewLink?: string | null): string {
@@ -118,6 +119,7 @@ export default function InterviewsList() {
   const [futureOnly, setFutureOnly] = useState(false);
   const [progressDialogOpen, setProgressDialogOpen] = useState(false);
   const [infoDialogOpen, setInfoDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedInterview, setSelectedInterview] = useState<Interview | null>(null);
   const [guestInterviews, setGuestInterviews] = useState<Interview[]>([]);
   const {is} = useFlags()
@@ -232,6 +234,11 @@ export default function InterviewsList() {
   const handleProgressInterview = (interview: Interview) => {
     setSelectedInterview(interview);
     setProgressDialogOpen(true);
+  };
+
+  const handleEditInterview = (interview: Interview) => {
+    setSelectedInterview(interview);
+    setEditDialogOpen(true);
   };
 
   const handleAwaiting = async (interview: Interview)  => {
@@ -436,12 +443,21 @@ export default function InterviewsList() {
                       {is("edit interview").enabled() && (
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button variant={"ghost"} size={"sm"} className={"cursor-pointer"}><Pencil /></Button>
+                            <Button
+                              variant={"ghost"}
+                              size={"sm"}
+                              className={"cursor-pointer"}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditInterview(interview);
+                              }}
+                            >
+                              <Pencil />
+                            </Button>
                           </TooltipTrigger>
                           <TooltipContent>Edit Interview Details</TooltipContent>
                         </Tooltip>
                       )}
-                      {/*<Button variant={"ghost"} size={"sm"} className={"cursor-pointer"}><Pencil /></Button>*/}
                       {interview.outcome.toLowerCase() !== "rejected" && interview.outcome.toLowerCase() !== "passed"  && (
                         <>
                           <Tooltip>
@@ -540,6 +556,24 @@ export default function InterviewsList() {
                 router.refresh();
               }}
               submitLabel="Schedule Next Stage"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Interview - {selectedInterview?.title}</DialogTitle>
+          </DialogHeader>
+          {selectedInterview && (
+            <InterviewEditForm
+              interviewId={selectedInterview.id}
+              onSuccess={() => {
+                setEditDialogOpen(false);
+                setSelectedInterview(null);
+                router.refresh();
+              }}
             />
           )}
         </DialogContent>

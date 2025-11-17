@@ -94,6 +94,12 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (typeof body.stageMethodId === "number") {
       data.stageMethod = { connect: { id: body.stageMethodId } };
     }
+    if (typeof body.clientCompany === "string" || body.clientCompany === null) {
+      data.clientCompany = body.clientCompany;
+    }
+    if (typeof body.metadata === "object") {
+      data.metadata = body.metadata;
+    }
 
     const updated = await prisma.interview.update({
       where: { id },
