@@ -89,7 +89,7 @@ export default function InterviewEditForm({ interviewId, onSuccess }: InterviewE
 
   // Reset form when interview data loads
   useEffect(() => {
-    if (interview) {
+    if (interview && stageMethods) {
       const interviewDate = interview.date ? new Date(interview.date) : null;
       const deadlineDate = interview.deadline ? new Date(interview.deadline) : null;
 
@@ -108,6 +108,8 @@ export default function InterviewEditForm({ interviewId, onSuccess }: InterviewE
         ? deadlineDate.toISOString().slice(0, 16)
         : "";
 
+      const stageMethodId = interview.stageMethod?.id;
+
       reset({
         clientCompany: interview.clientCompany || "",
         date: formattedDate,
@@ -117,10 +119,10 @@ export default function InterviewEditForm({ interviewId, onSuccess }: InterviewE
         interviewer: interview.interviewer || "",
         notes: interview.notes || "",
         jobPostingLink: (interview.metadata as { jobListing?: string })?.jobListing || "",
-        stageMethodId: interview.stageMethod?.id,
+        stageMethodId: stageMethodId,
       });
     }
-  }, [interview, reset]);
+  }, [interview, stageMethods, reset]);
 
   const onSubmit = async (values: EditFormValues) => {
     setIsSubmitting(true);
@@ -260,23 +262,29 @@ export default function InterviewEditForm({ interviewId, onSuccess }: InterviewE
         <Controller
           name="stageMethodId"
           control={control}
-          render={({ field }) => (
-            <Select
-              value={field.value?.toString()}
-              onValueChange={(value) => field.onChange(parseInt(value, 10))}
-            >
-              <SelectTrigger id="stageMethod">
-                <SelectValue placeholder="Select method" />
-              </SelectTrigger>
-              <SelectContent>
-                {stageMethods?.map((method) => (
-                  <SelectItem key={method.id} value={method.id.toString()}>
-                    {method.method}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
+          render={({ field }) => {
+            return (
+              <Select
+                value={field.value ? field.value.toString() : ""}
+                onValueChange={(value) => {
+                  field.onChange(parseInt(value, 10));
+                }}
+              >
+                <SelectTrigger id="stageMethod">
+                  <SelectValue placeholder="Select method" />
+                </SelectTrigger>
+                <SelectContent>
+                  {stageMethods?.map((method) => {
+                    return (
+                      <SelectItem key={method.id} value={method.id.toString()}>
+                        {method.method}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            );
+          }}
         />
         {errors.stageMethodId && (
           <p className="text-xs text-destructive mt-1">{errors.stageMethodId.message}</p>
