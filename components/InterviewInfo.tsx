@@ -33,12 +33,60 @@ export default function InterviewInfo(props: {interviewId: string | null}) {
   console.info("Interview info", interviewData);
 
   // Normalize guest/API data into a single view model for a unified layout
+  interface GuestInterview {
+    companyName?: string | null;
+    clientCompany?: string | null;
+    jobTitle?: string | null;
+    stage?: string | null;
+    status?: string | null;
+    outcome?: string | null;
+    date?: string | null;
+    time?: string | null;
+    interviewer?: string | null;
+    locationType?: string | null;
+    interviewLink?: string | null;
+    jobPostingLink?: string | null;
+    metadata?: { jobListing?: string } | null;
+  }
 
-  const vm = useMemo(() => {
-    const d: any = interviewData as any;
-    if (!d) return null;
+  interface ApiInterview {
+    company?: { name?: string | null } | null;
+    clientCompany?: string | null;
+    jobTitle?: string | null;
+    stage?: { stage?: string | null } | null;
+    status?: string | null;
+    outcome?: string | null;
+    date?: string | null;
+    deadline?: string | null;
+    interviewer?: string | null;
+    stageMethod?: { method?: string | null } | null;
+    link?: string | null;
+    jobPostingLink?: string | null;
+    metadata?: { jobListing?: string } | null;
+  }
+
+  interface ViewModel {
+    company: string | null;
+    clientCompany: string | null;
+    jobTitle: string | null;
+    stage: string | null;
+    status: string | null;
+    outcome: string | null;
+    date: string | null;
+    deadline: string | null;
+    interviewer: string | null;
+    method: string | null;
+    link: string | null;
+    jobPostingLink: string | null;
+    notes: string | null;
+    hasTime: boolean;
+  }
+
+  const vm = useMemo((): ViewModel | null => {
+    if (!interviewData) return null;
 
     if (isGuest) {
+      const d = interviewData as GuestInterview;
       const link: string | null = d.interviewLink ?? null;
       const method = d.locationType ?? deriveMethodFromLink(link);
       return {
@@ -49,17 +97,18 @@ export default function InterviewInfo(props: {interviewId: string | null}) {
         status: d.status ?? null,
         outcome: d.outcome ?? null,
         date: d.date ?? null,
-        deadline: d.stage === "Technical Test" ? d.date ?? null : null,
+        deadline: d.stage === "Technical Test" ? (d.date ?? null) : null,
         interviewer: d.interviewer ?? null,
         method: method ?? null,
         link,
         jobPostingLink: d.jobPostingLink ?? d.metadata?.jobListing ?? null,
-        notes: d.notes ?? null,
-        hasTime: !!d.time,
+        notes: (d as unknown as { notes?: string | null })?.notes ?? null,
+        hasTime: Boolean(d.time),
       };
     }
 
     // API/DB data
+    const d = interviewData as ApiInterview;
     return {
       company: d.company?.name ?? null,
       clientCompany: d.clientCompany ?? null,
@@ -73,7 +122,7 @@ export default function InterviewInfo(props: {interviewId: string | null}) {
       method: d.stageMethod?.method ?? null,
       link: d.link ?? null,
       jobPostingLink: d.jobPostingLink ?? d.metadata?.jobListing ?? null,
-      notes: d.notes ?? null,
+      notes: (d as unknown as { notes?: string | null })?.notes ?? null,
       hasTime: true,
     };
   }, [interviewData, isGuest]);

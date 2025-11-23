@@ -27,6 +27,8 @@ interface InterviewData {
   clientCompany: string | null;
   stage: { id: number; stage: string };
   stageMethod: { id: number; method: string } | null;
+  // Some API responses may also include a flattened stageMethodId
+  stageMethodId?: number;
   date: string | null;
   deadline: string | null;
   link: string | null;
@@ -113,7 +115,7 @@ export default function InterviewEditForm({ interviewId, onSuccess }: InterviewE
       // 1) Nested object id
       // 2) Flat stageMethodId from API (if present)
       // 3) Resolve by method name if nested object has method string
-      let stageMethodId: number | undefined = interview.stageMethod?.id ?? (interview as any).stageMethodId;
+      let stageMethodId: number | undefined = interview.stageMethod?.id ?? interview.stageMethodId;
       if (!stageMethodId && interview.stageMethod?.method) {
         const match = stageMethods.find((m) => m.method === interview.stageMethod?.method);
         stageMethodId = match?.id;
