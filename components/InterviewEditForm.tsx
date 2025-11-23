@@ -118,6 +118,14 @@ export default function InterviewEditForm({ interviewId, onSuccess }: InterviewE
         const match = stageMethods.find((m) => m.method === interview.stageMethod?.method);
         stageMethodId = match?.id;
       }
+      // 4) As a last resort, try to infer from the meeting link
+      if (!stageMethodId && interview.link) {
+        const inferred = deriveMethodFromLink(interview.link);
+        if (inferred) {
+          const match = stageMethods.find((m) => m.method === inferred);
+          stageMethodId = match?.id;
+        }
+      }
 
       reset({
         clientCompany: interview.clientCompany || "",
