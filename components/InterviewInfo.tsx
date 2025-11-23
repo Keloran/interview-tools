@@ -4,9 +4,7 @@ import {useQuery} from "@tanstack/react-query";
 import {useUser} from "@clerk/nextjs";
 import {listGuestInterviews} from "@/lib/guestStorage";
 import {useMemo} from "react";
-import {SiGooglemeet, SiZoom} from "react-icons/si";
-import {Button} from "@/components/ui/button";
-import {PiMicrosoftTeamsLogoFill} from "react-icons/pi";
+import {deriveMethodFromLink, getStageMethodButton} from "@/lib/utils/interviewMethod";
 
 export default function InterviewInfo(props: {interviewId: string | null}) {
   const {user} = useUser();
@@ -35,14 +33,6 @@ export default function InterviewInfo(props: {interviewId: string | null}) {
   console.info("Interview info", interviewData);
 
   // Normalize guest/API data into a single view model for a unified layout
-  const deriveMethodFromLink = (link?: string | null): string | null => {
-    if (!link) return null;
-    const lower = link.toLowerCase();
-    if (lower.includes("zoom")) return "Zoom";
-    if (lower.includes("teams")) return "Teams";
-    if (lower.includes("meet.google") || lower.includes("google.com/meet") || lower.includes("gmeet")) return "Google Meet";
-    return null;
-  };
 
   const vm = useMemo(() => {
     const d: any = interviewData as any;
@@ -92,31 +82,7 @@ export default function InterviewInfo(props: {interviewId: string | null}) {
     return <div className="text-center py-4 text-muted-foreground">Loading...</div>;
   }
 
-  const getStageMethodButton = (stageMethod: string, link: string) => {
-    switch (stageMethod) {
-      case "Zoom": {
-        return (
-          <Button variant={"outline"} className={"cursor-pointer"} onClick={() => window.open(link)}>
-            <SiZoom/>
-          </Button>
-        )
-      }
-      case "Teams": {
-        return (
-          <Button variant={"outline"} className={"cursor-pointer"} onClick={() => window.open(link)}>
-            <PiMicrosoftTeamsLogoFill />
-          </Button>
-        )
-      }
-      case "Google Meet": {
-        return (
-          <Button variant={"outline"} className={"cursor-pointer"} onClick={() => window.open(link)}>
-            <SiGooglemeet />
-          </Button>
-        )
-      }
-    }
-  }
+  // getStageMethodButton is now imported from shared utils
 
   // Unified layout for both guest and authenticated interviews using the view model
   return (
