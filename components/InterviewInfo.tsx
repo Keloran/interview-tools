@@ -32,6 +32,7 @@ export default function InterviewInfo(props: {interviewId: string | null}) {
   }, [isGuest, props.interviewId]);
 
   const interviewData = isGuest ? guestInterviewData : apiInterviewData;
+  console.info("Interview info", interviewData);
 
   if (!interviewData) {
     return <div className="text-center py-4 text-muted-foreground">Loading...</div>;
