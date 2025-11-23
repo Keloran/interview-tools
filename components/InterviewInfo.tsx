@@ -4,9 +4,7 @@ import {useQuery} from "@tanstack/react-query";
 import {useUser} from "@clerk/nextjs";
 import {listGuestInterviews} from "@/lib/guestStorage";
 import {useMemo} from "react";
-import {SiGooglemeet, SiZoom} from "react-icons/si";
-import {Button} from "@/components/ui/button";
-import {PiMicrosoftTeamsLogoFill} from "react-icons/pi";
+import {deriveMethodFromLink, getStageMethodButton} from "@/lib/utils/interviewMethod";
 
 export default function InterviewInfo(props: {interviewId: string | null}) {
   const {user} = useUser();
@@ -34,200 +32,202 @@ export default function InterviewInfo(props: {interviewId: string | null}) {
   const interviewData = isGuest ? guestInterviewData : apiInterviewData;
   console.info("Interview info", interviewData);
 
-  if (!interviewData) {
+  // Normalize guest/API data into a single view model for a unified layout
+  interface GuestInterview {
+    companyName?: string | null;
+    clientCompany?: string | null;
+    jobTitle?: string | null;
+    stage?: string | null;
+    status?: string | null;
+    outcome?: string | null;
+    date?: string | null;
+    time?: string | null;
+    interviewer?: string | null;
+    locationType?: string | null;
+    interviewLink?: string | null;
+    jobPostingLink?: string | null;
+    metadata?: { jobListing?: string } | null;
+  }
+
+  interface ApiInterview {
+    company?: { name?: string | null } | null;
+    clientCompany?: string | null;
+    jobTitle?: string | null;
+    stage?: { stage?: string | null } | null;
+    status?: string | null;
+    outcome?: string | null;
+    date?: string | null;
+    deadline?: string | null;
+    interviewer?: string | null;
+    stageMethod?: { method?: string | null } | null;
+    link?: string | null;
+    jobPostingLink?: string | null;
+    metadata?: { jobListing?: string } | null;
+  }
+
+  interface ViewModel {
+    company: string | null;
+    clientCompany: string | null;
+    jobTitle: string | null;
+    stage: string | null;
+    status: string | null;
+    outcome: string | null;
+    date: string | null;
+    deadline: string | null;
+    interviewer: string | null;
+    method: string | null;
+    link: string | null;
+    jobPostingLink: string | null;
+    notes: string | null;
+    hasTime: boolean;
+  }
+
+  const vm = useMemo((): ViewModel | null => {
+    if (!interviewData) return null;
+
+    if (isGuest) {
+      const d = interviewData as GuestInterview;
+      const link: string | null = d.interviewLink ?? null;
+      const method = d.locationType ?? deriveMethodFromLink(link);
+      return {
+        company: d.companyName ?? null,
+        clientCompany: d.clientCompany ?? null,
+        jobTitle: d.jobTitle ?? null,
+        stage: d.stage ?? null,
+        status: d.status ?? null,
+        outcome: d.outcome ?? null,
+        date: d.date ?? null,
+        deadline: d.stage === "Technical Test" ? (d.date ?? null) : null,
+        interviewer: d.interviewer ?? null,
+        method: method ?? null,
+        link,
+        jobPostingLink: d.jobPostingLink ?? d.metadata?.jobListing ?? null,
+        notes: (d as unknown as { notes?: string | null })?.notes ?? null,
+        hasTime: Boolean(d.time),
+      };
+    }
+
+    // API/DB data
+    const d = interviewData as ApiInterview;
+    return {
+      company: d.company?.name ?? null,
+      clientCompany: d.clientCompany ?? null,
+      jobTitle: d.jobTitle ?? null,
+      stage: d.stage?.stage ?? null,
+      status: d.status ?? null,
+      outcome: d.outcome ?? null,
+      date: d.date ?? null,
+      deadline: d.deadline ?? null,
+      interviewer: d.interviewer ?? null,
+      method: d.stageMethod?.method ?? null,
+      link: d.link ?? null,
+      jobPostingLink: d.jobPostingLink ?? d.metadata?.jobListing ?? null,
+      notes: (d as unknown as { notes?: string | null })?.notes ?? null,
+      hasTime: true,
+    };
+  }, [interviewData, isGuest]);
+
+  if (!vm) {
     return <div className="text-center py-4 text-muted-foreground">Loading...</div>;
   }
 
-  // For guest interviews
-  if (isGuest) {
-    return (
-      <div className="space-y-4">
-        <div>
-          <p className="text-sm font-medium text-muted-foreground">Company</p>
-          <p className="text-base">{interviewData.companyName}</p>
-        </div>
+  // getStageMethodButton is now imported from shared utils
 
-        {interviewData.clientCompany && (
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">Client Company</p>
-            <p className="text-base">{interviewData.clientCompany}</p>
-          </div>
-        )}
-
-        <div>
-          <p className="text-sm font-medium text-muted-foreground">Job Title</p>
-          <p className="text-base">{interviewData.jobTitle}</p>
-        </div>
-
-        <div>
-          <p className="text-sm font-medium text-muted-foreground">Stage</p>
-          <p className="text-base">{interviewData.stage}</p>
-        </div>
-
-        {interviewData.date && (
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">
-              {interviewData.stage === "Technical Test" ? "Deadline" : "Interview Date"}
-            </p>
-            <p className="text-base">
-              {new Date(interviewData.date).toLocaleDateString("en-US", {
-                month: "long",
-                day: "numeric",
-                year: "numeric",
-                hour: interviewData.time ? "numeric" : undefined,
-                minute: interviewData.time ? "numeric" : undefined,
-              })}
-            </p>
-          </div>
-        )}
-
-        {interviewData.interviewer && (
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">Interviewer</p>
-            <p className="text-base">{interviewData.interviewer}</p>
-          </div>
-        )}
-
-        {interviewData.locationType && (
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">Interview Type</p>
-            <p className="text-base capitalize">{interviewData.locationType}</p>
-          </div>
-        )}
-
-        {interviewData.interviewLink && (
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">Interview Link</p>
-            <a href={interviewData.interviewLink} target="_blank" rel="noopener noreferrer" className="text-base text-blue-600 hover:underline">
-              {interviewData.interviewLink}
-            </a>
-          </div>
-        )}
-
-        {interviewData.jobPostingLink && (
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">Job Posting</p>
-            <a href={interviewData.jobPostingLink} target="_blank" rel="noopener noreferrer" className="text-base text-blue-600 hover:underline">
-              View Job Posting
-            </a>
-          </div>
-        )}
-
-        {interviewData.notes && (
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">Notes</p>
-            <p className="text-base whitespace-pre-wrap">{interviewData.notes}</p>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  const getStageMethodButton = (stageMethod: string, link: string) => {
-    switch (stageMethod) {
-      case "Zoom": {
-        return (
-          <Button variant={"outline"} className={"cursor-pointer"} onClick={() => window.open(link)}>
-            <SiZoom/>
-          </Button>
-        )
-      }
-      case "Teams": {
-        return (
-          <Button variant={"outline"} className={"cursor-pointer"} onClick={() => window.open(link)}>
-            <PiMicrosoftTeamsLogoFill />
-          </Button>
-        )
-      }
-      case "Google Meet": {
-        return (
-          <Button variant={"outline"} className={"cursor-pointer"} onClick={() => window.open(link)}>
-            <SiGooglemeet />
-          </Button>
-        )
-      }
-    }
-  }
-
-  // For authenticated users - display API data
+  // Unified layout for both guest and authenticated interviews using the view model
   return (
     <div className="space-y-4">
       <div>
         <p className="text-sm font-medium text-muted-foreground">Company</p>
-        <p className="text-base">{interviewData.company?.name}</p>
+        <p className="text-base">{vm.company}</p>
       </div>
 
-      {interviewData.clientCompany && (
+      {vm.clientCompany && (
         <div>
           <p className="text-sm font-medium text-muted-foreground">Client Company</p>
-          <p className="text-base">{interviewData.clientCompany}</p>
+          <p className="text-base">{vm.clientCompany}</p>
         </div>
       )}
 
       <div>
         <p className="text-sm font-medium text-muted-foreground">Job Title</p>
-        <p className="text-base">{interviewData.jobTitle}</p>
+        <p className="text-base">{vm.jobTitle}</p>
       </div>
 
       <div>
         <p className="text-sm font-medium text-muted-foreground">Stage</p>
-        <p className="text-base">{interviewData.stage?.stage}</p>
+        <p className="text-base">{vm.stage}</p>
       </div>
 
-      <div>
-        <p className="text-sm font-medium text-muted-foreground">Status</p>
-        <p className="text-base">{interviewData.status}</p>
-      </div>
+      {vm.status && (
+        <div>
+          <p className="text-sm font-medium text-muted-foreground">Status</p>
+          <p className="text-base">{vm.status}</p>
+        </div>
+      )}
 
       <div>
         <p className="text-sm font-medium text-muted-foreground">Outcome</p>
-        <p className="text-base">{interviewData.outcome || "Pending"}</p>
+        <p className="text-base">{vm.outcome || "Pending"}</p>
       </div>
 
-      {(interviewData.date || interviewData.deadline) && (
+      {(vm.date || vm.deadline) && (
         <div>
           <p className="text-sm font-medium text-muted-foreground">
-            {interviewData.deadline ? "Deadline" : "Interview Date"}
+            {vm.deadline ? "Deadline" : "Interview Date"}
           </p>
           <p className="text-base">
-            {new Date(interviewData.date || interviewData.deadline).toLocaleDateString("en-US", {
+            {new Date((vm.date || vm.deadline) as string).toLocaleDateString("en-US", {
               month: "long",
               day: "numeric",
               year: "numeric",
-              hour: "numeric",
-              minute: "numeric",
+              hour: vm.hasTime ? "numeric" : undefined,
+              minute: vm.hasTime ? "numeric" : undefined,
             })}
           </p>
         </div>
       )}
 
-      {interviewData.interviewer && (
+      {vm.interviewer && (
         <div>
           <p className="text-sm font-medium text-muted-foreground">Interviewer</p>
-          <p className="text-base">{interviewData.interviewer}</p>
+          <p className="text-base">{vm.interviewer}</p>
         </div>
       )}
 
-      {interviewData.stageMethod && (
+      {vm.method && (
         <div>
           <p className="text-sm font-medium text-muted-foreground">Interview Method</p>
-          <p className="text-base">{interviewData.stageMethod.method}</p>
+          <p className="text-base">{vm.method}</p>
         </div>
       )}
 
-      {interviewData.link && (
+      {vm.link && (
         <div>
           <p className="text-sm font-medium text-muted-foreground">Interview Link</p>
-          {getStageMethodButton(interviewData.stageMethod.method, interviewData.link)}
+          {/* Show icon button if method recognized, otherwise show hyperlink */}
+          {vm.method ? (
+            getStageMethodButton(vm.method, vm.link)
+          ) : (
+            <a href={vm.link} target="_blank" rel="noopener noreferrer" className="text-base text-blue-600 hover:underline">
+              {vm.link}
+            </a>
+          )}
         </div>
       )}
 
-      {interviewData.metadata?.jobListing && (
+      {vm.jobPostingLink && (
         <div>
           <p className="text-sm font-medium text-muted-foreground">Job Posting</p>
-          <a href={interviewData.metadata.jobListing as string} target="_blank" rel="noopener noreferrer" className="text-base text-blue-600 hover:underline">
+          <a href={vm.jobPostingLink as string} target="_blank" rel="noopener noreferrer" className="text-base text-blue-600 hover:underline">
             View Job Posting
           </a>
+        </div>
+      )}
+
+      {vm.notes && (
+        <div>
+          <p className="text-sm font-medium text-muted-foreground">Notes</p>
+          <p className="text-base whitespace-pre-wrap">{vm.notes}</p>
         </div>
       )}
     </div>

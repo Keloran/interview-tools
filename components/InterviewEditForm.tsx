@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { editInterviewSchema, type EditInterviewData } from "@/lib/validations/interview";
+import { deriveMethodFromLink } from "@/lib/utils/interviewMethod";
 
 type EditFormValues = EditInterviewData;
 
@@ -26,6 +27,8 @@ interface InterviewData {
   clientCompany: string | null;
   stage: { id: number; stage: string };
   stageMethod: { id: number; method: string } | null;
+  // Some API responses may also include a flattened stageMethodId
+  stageMethodId?: number;
   date: string | null;
   deadline: string | null;
   link: string | null;
@@ -108,7 +111,23 @@ export default function InterviewEditForm({ interviewId, onSuccess }: InterviewE
         ? deadlineDate.toISOString().slice(0, 16)
         : "";
 
-      const stageMethodId = interview.stageMethod?.id;
+      // Determine the correct stageMethodId with robust fallbacks
+      // 1) Nested object id
+      // 2) Flat stageMethodId from API (if present)
+      // 3) Resolve by method name if nested object has method string
+      let stageMethodId: number | undefined = interview.stageMethod?.id ?? interview.stageMethodId;
+      if (!stageMethodId && interview.stageMethod?.method) {
+        const match = stageMethods.find((m) => m.method === interview.stageMethod?.method);
+        stageMethodId = match?.id;
+      }
+      // 4) As a last resort, try to infer from the meeting link
+      if (!stageMethodId && interview.link) {
+        const inferred = deriveMethodFromLink(interview.link);
+        if (inferred) {
+          const match = stageMethods.find((m) => m.method === inferred);
+          stageMethodId = match?.id;
+        }
+      }
 
       reset({
         clientCompany: interview.clientCompany || "",

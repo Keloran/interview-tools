@@ -8,8 +8,7 @@ import {useEffect, useMemo, useState} from "react";
 import {Clock, CornerUpRight, Pencil, X} from "lucide-react";
 import {useQuery, useQueryClient} from "@tanstack/react-query";
 import {useUser} from "@clerk/nextjs";
-import {SiGooglemeet, SiZoom} from "react-icons/si";
-import {PiMicrosoftTeamsLogoFill} from "react-icons/pi";
+import { getStageMethodButton } from "@/lib/utils/interviewMethod";
 import {Tooltip, TooltipContent, TooltipTrigger} from "@/components/ui/tooltip";
 import {Dialog, DialogContent, DialogHeader, DialogTitle} from "@/components/ui/dialog";
 import InterviewForm from "@/components/InterviewForm";
@@ -282,31 +281,7 @@ export default function InterviewsList() {
     days.push(<div key={`empty-${i}`} className="aspect-square" />);
   }
 
-  const getStageMethodButton = (stageMethod: string, link: string) => {
-    switch (stageMethod) {
-      case "Zoom": {
-        return (
-          <Button variant={"outline"} className={"cursor-pointer"} onClick={() => window.open(link)}>
-            <SiZoom/>
-          </Button>
-        )
-      }
-      case "Teams": {
-        return (
-          <Button variant={"outline"} className={"cursor-pointer"} onClick={() => window.open(link)}>
-            <PiMicrosoftTeamsLogoFill />
-          </Button>
-        )
-      }
-      case "Google Meet": {
-        return (
-          <Button variant={"outline"} className={"cursor-pointer"} onClick={() => window.open(link)}>
-            <SiGooglemeet />
-          </Button>
-        )
-      }
-    }
-  }
+  // getStageMethodButton is now imported from shared utilities
 
   const formatOutcome = (outcome: string): string => {
     return outcome

@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest",
-    "cis": "pnpm lint && tsc && pnpm test:run",
+    "cis": "pnpm lint && pnpm -m tsc && pnpm test:run",
     "test:watch": "vitest --watch",
     "test:run": "vitest run"
   },
