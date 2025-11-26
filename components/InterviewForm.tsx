@@ -348,6 +348,7 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
                 <CommandEmpty>
                   <Button onClick={() => {
                     setCompanyName(searchCompanyValue)}
+                    setCompanyOpen(false);
                   }>{searchCompanyValue}</Button>
                 </CommandEmpty>
                 <CommandGroup>
