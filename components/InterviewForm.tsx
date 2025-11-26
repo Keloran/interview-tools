@@ -347,8 +347,9 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
                 <CommandInput placeholder={"Search Company"} onValueChange={(e) => setSearchCompanyValue(e)} />
                 <CommandEmpty>
                   <Button onClick={() => {
-                    setCompanyName(searchCompanyValue)}
-                  }>{searchCompanyValue}</Button>
+                    setCompanyName(searchCompanyValue)
+                    setCompanyOpen(false)
+                  }}>{searchCompanyValue}</Button>
                 </CommandEmpty>
                 <CommandGroup>
                   {companies?.map((c) => (
