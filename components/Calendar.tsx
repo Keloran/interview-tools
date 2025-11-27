@@ -13,7 +13,20 @@ import {useUser} from "@clerk/nextjs";
 import {listGuestInterviews} from "@/lib/guestStorage";
 import {useFlags} from "@flags-gg/react-library";
 import CalendarSync from "@/components/CalendarSync";
+import {useQuery} from "@tanstack/react-query";
 
+interface InterviewApiItem {
+  id: string | number;
+  jobTitle: string;
+  date?: string | Date | null;
+  deadline?: string | Date | null;
+  stage?: { stage: string } | null;
+  link?: string | null;
+  company: { name: string; id: number };
+  clientCompany?: string | null;
+  interviewer?: string | null;
+  outcome?: string | null;
+}
 
 interface Interview {
   id: string
@@ -71,6 +84,37 @@ export default function Calendar() {
   const router = useRouter()
   const {is} = useFlags()
 
+  // Fetch interviews for logged-in users
+  const {data: apiInterviews} = useQuery({
+    queryKey: ["interviews", user?.id],
+    queryFn: async () => {
+      const url = new URL('/api/interviews', window.location.origin);
+      url.searchParams.set('includePast', 'true'); // Get all interviews for calendar
+      const res = await fetch(url.toString());
+      if (!res.ok) throw new Error("Failed to fetch interviews");
+      return await res.json();
+    },
+    enabled: !!user?.id,
+  });
+
+  // Update interviews state when API data changes (for logged-in users)
+  useEffect(() => {
+    if (user && apiInterviews) {
+      const mapped: Interview[] = apiInterviews.map((item: InterviewApiItem) => ({
+        id: String(item.id),
+        title: `${item.company.name} — ${item.jobTitle}`,
+        date: new Date((item.date ?? item.deadline) as string),
+        color: getStageColor(item.outcome ?? item.stage?.stage ?? "Unknown"),
+        stage: item.outcome ?? item.stage?.stage ?? "Unknown",
+        companyName: item.company.name,
+        clientCompany: item.clientCompany,
+        jobTitle: item.jobTitle,
+        interviewer: item.interviewer,
+        interviewLink: item.link,
+      }));
+      setInterviews(mapped);
+    }
+  }, [user, apiInterviews]);
 
   useEffect(() => {
     if (!user) {
