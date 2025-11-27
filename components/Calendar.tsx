@@ -189,8 +189,6 @@ export default function Calendar() {
     const date = new Date(year, month, day)
     const isFiltered = filteredDate && isSameDay(date, filteredDate)
 
-    console.info("dayInterviews", dayInterviews, day, interviews)
-
     days.push(
       <div
         key={day}
