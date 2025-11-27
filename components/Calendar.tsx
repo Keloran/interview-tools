@@ -13,6 +13,7 @@ import {useUser} from "@clerk/nextjs";
 import {listGuestInterviews} from "@/lib/guestStorage";
 import {useFlags} from "@flags-gg/react-library";
 import CalendarSync from "@/components/CalendarSync";
+import {useQuery} from "@tanstack/react-query";
 
 
 interface Interview {
@@ -71,6 +72,37 @@ export default function Calendar() {
   const router = useRouter()
   const {is} = useFlags()
 
+  // Fetch interviews for logged-in users
+  const {data: apiInterviews} = useQuery({
+    queryKey: ["interviews", user?.id],
+    queryFn: async () => {
+      const url = new URL('/api/interviews', window.location.origin);
+      url.searchParams.set('includePast', 'true'); // Get all interviews for calendar
+      const res = await fetch(url.toString());
+      if (!res.ok) throw new Error("Failed to fetch interviews");
+      return await res.json();
+    },
+    enabled: !!user?.id,
+  });
+
+  // Update interviews state when API data changes (for logged-in users)
+  useEffect(() => {
+    if (user && apiInterviews) {
+      const mapped: Interview[] = apiInterviews.map((item: any) => ({
+        id: String(item.id),
+        title: `${item.company.name} — ${item.jobTitle}`,
+        date: new Date((item.date ?? item.deadline) as string),
+        color: getStageColor(item.outcome ?? item.stage?.stage ?? "Unknown"),
+        stage: item.outcome ?? item.stage?.stage ?? "Unknown",
+        companyName: item.company.name,
+        clientCompany: item.clientCompany,
+        jobTitle: item.jobTitle,
+        interviewer: item.interviewer,
+        interviewLink: item.link,
+      }));
+      setInterviews(mapped);
+    }
+  }, [user, apiInterviews]);
 
   useEffect(() => {
     if (!user) {
@@ -156,6 +188,8 @@ export default function Calendar() {
     const dayInterviews = getInterviewsForDay(day)
     const date = new Date(year, month, day)
     const isFiltered = filteredDate && isSameDay(date, filteredDate)
+
+    console.info("dayInterviews", dayInterviews, day, interviews)
 
     days.push(
       <div
