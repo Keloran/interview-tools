@@ -97,6 +97,15 @@ function generateICalEvent(interview: InterviewWithRelations): string {
     event += 'STATUS:CONFIRMED\r\n';
   }
 
+  // Add 30-minute reminder for scheduled interviews (not all-day deadline events)
+  if (!isAllDay) {
+    event += 'BEGIN:VALARM\r\n';
+    event += 'ACTION:DISPLAY\r\n';
+    event += 'DESCRIPTION:Interview in 30 minutes\r\n';
+    event += 'TRIGGER:-PT30M\r\n';
+    event += 'END:VALARM\r\n';
+  }
+
   event += 'END:VEVENT\r\n';
 
   return event;
@@ -118,10 +127,11 @@ export async function GET(
       return new NextResponse('Calendar not found', { status: 404 });
     }
 
-    // Fetch all interviews for this user that have a date or deadline
+    // Fetch only SCHEDULED interviews for this user that have a date or deadline
     const interviews = await prisma.interview.findMany({
       where: {
         userId: user.id,
+        outcome: 'SCHEDULED',
         OR: [
           { date: { not: null } },
           { deadline: { not: null } },
