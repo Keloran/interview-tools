@@ -15,6 +15,18 @@ import {useFlags} from "@flags-gg/react-library";
 import CalendarSync from "@/components/CalendarSync";
 import {useQuery} from "@tanstack/react-query";
 
+interface InterviewApiItem {
+  id: string | number;
+  jobTitle: string;
+  date?: string | Date | null;
+  deadline?: string | Date | null;
+  stage?: { stage: string } | null;
+  link?: string | null;
+  company: { name: string; id: number };
+  clientCompany?: string | null;
+  interviewer?: string | null;
+  outcome?: string | null;
+}
 
 interface Interview {
   id: string
@@ -88,7 +100,7 @@ export default function Calendar() {
   // Update interviews state when API data changes (for logged-in users)
   useEffect(() => {
     if (user && apiInterviews) {
-      const mapped: Interview[] = apiInterviews.map((item: any) => ({
+      const mapped: Interview[] = apiInterviews.map((item: InterviewApiItem) => ({
         id: String(item.id),
         title: `${item.company.name} — ${item.jobTitle}`,
         date: new Date((item.date ?? item.deadline) as string),
