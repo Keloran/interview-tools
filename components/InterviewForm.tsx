@@ -6,13 +6,19 @@ import {Label} from "@/components/ui/label";
 import {Input} from "@/components/ui/input";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
 import {Popover, PopoverContent, PopoverTrigger} from "@/components/ui/popover";
-import {Command, CommandEmpty, CommandGroup, CommandInput, CommandItem} from "@/components/ui/command";
+import {
+  Command,
+  CommandGroup,
+  CommandInput,
+  CommandItem
+} from "@/components/ui/command";
 import {ChevronsUpDown, Plus} from "lucide-react";
 import {useQuery, useQueryClient} from "@tanstack/react-query";
 import {useUser} from "@clerk/nextjs";
 import {useRouter} from "next/navigation";
 import {addGuestInterview} from "@/lib/guestStorage";
 import {interviewFormSchema} from "@/lib/validations/interview";
+import {Separator} from "@/components/ui/separator";
 
 export type LocationType = "phone" | "link";
 
@@ -345,17 +351,12 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
             <PopoverContent>
               <Command>
                 <CommandInput placeholder={"Search Company"} onValueChange={(e) => setSearchCompanyValue(e)} />
-                <CommandEmpty>
-                  <Button onClick={() => {
-                    setCompanyName(searchCompanyValue)
-                    setCompanyOpen(false)
-                  }}>{searchCompanyValue}</Button>
-                </CommandEmpty>
                 <CommandGroup>
                   {companies?.map((c) => (
                     <CommandItem
                       key={`interview-company-${c.id}`}
                       value={c.name}
+                      className={"p-2"}
                       onSelect={(currentValue) => {
                         setCompanyName(currentValue);
                         setCompanyOpen(false);
@@ -366,6 +367,18 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
                   ))}
                 </CommandGroup>
               </Command>
+
+              {searchCompanyValue !== "" && (
+                <>
+                  <Separator className={"mb-2"} />
+                  <div className={"flex items-center"}>
+                    <Button variant={"outline"} className={"cursor-pointer"} onClick={() => {
+                      setCompanyName(searchCompanyValue)
+                      setCompanyOpen(false)
+                    }}><Plus className={"w-5 h-5"}/> {searchCompanyValue}</Button>
+                  </div>
+                </>
+              )}
             </PopoverContent>
           </Popover>
           {validationErrors.companyName && (
