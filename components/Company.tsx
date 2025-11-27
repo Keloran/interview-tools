@@ -61,10 +61,10 @@ export function Companies() {
       <CommandDialog open={searchOpen} onOpenChange={setSearchOpen}>
         <CommandInput placeholder="Type a command or search..." />
         <CommandList>
-          <CommandEmpty>No results found.</CommandEmpty>
+          <CommandEmpty>You haven&apos;t done anything with this company.</CommandEmpty>
           {data?.map((company) => (
             <CommandItem
-              className={"cursor-pointer"}
+              className={"cursor-pointer p-2"}
               key={company.id}
               onSelect={() => {
                 handleCompanyFilter(company.name)
