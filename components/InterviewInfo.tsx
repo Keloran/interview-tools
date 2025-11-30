@@ -5,10 +5,12 @@ import {useUser} from "@clerk/nextjs";
 import {listGuestInterviews} from "@/lib/guestStorage";
 import {useMemo} from "react";
 import {deriveMethodFromLink, getStageMethodButton} from "@/lib/utils/interviewMethod";
+import {useAppStore} from "@/lib/store";
 
 export default function InterviewInfo(props: {interviewId: string | null}) {
   const {user} = useUser();
   const isGuest = typeof props.interviewId === 'string' && props.interviewId.startsWith('guest_');
+  const setCompanyFilter = useAppStore((s) => s.setFilteredCompany);
 
   // Fetch interview data from API for authenticated users
   const { data: apiInterviewData } = useQuery({
@@ -133,12 +135,23 @@ export default function InterviewInfo(props: {interviewId: string | null}) {
 
   // getStageMethodButton is now imported from shared utils
 
+  const handleCompanyClick = () => {
+    if (vm?.company) {
+      setCompanyFilter(vm.company);
+    }
+  };
+
   // Unified layout for both guest and authenticated interviews using the view model
   return (
     <div className="space-y-4">
       <div>
         <p className="text-sm font-medium text-muted-foreground">Company</p>
-        <p className="text-base">{vm.company}</p>
+        <p
+          className="text-base text-blue-600 hover:underline cursor-pointer"
+          onClick={handleCompanyClick}
+        >
+          {vm.company}
+        </p>
       </div>
 
       {vm.clientCompany && (
