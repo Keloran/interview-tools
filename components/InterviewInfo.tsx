@@ -32,7 +32,6 @@ export default function InterviewInfo(props: {interviewId: string | null}) {
   }, [isGuest, props.interviewId]);
 
   const interviewData = isGuest ? guestInterviewData : apiInterviewData;
-  console.info("Interview info", interviewData);
 
   // Normalize guest/API data into a single view model for a unified layout
   interface GuestInterview {
