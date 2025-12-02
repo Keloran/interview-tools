@@ -126,8 +126,8 @@ export default function Stats() {
                 isClickable && "hover:bg-accent"
               )}
             >
-              <div className={cn("w-8 h-8 rounded-full flex items-center justify-center mb-2", stat.color)}>
-                <span className="text-2xl font-bold text-white">{stat.count}</span>
+              <div className={cn("min-w-8 min-h-8 rounded-full flex items-center justify-center mb-2", stat.color)}>
+                <span className="text-2xl font-bold text-white px-2">{stat.count}</span>
               </div>
               <span className="text-sm text-center font-medium">{stat.label}</span>
             </div>
