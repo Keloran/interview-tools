@@ -13,7 +13,7 @@
     "test:run": "vitest run"
   },
   "dependencies": {
-    "@clerk/nextjs": "^6.36.0",
+    "@clerk/nextjs": "^6.36.1",
     "@flags-gg/react-library": "^1.14.7",
     "@hookform/resolvers": "^5.2.2",
     "@prisma/adapter-pg": "^7.1.0",
