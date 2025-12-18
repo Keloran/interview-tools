@@ -301,23 +301,22 @@ export default function InterviewsList() {
           <div>
             <h2 className="text-2xl font-semibold">
               {outcomeFilter
-                ? `${formatOutcome(outcomeFilter)} Interviews`
+                ? `${displayedInterviews.length > 0 ? `${displayedInterviews.length} ` : ""}${formatOutcome(outcomeFilter)} Interview${displayedInterviews.length !== 1 ? "s" : ""}`
                 : companyFilter && dateFilter
-                ? `${companyFilter} Interviews for ${dateFilter.toLocaleDateString("en-US", {
+                ? `${displayedInterviews.length > 0 ? `${displayedInterviews.length} ` : ""}${companyFilter} Interview${displayedInterviews.length !== 1 ? "s" : ""} for ${dateFilter.toLocaleDateString("en-US", {
                     month: "long",
                     day: "numeric",
                     year: "numeric",
                   })}`
                 : companyFilter
-                ? `All Interviews with ${companyFilter}`
+                ? `All ${displayedInterviews.length > 0 ? `${displayedInterviews.length} ` : ""}Interview${displayedInterviews.length !== 1 ? "s" : ""} with ${companyFilter}`
                 : dateFilter
-                ? "Interviews for " +
-                  dateFilter.toLocaleDateString("en-US", {
+                ? `${displayedInterviews.length > 0 ? `${displayedInterviews.length} ` : ""}Interview${displayedInterviews.length !== 1 ? "s" : ""} for ${dateFilter.toLocaleDateString("en-US", {
                     month: "long",
                     day: "numeric",
                     year: "numeric",
-                  })
-                : "All Upcoming Interviews"}
+                  })}`
+                : `All ${displayedInterviews.length > 0 ? `${displayedInterviews.length} ` : ""}Upcoming Interview${displayedInterviews.length !== 1 ? "s" : ""}`}
             </h2>
             {dateFilter && (
               <Button variant="ghost" size="sm" onClick={() => setFilteredDate(null)} className="mt-2 h-8 cursor-pointer">
