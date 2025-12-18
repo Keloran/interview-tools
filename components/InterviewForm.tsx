@@ -124,6 +124,7 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
   const [companyOpen, setCompanyOpen] = useState(false);
   const [searchCompanyValue, setSearchCompanyValue] = useState("");
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { data: companies } = useQuery({ queryKey: ["companies"], queryFn: getCompanies, enabled: !!user?.id });
   const { data: stages } = useQuery({ queryKey: ["stages"], queryFn: getStages, enabled: !!user?.id });
@@ -155,6 +156,10 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
   const requiresScheduling = selectedStage !== "Applied" && selectedStage !== "Offer";
 
   const handleSubmit = async () => {
+    // Prevent double submission
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
     // Clear previous errors
     setValidationErrors({});
 
@@ -183,6 +188,7 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
         }
       });
       setValidationErrors(errors);
+      setIsSubmitting(false);
       return;
     }
 
@@ -195,15 +201,18 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
             time: !time ? "Time is required" : "",
             interviewer: !interviewer.trim() ? "Interviewer is required" : "",
           }));
+          setIsSubmitting(false);
           return;
         }
         if (locationType === "link" && !interviewLink.trim()) {
           setValidationErrors({ interviewLink: "Interview link is required for link type" });
+          setIsSubmitting(false);
           return;
         }
       }
       if (isProgressing && !date) {
         setValidationErrors({ date: "Date is required when progressing" });
+        setIsSubmitting(false);
         return;
       }
     }
@@ -211,6 +220,7 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
     // Legacy mode: just call the callback
     if (onSubmit) {
       onSubmit(values);
+      setIsSubmitting(false);
       return;
     }
 
@@ -238,6 +248,7 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
         });
         // Invalidate queries to refetch data
         queryClient.invalidateQueries({ queryKey: ["interviews"] });
+        setIsSubmitting(false);
         onSuccess();
         return;
       }
@@ -310,6 +321,8 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
         onSuccess();
       } catch (e) {
         console.error(e);
+      } finally {
+        setIsSubmitting(false);
       }
     }
   };
@@ -511,9 +524,9 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
         </div>
       )}
 
-      <Button onClick={handleSubmit} className="w-full">
+      <Button onClick={handleSubmit} disabled={isSubmitting} className="w-full">
         <Plus className="h-4 w-4 mr-2" />
-        {submitLabel}
+        {isSubmitting ? "Submitting..." : submitLabel}
       </Button>
     </div>
   );
