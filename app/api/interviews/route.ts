@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     const q = searchParams.get("q")?.trim()
 
     // Pagination (safe defaults)
-    const take = Math.min(Number(searchParams.get("take") ?? 100), 200)
+    const take = Math.min(Number(searchParams.get("take") ?? 200), 2000)
     const skip = Math.max(Number(searchParams.get("skip") ?? 0), 0)
 
     // Default: when filtering by company, show all; otherwise show future only
@@ -61,6 +61,7 @@ export async function GET(request: NextRequest) {
 
     // Build one dynamic where
     // Dev override: use userId 12 in development
+    //const where : Prisma.InterviewWhereInput = { user: { id: 12 }}
     const where: Prisma.InterviewWhereInput = {user: {clerkId: user.id}}
 
     // Date filters (consider both scheduled date and deadline)
