@@ -57,6 +57,11 @@ model Interview {
   updated_at      DateTime          @updatedAt
   link            String? // Meeting link (Teams, Google Meet, etc.)
 
+  // Parent-child relationship for interview progression
+  parentId        Int?
+  parent          Interview?        @relation("InterviewChain", fields: [parentId], references: [id], onDelete: Cascade)
+  children        Interview[]       @relation("InterviewChain")
+
   @@unique([userId, companyId, jobTitle, applicationDate, clientCompany]) // Prevent duplicate applications
 }
 
