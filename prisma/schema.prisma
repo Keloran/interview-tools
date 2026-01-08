@@ -14,67 +14,113 @@ datasource db {
 }
 
 model User {
-  id           Int         @id @default(autoincrement())
-  clerkId      String      @unique
-  email        String      @unique
-  name         String?
-  calendarUuid String      @unique @default(uuid())
-  companies    Company[]
-  interviews   Interview[]
+  id               Int               @id @default(autoincrement())
+  clerkId          String            @unique
+  email            String            @unique
+  name             String?
+  calendarUuid     String            @unique @default(uuid())
+  companies        Company[]
+  applications     Application[]
+  legacyInterviews LegacyInterview[]
 }
 
 model Company {
-  id         Int         @id @default(autoincrement())
-  name       String
-  userId     Int
-  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  interviews Interview[]
-  created_at DateTime    @default(now())
+  id               Int               @id @default(autoincrement())
+  name             String
+  userId           Int
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  applications     Application[]
+  legacyInterviews LegacyInterview[]
+  created_at       DateTime          @default(now())
 
   @@unique([userId, name])
 }
 
-model Interview {
+// LegacyInterview - the old interview table, kept for existing data
+// Maps to the existing "Interview" table in the database
+model LegacyInterview {
   id              Int               @id @default(autoincrement())
   companyId       Int
   company         Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  clientCompany   String? // End client company (for recruitment agencies)
-  jobTitle        String // Role you're applying for
-  applicationDate DateTime // When you applied for this job
-  interviewer     String? // Name of person interviewing you
+  clientCompany   String?
+  jobTitle        String
+  applicationDate DateTime
+  interviewer     String?
   stageId         Int
   stage           Stage             @relation(fields: [stageId], references: [id])
   stageMethodId   Int
   stageMethod     StageMethod       @relation(fields: [stageMethodId], references: [id])
   userId          Int
   user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  date            DateTime? // When this specific interview stage is scheduled (nullable for Technical Test)
-  deadline        DateTime? // For take-home tests
+  date            DateTime?
+  deadline        DateTime?
   outcome         InterviewOutcome?
-  notes           String?           @db.Text // Your notes about the interview
-  metadata        Json? // Job posting URL, salary expectations, etc.
+  notes           String?           @db.Text
+  metadata        Json?
   created_at      DateTime          @default(now())
   updated_at      DateTime          @updatedAt
-  link            String? // Meeting link (Teams, Google Meet, etc.)
+  link            String?
 
-  // Parent-child relationship for interview progression
+  @@unique([userId, companyId, jobTitle, applicationDate, clientCompany])
+  @@map("Interview") // Maps to existing Interview table
+}
+
+// Application represents a job application - the root entity for tracking
+model Application {
+  id              Int               @id @default(autoincrement())
+  userId          Int
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companyId       Int
+  company         Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  clientCompany   String?           // End client company (for recruitment agencies)
+  jobTitle        String            // Role you're applying for
+  applicationDate DateTime          // When you applied for this job
+  jobPostingLink  String?           // URL of job posting
+  interviews      Interview[]
+  created_at      DateTime          @default(now())
+  updated_at      DateTime          @updatedAt
+
+  @@unique([userId, companyId, jobTitle, applicationDate, clientCompany])
+}
+
+// Interview represents a single interview stage within an application
+model Interview {
+  id              Int               @id @default(autoincrement())
+  applicationId   Int
+  application     Application       @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  stageId         Int
+  stage           Stage             @relation(fields: [stageId], references: [id])
+  stageMethodId   Int
+  stageMethod     StageMethod       @relation(fields: [stageMethodId], references: [id])
+  interviewer     String?           // Name of person interviewing you
+  date            DateTime?         // When this interview stage is scheduled
+  deadline        DateTime?         // For take-home tests
+  outcome         InterviewOutcome?
+  notes           String?           @db.Text
+  link            String?           // Meeting link (Teams, Google Meet, etc.)
+  created_at      DateTime          @default(now())
+  updated_at      DateTime          @updatedAt
+
+  // Parent-child for ordering within the application
   parentId        Int?
-  parent          Interview?        @relation("InterviewChain", fields: [parentId], references: [id], onDelete: Cascade)
+  parent          Interview?        @relation("InterviewChain", fields: [parentId], references: [id], onDelete: SetNull)
   children        Interview[]       @relation("InterviewChain")
 
-  @@unique([userId, companyId, jobTitle, applicationDate, clientCompany]) // Prevent duplicate applications
+  @@map("InterviewStage") // New table name to avoid conflict
 }
 
 model Stage {
-  id         Int         @id @default(autoincrement())
-  stage      String      @unique
-  interviews Interview[]
+  id               Int               @id @default(autoincrement())
+  stage            String            @unique
+  interviews       Interview[]
+  legacyInterviews LegacyInterview[]
 }
 
 model StageMethod {
-  id         Int         @id @default(autoincrement())
-  method     String      @unique
-  interviews Interview[]
+  id               Int               @id @default(autoincrement())
+  method           String            @unique
+  interviews       Interview[]
+  legacyInterviews LegacyInterview[]
 }
 
 enum InterviewOutcome {
