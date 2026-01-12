@@ -39,7 +39,7 @@
     "react-icons": "^5.5.0",
     "tailwind-merge": "^3.4.0",
     "zod": "^4.3.5",
-    "zustand": "^5.0.9"
+    "zustand": "^5.0.10"
   },
   "devDependencies": {
     "@clerk/types": "^4.101.10",
