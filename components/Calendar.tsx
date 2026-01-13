@@ -242,7 +242,7 @@ export default function Calendar() {
               {MONTHS[month]} {year}
             </h3>
             <div className="flex gap-1">
-              {is("calendar sync").enabled() && (
+              {is("calendar sync").enabled() && user !== null && (
                 <Dialog>
                   <DialogTrigger><CalendarHeart className="h-4 w-4 cursor-pointer" /></DialogTrigger>
                   <DialogContent>
