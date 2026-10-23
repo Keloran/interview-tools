@@ -5,7 +5,7 @@ import {Card} from "@/components/ui/card";
 import {Button} from "@/components/ui/button";
 import {cn, getStageColor, isSameDay} from "@/lib/utils";
 import {useEffect, useMemo, useState} from "react";
-import {CalendarClock, Clock, CornerUpRight, Pencil, X} from "lucide-react";
+import {CalendarClock, Check, Clock, CornerUpRight, Pencil, ThumbsDown, X} from "lucide-react";
 import {useQuery, useQueryClient} from "@tanstack/react-query";
 import {useUser} from "@clerk/nextjs";
 import { getStageMethodButton } from "@/lib/utils/interviewMethod";
@@ -242,9 +242,9 @@ export default function InterviewsList() {
     setEditDialogOpen(true);
   };
 
-  const handleAwaiting = async (interview: Interview)  => {
+  const handleSetOutcome = async (interview: Interview, outcome: string) => {
     if (interview.id.startsWith("guest_")) {
-      interview.outcome = "AWAITING_RESPONSE";
+      interview.outcome = outcome;
       return
     }
 
@@ -252,15 +252,13 @@ export default function InterviewsList() {
       await fetch(`/api/interview/${interview.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          outcome: "AWAITING_RESPONSE",
-        })
+        body: JSON.stringify({ outcome })
       })
-      interview.outcome = "AWAITING_RESPONSE";
+      interview.outcome = outcome;
       // Invalidate queries to refetch data
       queryClient.invalidateQueries({ queryKey: ["interviews"] });
     } catch (error) {
-      console.error("Failed to set awaiting on interview:", error);
+      console.error(`Failed to set ${outcome} on interview:`, error);
     } finally {
       router.refresh()
     }
@@ -434,7 +432,7 @@ export default function InterviewsList() {
                           <TooltipContent>Edit Interview Details</TooltipContent>
                         </Tooltip>
                       )}
-                      {!["REJECTED", "WITHDREW", "OFFER_ACCEPTED", "OFFER_DECLINED"].includes(interview.outcome.toUpperCase()) && (
+                      {interview.stage !== "Offer" && !["REJECTED", "WITHDREW", "OFFER_ACCEPTED", "OFFER_DECLINED"].includes(interview.outcome.toUpperCase()) && (
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button
@@ -453,8 +451,44 @@ export default function InterviewsList() {
                           <TooltipContent>Share your availability for the next stage</TooltipContent>
                         </Tooltip>
                       )}
-                      {interview.outcome.toLowerCase() !== "rejected" && interview.outcome.toLowerCase() !== "passed"  && (
+                      {!["REJECTED", "PASSED", "OFFER_ACCEPTED", "OFFER_DECLINED"].includes(interview.outcome.toUpperCase()) && (
                         <>
+                          {interview.stage === "Offer" ? (
+                            <>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant={"ghost"}
+                                    size={"sm"}
+                                    className={"cursor-pointer"}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleSetOutcome(interview, "OFFER_ACCEPTED");
+                                    }}
+                                  >
+                                    <Check />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Accept offer</TooltipContent>
+                              </Tooltip>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant={"ghost"}
+                                    size={"sm"}
+                                    className={"cursor-pointer"}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleSetOutcome(interview, "OFFER_DECLINED");
+                                    }}
+                                  >
+                                    <ThumbsDown />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Decline offer</TooltipContent>
+                              </Tooltip>
+                            </>
+                          ) : (
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button
@@ -471,6 +505,7 @@ export default function InterviewsList() {
                             </TooltipTrigger>
                             <TooltipContent>Progress interview to next stage</TooltipContent>
                           </Tooltip>
+                          )}
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button
@@ -499,7 +534,7 @@ export default function InterviewsList() {
                                   className={"cursor-pointer"}
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    handleAwaiting(interview);
+                                    handleSetOutcome(interview, "AWAITING_RESPONSE");
                                   }}
                                 >
                                   <Clock />
