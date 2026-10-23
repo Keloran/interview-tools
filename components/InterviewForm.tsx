@@ -19,6 +19,8 @@ import {useRouter} from "next/navigation";
 import {addGuestInterview} from "@/lib/guestStorage";
 import {interviewFormSchema} from "@/lib/validations/interview";
 import {Separator} from "@/components/ui/separator";
+import {CompanyHistory, findPreviousApplications, timeAgo} from "@/lib/applications";
+import {cn} from "@/lib/utils";
 
 export type LocationType = "phone" | "link";
 
@@ -47,10 +49,7 @@ export type InterviewFormProps = {
   previousInterviewId?: string; // Deprecated: use interviewId instead
 };
 
-interface Company {
-  name: string;
-  id: number;
-}
+type Company = CompanyHistory;
 
 interface Stage {
   id: number;
@@ -128,6 +127,9 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
 
   const { data: companies } = useQuery({ queryKey: ["companies"], queryFn: getCompanies, enabled: !!user?.id });
   const { data: stages } = useQuery({ queryKey: ["stages"], queryFn: getStages, enabled: !!user?.id });
+
+  // Same job is often listed on several sites, so warn before adding it twice (not when progressing an existing one)
+  const previousApplications = isProgressing ? [] : findPreviousApplications(companies ?? [], companyName, clientCompany, jobTitle);
 
   // Populate form from fetched interview data (only once when data first loads)
   useEffect(() => {
@@ -421,6 +423,28 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
             <p className="text-xs text-destructive mt-1">{validationErrors.jobTitle}</p>
           )}
         </div>
+        {previousApplications.length > 0 && (
+          <div
+            role="status"
+            className={cn(
+              "md:col-span-2 rounded-md border p-3 text-sm",
+              previousApplications[0].sameTitle ? "border-amber-500/50 bg-amber-500/10" : "bg-muted/30"
+            )}
+          >
+            <p className="font-medium">
+              {previousApplications[0].sameTitle ? "You may have already applied for this job" : "You've applied to this company before"}
+            </p>
+            <ul className="mt-1 space-y-0.5 text-muted-foreground">
+              {previousApplications.slice(0, 5).map((a) => (
+                <li key={a.id}>
+                  <span className={cn(a.sameTitle && "text-foreground")}>{a.jobTitle}</span>
+                  {a.clientCompany ? ` at ${a.clientCompany} via ${a.companyName}` : ` at ${a.companyName}`}
+                  {" · applied "}{timeAgo(a.applicationDate)}{" · "}{a.status}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
         <div className="space-y-2 md:col-span-2">
           <Label htmlFor="job-posting-link">Job posting link</Label>
           <Input

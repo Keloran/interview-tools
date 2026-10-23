@@ -24,22 +24,24 @@ describe('GET /api/companies', () => {
   it('returns companies for authorized user', async () => {
     ;(currentUser as any).mockResolvedValueOnce({id: 'user_123'})
     ;(prisma.company.findMany as any).mockResolvedValueOnce([
-      {id: 1, name: 'Acme'},
-      {id: 2, name: 'Beta'},
+      {id: 1, name: 'Acme', applications: [{
+        id: 5, jobTitle: 'SE', clientCompany: null, applicationDate: '2025-01-01T00:00:00.000Z',
+        interviews: [{outcome: 'REJECTED', updated_at: '2025-02-01T00:00:00.000Z', stage: {stage: 'Technical'}}],
+      }]},
+      {id: 2, name: 'Beta', applications: []},
     ])
 
     const res = await GET()
     expect(res.status).toBe(200)
     const json = await res.json()
     expect(json).toEqual([
-      {id: 1, name: 'Acme'},
-      {id: 2, name: 'Beta'},
+      {id: 1, name: 'Acme', applications: [{
+        id: 5, jobTitle: 'SE', clientCompany: null, applicationDate: '2025-01-01T00:00:00.000Z',
+        status: 'Rejected at Technical', response: 'responded',
+      }]},
+      {id: 2, name: 'Beta', applications: []},
     ])
-    expect(prisma.company.findMany).toHaveBeenCalledWith({
-      where: {user: {clerkId: 'user_123'}},
-      select: {name: true, id: true},
-      orderBy: {name: 'asc'},
-    })
+    expect((prisma.company.findMany as any).mock.calls[0][0].where).toEqual({user: {clerkId: 'user_123'}})
   })
 
   it('handles prisma errors', async () => {

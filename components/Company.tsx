@@ -8,11 +8,9 @@ import {Input} from "@/components/ui/input";
 import {Search} from "lucide-react";
 import {useAppStore} from "@/lib/store";
 import {useFlags} from "@flags-gg/react-library";
+import {CompanyHistory, responseRecord, timeAgo} from "@/lib/applications";
 
-interface Company {
-  name: string;
-  id: number;
-}
+type Company = CompanyHistory;
 
 async function getCompanies() {
   const res = await fetch(`/api/companies`, {
@@ -62,15 +60,30 @@ export function Companies() {
         <CommandInput placeholder="Type a command or search..." />
         <CommandList>
           <CommandEmpty>You haven&apos;t done anything with this company.</CommandEmpty>
-          {data?.map((company) => (
-            <CommandItem
-              className={"cursor-pointer p-2"}
-              key={company.id}
-              onSelect={() => {
-                handleCompanyFilter(company.name)
-                setSearchOpen(false)
-              }}>{company.name}</CommandItem>
-          ))}
+          {data?.map((company) => {
+            const record = responseRecord(company.applications)
+            return (
+              <CommandItem
+                className={"cursor-pointer p-2 flex-col items-start gap-0.5"}
+                key={company.id}
+                // searchable by client company and title too, so a job found via a recruiter still turns up
+                value={[company.name, ...company.applications.flatMap((a) => [a.clientCompany ?? "", a.jobTitle])].join(" ")}
+                onSelect={() => {
+                  handleCompanyFilter(company.name)
+                  setSearchOpen(false)
+                }}>
+                <div className={"flex w-full justify-between gap-2"}>
+                  <span className={"font-medium"}>{company.name}</span>
+                  {record && <span className={"text-xs text-muted-foreground"}>{record}</span>}
+                </div>
+                {company.applications.map((a) => (
+                  <span key={a.id} className={"text-xs text-muted-foreground"}>
+                    {a.jobTitle}{a.clientCompany && ` (${a.clientCompany})`} · applied {timeAgo(a.applicationDate)} · {a.status}
+                  </span>
+                ))}
+              </CommandItem>
+            )
+          })}
         </CommandList>
       </CommandDialog>
     </div>
