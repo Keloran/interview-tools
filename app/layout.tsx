@@ -3,6 +3,7 @@ import {Geist, Geist_Mono} from "next/font/google";
 import "./globals.css";
 import {ClerkProvider, SignedIn, SignedOut, SignInButton, UserButton,} from "@clerk/nextjs";
 import {ReactNode} from "react";
+import Link from "next/link";
 import {Button} from "@/components/ui/button";
 import {Companies} from "@/components/Company";
 import ClientProviders from "@/components/ClientProviders";
@@ -76,6 +77,9 @@ const Navbar = () => {
         </SignInButton>
       </SignedOut>
       <SignedIn>
+        <Button asChild variant="ghost">
+          <Link href="/no-feedback">No Feedback</Link>
+        </Button>
         <UserButton />
       </SignedIn>
     </>

@@ -2,6 +2,7 @@ import {NextRequest, NextResponse} from "next/server";
 import {currentUser} from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 import {inferStageMethodName} from "@/lib/utils";
+import {interviewSelect, toInterviewDto} from "@/lib/interviews";
 import { $Enums, Prisma } from "@/app/generated/prisma/client";
 
 export async function POST(request: NextRequest) {
@@ -24,6 +25,7 @@ export async function POST(request: NextRequest) {
       locationType, // "phone" | "link"
       interviewLink,
       notes,
+      previousInterviewId, // progressing an existing application to its next stage
     } = body ?? {}
 
     // Basic validations
@@ -90,56 +92,47 @@ export async function POST(request: NextRequest) {
       stageMethod = await prisma.stageMethod.create({ data: { method: methodName }, select: { id: true, method: true } })
     }
 
-    // Compose metadata as a plain object, cast at use site to Prisma.InputJsonValue
-    const metadata: Record<string, unknown> = {}
-    /* eslint-disable  @typescript-eslint/no-explicit-any */
-    if (jobPostingLink) (metadata as any).jobListing = jobPostingLink
-    /* eslint-disable  @typescript-eslint/no-explicit-any */
-    if (locationType === "phone") (metadata as any).location = "phone"
-    /* eslint-disable  @typescript-eslint/no-explicit-any */
-    if (locationType === "link") (metadata as any).location = "link"
-
     // Set outcome based on stage
     const outcome = stage !== "Applied" ? "SCHEDULED" : "AWAITING_RESPONSE"
 
     const isTechnicalTest = String(stage).toLowerCase() === "technical test".toLowerCase()
 
+    // Next stage of an existing application, or a brand new application
+    const previous = previousInterviewId
+      ? await prisma.interview.findFirst({
+          where: { id: Number(previousInterviewId), application: { userId: effectiveUserId } },
+          select: { id: true, applicationId: true },
+        })
+      : null
+
     const created = await prisma.interview.create({
       data: {
-        companyId: company.id,
-        clientCompany: clientCompany || null,
-        jobTitle,
-        applicationDate: new Date(),
+        application: previous
+          ? { connect: { id: previous.applicationId } }
+          : {
+              create: {
+                userId: effectiveUserId,
+                companyId: company.id,
+                clientCompany: clientCompany || null,
+                jobTitle,
+                applicationDate: new Date(),
+                jobPostingLink: jobPostingLink || null,
+              },
+            },
+        parent: previous ? { connect: { id: previous.id } } : undefined,
         interviewer: isTechnicalTest ? null : (interviewer || null),
-        stageId: stageRecord.id,
-        stageMethodId: stageMethod.id,
-        userId: effectiveUserId,
+        stage: { connect: { id: stageRecord.id } },
+        stageMethod: { connect: { id: stageMethod.id } },
         date: isTechnicalTest ? null : interviewDate,
         deadline: isTechnicalTest ? (deadlineDate ?? interviewDate) : null,
         outcome: outcome as $Enums.InterviewOutcome,
         notes: notes || null,
-        metadata: Object.keys(metadata).length ? (metadata as Prisma.InputJsonValue) : undefined,
         link: isTechnicalTest ? null : (interviewLink || null),
       },
-      select: {
-        id: true,
-        jobTitle: true,
-        interviewer: true,
-        company: { select: { id: true, name: true } },
-        clientCompany: true,
-        stage: { select: { id: true, stage: true } },
-        stageMethod: { select: { id: true, method: true } },
-        applicationDate: true,
-        date: true,
-        deadline: true,
-        outcome: true,
-        notes: true,
-        metadata: true,
-        link: true,
-      },
+      select: interviewSelect,
     })
 
-    return NextResponse.json(created, { status: 201 })
+    return NextResponse.json(toInterviewDto(created), { status: 201 })
   } catch (error) {
     console.error("POST /api/interview error", error)
     return NextResponse.json({ message: "Internal Server Error" }, { status: 500 })

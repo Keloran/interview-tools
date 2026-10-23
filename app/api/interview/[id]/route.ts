@@ -3,24 +3,7 @@ import { currentUser } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 import { Prisma } from "@/app/generated/prisma/client";
 import type { $Enums } from "@/app/generated/prisma/client";
-
-// Shared select shape to keep responses consistent with /api/interviews
-const select = {
-  id: true,
-  jobTitle: true,
-  interviewer: true,
-  company: { select: { id: true, name: true } },
-  clientCompany: true,
-  stage: { select: { id: true, stage: true } },
-  stageMethod: { select: { id: true, method: true } },
-  applicationDate: true,
-  date: true,
-  deadline: true,
-  outcome: true,
-  notes: true,
-  metadata: true,
-  link: true,
-} as const;
+import { interviewSelect, toInterviewDto } from "@/lib/interviews";
 
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const user = await currentUser();
@@ -36,13 +19,13 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 
   try {
     const interview = await prisma.interview.findFirst({
-      where: { id, user: { clerkId: user.id } },
-      select,
+      where: { id, application: { user: { clerkId: user.id } } },
+      select: interviewSelect,
     });
 
     if (!interview) return NextResponse.json({ message: "Not Found" }, { status: 404 });
 
-    return NextResponse.json(interview);
+    return NextResponse.json(toInterviewDto(interview));
   } catch (error) {
     console.error("GET /api/interview/[id] error", error);
     return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
@@ -63,6 +46,12 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
   try {
     const body = await request.json();
+
+    const owned = await prisma.interview.findFirst({
+      where: { id, application: { user: { clerkId: user.id } } },
+      select: { id: true },
+    });
+    if (!owned) return NextResponse.json({ message: "Not Found" }, { status: 404 });
 
     // Only allow a safe subset of fields to be updated via this endpoint for now
     // Extend as needed.
@@ -94,20 +83,23 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (typeof body.stageMethodId === "number") {
       data.stageMethod = { connect: { id: body.stageMethodId } };
     }
+    // Application-level fields live on the parent application
+    const application: Prisma.ApplicationUpdateWithoutInterviewsInput = {};
     if (typeof body.clientCompany === "string" || body.clientCompany === null) {
-      data.clientCompany = body.clientCompany;
+      application.clientCompany = body.clientCompany;
     }
-    if (typeof body.metadata === "object") {
-      data.metadata = body.metadata;
+    if (body.metadata && typeof body.metadata === "object" && "jobListing" in body.metadata) {
+      application.jobPostingLink = body.metadata.jobListing || null;
     }
+    if (Object.keys(application).length) data.application = { update: application };
 
     const updated = await prisma.interview.update({
       where: { id },
       data,
-      select,
+      select: interviewSelect,
     });
 
-    return NextResponse.json(updated);
+    return NextResponse.json(toInterviewDto(updated));
   } catch (error) {
     console.error("PUT /api/interview/[id] error", error);
     return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
@@ -134,7 +126,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const interview = await prisma.interview.findFirst({
       where: {
         id: Number(id),
-        user: { clerkId: user.id },
+        application: { user: { clerkId: user.id } },
       },
     })
 

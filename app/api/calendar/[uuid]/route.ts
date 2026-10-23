@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { interviewSelect, toInterviewDto } from "@/lib/interviews";
 
 interface InterviewWithRelations {
   id: number;
@@ -130,18 +131,14 @@ export async function GET(
     // Fetch only SCHEDULED interviews for this user that have a date or deadline
     const interviews = await prisma.interview.findMany({
       where: {
-        userId: user.id,
+        application: { userId: user.id },
         outcome: 'SCHEDULED',
         OR: [
           { date: { not: null } },
           { deadline: { not: null } },
         ],
       },
-      include: {
-        company: true,
-        stage: true,
-        stageMethod: true,
-      },
+      select: interviewSelect,
       orderBy: [
         { date: 'asc' },
         { deadline: 'asc' },
@@ -158,7 +155,7 @@ export async function GET(
     ical += 'X-WR-TIMEZONE:UTC\r\n';
 
     // Add each interview as an event
-    for (const interview of interviews) {
+    for (const interview of interviews.map(toInterviewDto)) {
       const event = generateICalEvent(interview);
       if (event) {
         ical += event;
