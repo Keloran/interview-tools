@@ -14,11 +14,11 @@ export default function GuestSync() {
       if (!user || syncedRef.current) return;
       const locals = listGuestInterviews();
       if (!locals.length) return;
-      // Create on server (companies are created implicitly by /api/interviews upsert)
+      // Create on server (companies are created implicitly by /api/interview upsert)
       for (const g of locals) {
         try {
           const dateISO = g.date ?? new Date().toISOString();
-          const res = await fetch("/api/interviews", {
+          const res = await fetch("/api/interview", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({

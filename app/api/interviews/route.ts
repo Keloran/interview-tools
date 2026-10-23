@@ -3,6 +3,7 @@ import {NextRequest, NextResponse} from "next/server"
 import prisma from "@/lib/prisma"
 import type {$Enums} from "@/app/generated/prisma/client"
 import {Prisma} from "@/app/generated/prisma/client"
+import {interviewSelect, toInterviewDto} from "@/lib/interviews"
 
 export async function GET(request: NextRequest) {
   const user = await currentUser()
@@ -41,28 +42,9 @@ export async function GET(request: NextRequest) {
       ? (!!companyName)
       : includePastParam === "true"
 
-    // Shared select
-    const select = {
-      id: true,
-      jobTitle: true,
-      interviewer: true,
-      company: { select: { id: true, name: true } },
-      clientCompany: true,
-      stage: { select: { id: true, stage: true } },
-      stageMethod: { select: { id: true, method: true } },
-      applicationDate: true,
-      date: true,
-      deadline: true,
-      outcome: true,
-      notes: true,
-      metadata: true,
-      link: true,
-    } as const
-
     // Build one dynamic where
-    // Dev override: use userId 12 in development
-    //const where : Prisma.InterviewWhereInput = { user: { id: 12 }}
-    const where: Prisma.InterviewWhereInput = {user: {clerkId: user.id}}
+    const application: Prisma.ApplicationWhereInput = {user: {clerkId: user.id}}
+    const where: Prisma.InterviewWhereInput = {application}
 
     // Date filters (consider both scheduled date and deadline)
     if (date) {
@@ -100,13 +82,12 @@ export async function GET(request: NextRequest) {
 
     // Company filters
     if (companyId) {
-      // Your schema has companyId on Interview, so use the FK directly
-      where.companyId = Number(companyId)
+      application.companyId = Number(companyId)
     } else if (companyName) {
       // Search both company name and clientCompany field
       const companyOr = [
-        {company: {name: {contains: companyName, mode: Prisma.QueryMode.insensitive}}},
-        {clientCompany: {contains: companyName, mode: Prisma.QueryMode.insensitive}},
+        {application: {company: {name: {contains: companyName, mode: Prisma.QueryMode.insensitive}}}},
+        {application: {clientCompany: {contains: companyName, mode: Prisma.QueryMode.insensitive}}},
       ]
       const andArray = Array.isArray(where.AND)
         ? where.AND
@@ -127,10 +108,10 @@ export async function GET(request: NextRequest) {
     // Free-text search across jobTitle, interviewer, company.name, and clientCompany
     if (q) {
       const or = [
-        {jobTitle: {contains: q, mode: Prisma.QueryMode.insensitive}},
+        {application: {jobTitle: {contains: q, mode: Prisma.QueryMode.insensitive}}},
         {interviewer: {contains: q, mode: Prisma.QueryMode.insensitive}},
-        {company: {name: {contains: q, mode: Prisma.QueryMode.insensitive}}},
-        {clientCompany: {contains: q, mode: Prisma.QueryMode.insensitive}},
+        {application: {company: {name: {contains: q, mode: Prisma.QueryMode.insensitive}}}},
+        {application: {clientCompany: {contains: q, mode: Prisma.QueryMode.insensitive}}},
       ]
       const andArray = Array.isArray(where.AND)
         ? where.AND
@@ -142,7 +123,7 @@ export async function GET(request: NextRequest) {
 
     const interviews = await prisma.interview.findMany({
       where,
-      select,
+      select: interviewSelect,
       orderBy: [
         {date: "asc"},
         {deadline: "asc"},
@@ -151,7 +132,7 @@ export async function GET(request: NextRequest) {
       skip,
     })
 
-    return NextResponse.json(interviews)
+    return NextResponse.json(interviews.map(toInterviewDto))
   } catch (error) {
     console.error(error)
     return NextResponse.json({ message: "Internal Server Error" }, { status: 500 })

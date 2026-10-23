@@ -1,3 +1,6 @@
+import { auth } from "@clerk/nextjs/server";
+import { redirect } from "next/navigation";
+import prisma from "@/lib/prisma";
 import {
   Card,
   CardContent,
@@ -6,60 +9,43 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-interface StalledApplication {
-  id: string;
-  companyName: string;
-  jobTitle: string;
-  applicationDate: string;
-  daysSinceApplication: number;
-  lastStage: string;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+async function getStalledApplications(clerkId: string) {
+  // Applied 30+ days ago and nothing has moved: every stage is still awaiting a response
+  const applications = await prisma.application.findMany({
+    where: {
+      user: { clerkId },
+      applicationDate: { lt: new Date(Date.now() - 30 * DAY_MS) },
+      interviews: { every: { OR: [{ outcome: "AWAITING_RESPONSE" }, { outcome: null }] } },
+    },
+    select: {
+      id: true,
+      jobTitle: true,
+      clientCompany: true,
+      applicationDate: true,
+      company: { select: { name: true } },
+      interviews: { select: { stage: { select: { stage: true } } }, orderBy: { created_at: "desc" }, take: 1 },
+    },
+    orderBy: { applicationDate: "asc" },
+  });
+
+  return applications.map((a) => ({
+    id: a.id,
+    companyName: a.clientCompany || a.company.name,
+    jobTitle: a.jobTitle,
+    applicationDate: a.applicationDate.toISOString().split("T")[0],
+    daysSinceApplication: Math.floor((Date.now() - a.applicationDate.getTime()) / DAY_MS),
+    lastStage: a.interviews[0]?.stage.stage ?? "Applied",
+  }));
 }
 
-// Hardcoded data - will be replaced with database query later
-const stalledApplications: StalledApplication[] = [
-  {
-    id: "1",
-    companyName: "Orbis",
-    jobTitle: "Senior Backend Engineer",
-    applicationDate: "2025-11-06",
-    daysSinceApplication: 48,
-    lastStage: "Applied",
-  },
-  {
-    id: "2",
-    companyName: "Experian",
-    jobTitle: "Software Engineer",
-    applicationDate: "2025-11-09",
-    daysSinceApplication: 45,
-    lastStage: "Applied",
-  },
-  {
-    id: "3",
-    companyName: "Burns Sheehan",
-    jobTitle: "Senior Product Engineer",
-    applicationDate: "2025-11-09",
-    daysSinceApplication: 45,
-    lastStage: "Applied",
-  },
-  {
-    id: "4",
-    companyName: "Atarus",
-    jobTitle: "Senior Software Engineer",
-    applicationDate: "2025-11-12",
-    daysSinceApplication: 42,
-    lastStage: "Applied",
-  },
-  {
-    id: "5",
-    companyName: "Trust in SODA",
-    jobTitle: "Senior Software Engineer",
-    applicationDate: "2025-11-13",
-    daysSinceApplication: 41,
-    lastStage: "Applied",
-  },
-];
+export default async function NoFeedbackPage() {
+  const { userId } = await auth();
+  if (!userId) redirect("/");
 
-export default function NoFeedbackPage() {
+  const stalledApplications = await getStalledApplications(userId);
+
   return (
     <div className="flex flex-col gap-6">
       <Card>

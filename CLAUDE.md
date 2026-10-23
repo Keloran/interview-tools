@@ -58,16 +58,18 @@ The app uses a multi-table relational model:
 
 - **User**: Created via Clerk webhook on signup, stores `clerkId`, email, name
 - **Company**: User-owned companies (unique per userId+name)
-- **Interview**: The core entity tracking each interview stage
-  - Links to Company, Stage, StageMethod
-  - Has `status` (APPLIED, SCHEDULED, COMPLETED, etc.)
-  - Has `outcome` (PASSED, REJECTED, OFFER_RECEIVED, etc.)
-  - Stores `applicationDate`, `date` (interview datetime), optional `deadline` for take-homes
-  - Contains `metadata` JSON field for flexible data like job posting URLs
+- **Application**: A job application (company, `jobTitle`, `clientCompany`, `applicationDate`, `jobPostingLink`)
+- **Interview** (table `InterviewStage`): One stage of an application
+  - Links to Application, Stage, StageMethod; `parentId` chains stages in order
+  - Has `outcome` (SCHEDULED, PASSED, REJECTED, AWAITING_RESPONSE, OFFER_RECEIVED, etc.)
+  - Stores `date` (interview datetime), optional `deadline` for take-homes
+- **LegacyInterview** (table `Interview`): Pre-Application data, copied into Application/Interview by migration `20261023000000_applications_and_stages`; kept read-only until dropped
 - **Stage**: Reference table for interview stages (e.g., "Phone Screen", "Technical", "Onsite")
 - **StageMethod**: Reference table for interview methods (e.g., "Phone", "Link")
 
-**Key constraint**: Interviews are unique per `[userId, companyId, jobTitle, applicationDate]` to prevent duplicates.
+**Key constraint**: Applications are unique per `[userId, companyId, jobTitle, applicationDate, clientCompany]`.
+
+**API responses** are flattened back to the old shape (`jobTitle`, `company`, `metadata.jobListing` on each interview) by `toInterviewDto` in `lib/interviews.ts`. Pass `previousInterviewId` to `POST /api/interview` to add a stage to an existing application.
 
 **Prisma output**: Generated client is in `app/generated/prisma/` (not the default location).
 
@@ -89,7 +91,7 @@ All routes authenticate via Clerk's `currentUser()`.
 - Returns interviews with nested company, stage, stageMethod data
 - Defaults to future-only interviews unless `includePast=true`
 
-**POST /api/interviews**
+**POST /api/interview**
 - Creates new interview
 - Auto-creates/upserts User, Company, Stage, StageMethod records
 - Required fields: `stage`, `companyName`, `jobTitle`

@@ -283,6 +283,7 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
           locationType?: "phone" | "link";
           interviewLink?: string;
           notes?: string;
+          previousInterviewId?: string;
         };
 
         const body: PostInterviewBody = {
@@ -295,6 +296,7 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
           locationType: isTechnicalTest ? undefined : locationType,
           interviewLink: isTechnicalTest ? undefined : interviewLink,
           notes: isTechnicalTest ? notes : undefined,
+          previousInterviewId: effectiveInterviewId,
         };
 
         if (isTechnicalTest) {
