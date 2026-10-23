@@ -10,7 +10,7 @@ const mockStages = [
   {id: 2, stage: 'Phone Screen'},
 ]
 const mockCompanies = [
-  {id: 1, name: 'Acme'},
+  {id: 1, name: 'Acme', applications: []},
 ]
 
 function mockFetchOnce() {

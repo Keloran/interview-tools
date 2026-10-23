@@ -18,8 +18,8 @@ describe('Components/Company', () => {
     global.fetch = vi.fn(async () => ({
       ok: true,
       json: async () => [
-        {id: 1, name: 'Acme'},
-        {id: 2, name: 'Beta'},
+        {id: 1, name: 'Acme', applications: []},
+        {id: 2, name: 'Beta', applications: []},
       ],
     })) as any
 
