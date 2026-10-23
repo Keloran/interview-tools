@@ -5,7 +5,7 @@ import {Card} from "@/components/ui/card";
 import {Button} from "@/components/ui/button";
 import {cn, getStageColor, isSameDay} from "@/lib/utils";
 import {useEffect, useMemo, useState} from "react";
-import {Clock, CornerUpRight, Pencil, X} from "lucide-react";
+import {CalendarClock, Clock, CornerUpRight, Pencil, X} from "lucide-react";
 import {useQuery, useQueryClient} from "@tanstack/react-query";
 import {useUser} from "@clerk/nextjs";
 import { getStageMethodButton } from "@/lib/utils/interviewMethod";
@@ -17,6 +17,7 @@ import {listGuestInterviews, removeGuestInterview} from "@/lib/guestStorage";
 import Link from "next/link";
 import InterviewInfo from "@/components/InterviewInfo";
 import InterviewEditForm from "@/components/InterviewEditForm";
+import ShareAvailability from "@/components/ShareAvailability";
 import {useFlags} from "@flags-gg/react-library";
 
 function inferStageMethodName(locationType?: string | null, interviewLink?: string | null): string {
@@ -117,6 +118,7 @@ export default function InterviewsList() {
   const setOutcomeFilter = useAppStore((s) => s.setFilteredOutcome);
   const [futureOnly, setFutureOnly] = useState(false);
   const [progressDialogOpen, setProgressDialogOpen] = useState(false);
+  const [availabilityDialogOpen, setAvailabilityDialogOpen] = useState(false);
   const [infoDialogOpen, setInfoDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedInterview, setSelectedInterview] = useState<Interview | null>(null);
@@ -432,6 +434,25 @@ export default function InterviewsList() {
                           <TooltipContent>Edit Interview Details</TooltipContent>
                         </Tooltip>
                       )}
+                      {!["REJECTED", "WITHDREW", "OFFER_ACCEPTED", "OFFER_DECLINED"].includes(interview.outcome.toUpperCase()) && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant={"ghost"}
+                              size={"sm"}
+                              className={"cursor-pointer"}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedInterview(interview);
+                                setAvailabilityDialogOpen(true);
+                              }}
+                            >
+                              <CalendarClock />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Share your availability for the next stage</TooltipContent>
+                        </Tooltip>
+                      )}
                       {interview.outcome.toLowerCase() !== "rejected" && interview.outcome.toLowerCase() !== "passed"  && (
                         <>
                           <Tooltip>
@@ -532,6 +553,21 @@ export default function InterviewsList() {
               submitLabel="Schedule Next Stage"
             />
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={availabilityDialogOpen}
+        onOpenChange={(open) => {
+          setAvailabilityDialogOpen(open);
+          if (!open) router.refresh();
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Share availability - {selectedInterview?.title}</DialogTitle>
+          </DialogHeader>
+          {selectedInterview && <ShareAvailability key={selectedInterview.id} interviewId={selectedInterview.id} />}
         </DialogContent>
       </Dialog>
 
