@@ -57,6 +57,8 @@ vi.mock('@/lib/prisma', () => {
       stage: {findMany: fn(), upsert: fn()},
       stageMethod: {findFirst: fn(), create: fn()},
       interview: {findMany: fn(), findFirst: fn(), create: fn(), update: fn()},
+      availabilityLink: {create: fn(), findUnique: fn(), updateMany: fn(), update: fn()},
+      $transaction: fn(),
     },
   }
 })

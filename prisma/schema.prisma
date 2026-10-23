@@ -67,53 +67,72 @@ model LegacyInterview {
 
 // Application represents a job application - the root entity for tracking
 model Application {
-  id              Int               @id @default(autoincrement())
-  userId          Int
-  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  companyId       Int
-  company         Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  clientCompany   String?           // End client company (for recruitment agencies)
-  jobTitle        String            // Role you're applying for
-  applicationDate DateTime          // When you applied for this job
-  jobPostingLink  String?           // URL of job posting
-  interviews      Interview[]
-  created_at      DateTime          @default(now())
-  updated_at      DateTime          @updatedAt
+  id                Int                @id @default(autoincrement())
+  userId            Int
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companyId         Int
+  company           Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  clientCompany     String? // End client company (for recruitment agencies)
+  jobTitle          String // Role you're applying for
+  applicationDate   DateTime // When you applied for this job
+  jobPostingLink    String? // URL of job posting
+  interviews        Interview[]
+  availabilityLinks AvailabilityLink[]
+  created_at        DateTime           @default(now())
+  updated_at        DateTime           @updatedAt
 
   @@unique([userId, companyId, jobTitle, applicationDate, clientCompany])
 }
 
+// Shareable "here's when I'm free" link for an application's next stage; booking a slot schedules it
+model AvailabilityLink {
+  id              String      @id @default(uuid())
+  applicationId   Int
+  application     Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  stageId         Int
+  stage           Stage       @relation(fields: [stageId], references: [id])
+  durationMinutes Int         @default(60)
+  meetingLink     String?
+  slots           DateTime[]
+  bookedSlot      DateTime?
+  interviewId     Int?        @unique
+  interview       Interview?  @relation(fields: [interviewId], references: [id], onDelete: SetNull)
+  created_at      DateTime    @default(now())
+}
+
 // Interview represents a single interview stage within an application
 model Interview {
-  id              Int               @id @default(autoincrement())
-  applicationId   Int
-  application     Application       @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  stageId         Int
-  stage           Stage             @relation(fields: [stageId], references: [id])
-  stageMethodId   Int
-  stageMethod     StageMethod       @relation(fields: [stageMethodId], references: [id])
-  interviewer     String?           // Name of person interviewing you
-  date            DateTime?         // When this interview stage is scheduled
-  deadline        DateTime?         // For take-home tests
-  outcome         InterviewOutcome?
-  notes           String?           @db.Text
-  link            String?           // Meeting link (Teams, Google Meet, etc.)
-  created_at      DateTime          @default(now())
-  updated_at      DateTime          @updatedAt
+  id            Int               @id @default(autoincrement())
+  applicationId Int
+  application   Application       @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  stageId       Int
+  stage         Stage             @relation(fields: [stageId], references: [id])
+  stageMethodId Int
+  stageMethod   StageMethod       @relation(fields: [stageMethodId], references: [id])
+  interviewer   String? // Name of person interviewing you
+  date          DateTime? // When this interview stage is scheduled
+  deadline      DateTime? // For take-home tests
+  outcome       InterviewOutcome?
+  notes         String?           @db.Text
+  link          String? // Meeting link (Teams, Google Meet, etc.)
+  created_at    DateTime          @default(now())
+  updated_at    DateTime          @updatedAt
 
   // Parent-child for ordering within the application
-  parentId        Int?
-  parent          Interview?        @relation("InterviewChain", fields: [parentId], references: [id], onDelete: SetNull)
-  children        Interview[]       @relation("InterviewChain")
+  parentId         Int?
+  parent           Interview?        @relation("InterviewChain", fields: [parentId], references: [id], onDelete: SetNull)
+  children         Interview[]       @relation("InterviewChain")
+  availabilityLink AvailabilityLink?
 
   @@map("InterviewStage") // New table name to avoid conflict
 }
 
 model Stage {
-  id               Int               @id @default(autoincrement())
-  stage            String            @unique
-  interviews       Interview[]
-  legacyInterviews LegacyInterview[]
+  id                Int                @id @default(autoincrement())
+  stage             String             @unique
+  interviews        Interview[]
+  legacyInterviews  LegacyInterview[]
+  availabilityLinks AvailabilityLink[]
 }
 
 model StageMethod {
