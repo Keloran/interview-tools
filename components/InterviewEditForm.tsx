@@ -13,6 +13,7 @@ import DurationSelect from "@/components/DurationSelect";
 import { editInterviewSchema, type EditInterviewData } from "@/lib/validations/interview";
 import { deriveMethodFromLink } from "@/lib/utils/interviewMethod";
 import {reportClientError} from "@/lib/reportClientError";
+import { toISODate } from "@/lib/utils";
 
 type EditFormValues = EditInterviewData;
 
@@ -102,7 +103,7 @@ export default function InterviewEditForm({ interviewId, onSuccess }: InterviewE
 
       // Format date as YYYY-MM-DD for date input
       const formattedDate = interviewDate
-        ? interviewDate.toISOString().split('T')[0]
+        ? toISODate(interviewDate) // local, matching the local time below
         : "";
 
       // Format time as HH:MM for time input (using local timezone)

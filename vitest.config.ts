@@ -1,6 +1,10 @@
 import {defineConfig} from 'vitest/config'
 import react from '@vitejs/plugin-react'
 
+// Not UTC on purpose: local-vs-UTC date bugs only show up east/west of UTC (and the users are in the UK).
+// Set here so the test workers inherit it; changing TZ inside a test file doesn't reach them.
+process.env.TZ = 'Europe/London'
+
 export default defineConfig({
   plugins: [react()],
   test: {
