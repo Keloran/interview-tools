@@ -607,7 +607,7 @@ export default function InterviewsList() {
           <DialogHeader>
             <DialogTitle>Share availability - {selectedInterview?.title}</DialogTitle>
           </DialogHeader>
-          {selectedInterview && <ShareAvailability key={selectedInterview.id} interviewId={selectedInterview.id} />}
+          {selectedInterview && <ShareAvailability key={selectedInterview.id} interviewId={selectedInterview.id} currentStage={selectedInterview.stage} />}
         </DialogContent>
       </Dialog>
 

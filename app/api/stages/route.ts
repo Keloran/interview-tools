@@ -2,6 +2,7 @@ import {NextResponse} from "next/server";
 import prisma from "@/lib/prisma";
 import {currentUser} from "@clerk/nextjs/server";
 import {reportError} from "@/lib/bugfixes";
+import {sortStages} from "@/lib/stages";
 
 export async function GET() {
   const user = await currentUser();
@@ -12,10 +13,9 @@ export async function GET() {
   try {
     const stages = await prisma.stage.findMany({
       select: { id: true, stage: true },
-      orderBy: { stage: "asc" },
     });
 
-    return NextResponse.json(stages);
+    return NextResponse.json(sortStages(stages));
   } catch (error) {
     reportError("GET /api/stages error", error);
     return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });

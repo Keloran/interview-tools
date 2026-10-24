@@ -21,6 +21,8 @@ import {interviewFormSchema} from "@/lib/validations/interview";
 import {Separator} from "@/components/ui/separator";
 import {CompanyHistory, findPreviousApplications, timeAgo} from "@/lib/applications";
 import {cn, toISODate} from "@/lib/utils";
+import {nextStage, sortStages} from "@/lib/stages";
+import StageCombobox from "@/components/StageCombobox";
 import DurationSelect from "@/components/DurationSelect";
 import {reportClientError} from "@/lib/reportClientError";
 
@@ -59,7 +61,7 @@ interface Stage {
 }
 
 // Fallback stages for unsigned (guest) users
-const guestStages: Stage[] = [
+const guestStages: Stage[] = sortStages([
   { id: 1, stage: "Phone Screen" },
   { id: 2, stage: "First Stage" },
   { id: 3, stage: "Second Stage" },
@@ -69,7 +71,7 @@ const guestStages: Stage[] = [
   { id: 7, stage: "Final Stage" },
   { id: 8, stage: "Applied" },
   { id: 9, stage: "Technical Interview" },
-];
+]);
 
 async function getCompanies() {
   const res = await fetch(`/api/companies`, { method: "GET" });
@@ -109,7 +111,7 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
     ? toISODate(initialDate) // local: toISOString gives the previous day east of UTC
     : initialValues?.date || "";
 
-  const [stage, setStage] = useState<InterviewFormValues["stage"]>(initialValues?.stage || "Applied");
+  const [stage, setStage] = useState<InterviewFormValues["stage"]>(initialValues?.stage || ""); // "" = use the default below
   const [companyName, setCompanyName] = useState(initialValues?.companyName || "");
   const [clientCompany, setClientCompany] = useState(initialValues?.clientCompany || "");
   const [jobTitle, setJobTitle] = useState(initialValues?.jobTitle || "");
@@ -147,11 +149,16 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
 
   const effectiveStages: Stage[] | undefined = user ? stages : guestStages;
 
-  // Compute a default stage without causing setState inside an effect
+  // When progressing, Applied is already behind you
+  const stageOptions = effectiveStages?.filter((s) => !(isProgressing && s.stage === "Applied"));
+
+  // Compute a default stage without causing setState inside an effect:
+  // progressing defaults to the stage after the current one, a new application to Applied
   const defaultStage = ((): string => {
-    if (!effectiveStages || effectiveStages.length === 0) return "Applied";
-    const applied = effectiveStages.find((s) => s.stage.toLowerCase() === "applied");
-    return applied ? applied.stage : effectiveStages[0].stage;
+    if (!stageOptions || stageOptions.length === 0) return isProgressing ? "" : "Applied";
+    if (isProgressing) return nextStage(interviewData?.stage?.stage, stageOptions) ?? stageOptions[0].stage;
+    const applied = stageOptions.find((s) => s.stage.toLowerCase() === "applied");
+    return applied ? applied.stage : stageOptions[0].stage;
   })();
 
   const selectedStage = stage || defaultStage;
@@ -342,22 +349,13 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
     <div className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="interview-stage">Interview Stage</Label>
-        <Select value={selectedStage} onValueChange={(v) => setStage(v as InterviewFormValues["stage"])}>
-          <SelectTrigger id="interview-stage">
-            <SelectValue placeholder={effectiveStages ? "Select a stage" : "Loading..."} />
-          </SelectTrigger>
-          <SelectContent>
-            {effectiveStages
-              ?.filter((s) => {
-                // When progressing, exclude "Applied" since we've already passed that stage
-                return !(isProgressing && s.stage === "Applied");
-
-              })
-              .map((s) => (
-                <SelectItem key={s.id} value={s.stage}>{s.stage}</SelectItem>
-              ))}
-          </SelectContent>
-        </Select>
+        <StageCombobox
+          id="interview-stage"
+          stages={stageOptions}
+          value={selectedStage}
+          onChange={(v) => setStage(v as InterviewFormValues["stage"])}
+          placeholder="Select a stage"
+        />
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">

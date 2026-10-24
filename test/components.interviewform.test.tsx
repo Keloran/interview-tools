@@ -76,4 +76,22 @@ describe('Components/InterviewForm', () => {
     await user.click(btn)
     expect(onSubmit).not.toHaveBeenCalled()
   })
+
+  it('progressing defaults to the stage after the current one', async () => {
+    const responses: Record<string, unknown> = {
+      '/api/interview/7': {id: 7, jobTitle: 'SE', company: {id: 1, name: 'Acme'}, stage: {id: 2, stage: 'Phone Screen'}},
+      '/api/companies': mockCompanies,
+      '/api/stages': [{id: 1, stage: 'Applied'}, {id: 2, stage: 'Phone Screen'}, {id: 3, stage: 'First Stage'}, {id: 4, stage: 'Offer'}],
+    }
+    global.fetch = vi.fn(async (url: string) => ({ok: true, json: async () => responses[new URL(url, 'http://x').pathname]})) as any
+
+    render(
+      <Providers>
+        <InterviewForm interviewId="7" onSuccess={vi.fn()} submitLabel="Schedule Next Stage"/>
+      </Providers>
+    )
+
+    // the label names the combobox; the picked stage is its text
+    await screen.findByText('First Stage', {selector: '#interview-stage span'})
+  })
 })

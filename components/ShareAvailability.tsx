@@ -2,15 +2,16 @@
 
 import {useState} from "react";
 import {useQuery, useQueryClient} from "@tanstack/react-query";
-import {ChevronLeft, ChevronRight, X} from "lucide-react";
+import {Check, ChevronLeft, ChevronRight, X} from "lucide-react";
 import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
 import {Label} from "@/components/ui/label";
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
+import StageCombobox from "@/components/StageCombobox";
+import {nextStage} from "@/lib/stages";
 import DurationSelect from "@/components/DurationSelect";
 import {GAP_BETWEEN_MINUTES, suggestSlots} from "@/lib/availability";
 import {addDays, getBusy} from "@/lib/busy";
-import {cn, toISODate} from "@/lib/utils";
+import {toISODate} from "@/lib/utils";
 import {reportClientError} from "@/lib/reportClientError";
 import AvailabilityLinks from "@/components/AvailabilityLinks";
 
@@ -19,14 +20,15 @@ type Stage = { id: number; stage: string };
 const timeFmt = new Intl.DateTimeFormat(undefined, {hour: "numeric", minute: "2-digit"});
 const slotFmt = new Intl.DateTimeFormat(undefined, {weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit"});
 
-export default function ShareAvailability({interviewId}: { interviewId: string }) {
+// currentStage: the stage this interview is at, so the next one can be picked for you
+export default function ShareAvailability({interviewId, currentStage}: { interviewId: string; currentStage?: string }) {
   const queryClient = useQueryClient();
   const {data: stages} = useQuery<Stage[]>({
     queryKey: ["stages"],
     queryFn: async () => (await fetch("/api/stages")).json(),
   });
 
-  const [stage, setStage] = useState("");
+  const [pickedStage, setStage] = useState(""); // "" = the stage after currentStage
   const [duration, setDuration] = useState(60);
   const [meetingLink, setMeetingLink] = useState("");
   const [day, setDay] = useState(() => addDays(toISODate(new Date()), 1));
@@ -37,6 +39,8 @@ export default function ShareAvailability({interviewId}: { interviewId: string }
 
   const {data: busy, isLoading: loadingBusy} = useQuery({queryKey: ["busy", day], queryFn: () => getBusy(day)});
   const suggestions = busy ? suggestSlots(new Date(`${day}T00:00`), duration, busy) : [];
+  const stageOptions = stages?.filter((s) => s.stage !== "Applied");
+  const stage = pickedStage || (stageOptions && nextStage(currentStage, stageOptions)) || "";
   const toggle = (iso: string) => setSlots(slots.includes(iso) ? slots.filter((s) => s !== iso) : [...slots, iso].sort());
 
   const create = async () => {
@@ -79,16 +83,12 @@ export default function ShareAvailability({interviewId}: { interviewId: string }
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2">
           <Label htmlFor="availability-stage">Next stage</Label>
-          <Select value={stage} onValueChange={setStage}>
-            <SelectTrigger id="availability-stage" className="w-full">
-              <SelectValue placeholder={stages ? "Choose…" : "Loading..."} />
-            </SelectTrigger>
-            <SelectContent>
-              {stages?.filter((s) => s.stage !== "Applied").map((s) => (
-                <SelectItem key={s.id} value={s.stage}>{s.stage}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <StageCombobox
+            id="availability-stage"
+            stages={stageOptions}
+            value={stage}
+            onChange={setStage}
+          />
         </div>
         <div className="space-y-2">
           <Label htmlFor="availability-duration">Length</Label>
@@ -121,16 +121,20 @@ export default function ShareAvailability({interviewId}: { interviewId: string }
           <div className="flex flex-wrap gap-2">
             {suggestions.map((d) => {
               const iso = d.toISOString();
+              const picked = slots.includes(iso);
               return (
                 <Button
                   key={iso}
                   type="button"
-                  variant="outline"
+                  // filled + tick when picked, so it's obvious clicking again removes it
+                  variant={picked ? "default" : "outline"}
                   size="sm"
-                  aria-pressed={slots.includes(iso)}
-                  className={cn("cursor-pointer", slots.includes(iso) && "border-primary bg-primary/10")}
+                  aria-pressed={picked}
+                  title={picked ? "Picked: click to remove" : "Click to offer this time"}
+                  className="cursor-pointer"
                   onClick={() => toggle(iso)}
                 >
+                  {picked && <Check />}
                   {timeFmt.format(d)}
                 </Button>
               );
