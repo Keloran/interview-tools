@@ -2,7 +2,7 @@
 
 import {useState} from "react";
 import {useQuery, useQueryClient} from "@tanstack/react-query";
-import {ChevronLeft, ChevronRight, X} from "lucide-react";
+import {Check, ChevronLeft, ChevronRight, X} from "lucide-react";
 import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
 import {Label} from "@/components/ui/label";
@@ -10,7 +10,7 @@ import StageCombobox from "@/components/StageCombobox";
 import DurationSelect from "@/components/DurationSelect";
 import {GAP_BETWEEN_MINUTES, suggestSlots} from "@/lib/availability";
 import {addDays, getBusy} from "@/lib/busy";
-import {cn, toISODate} from "@/lib/utils";
+import {toISODate} from "@/lib/utils";
 import {reportClientError} from "@/lib/reportClientError";
 import AvailabilityLinks from "@/components/AvailabilityLinks";
 
@@ -117,16 +117,20 @@ export default function ShareAvailability({interviewId}: { interviewId: string }
           <div className="flex flex-wrap gap-2">
             {suggestions.map((d) => {
               const iso = d.toISOString();
+              const picked = slots.includes(iso);
               return (
                 <Button
                   key={iso}
                   type="button"
-                  variant="outline"
+                  // filled + tick when picked, so it's obvious clicking again removes it
+                  variant={picked ? "default" : "outline"}
                   size="sm"
-                  aria-pressed={slots.includes(iso)}
-                  className={cn("cursor-pointer", slots.includes(iso) && "border-primary bg-primary/10")}
+                  aria-pressed={picked}
+                  title={picked ? "Picked: click to remove" : "Click to offer this time"}
+                  className="cursor-pointer"
                   onClick={() => toggle(iso)}
                 >
+                  {picked && <Check />}
                   {timeFmt.format(d)}
                 </Button>
               );
