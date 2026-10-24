@@ -6,10 +6,9 @@ import {Plus, Trash2} from "lucide-react";
 import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
 import {Label} from "@/components/ui/label";
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
 
 type Stage = { id: number; stage: string };
-
-const selectClass = "h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm";
 
 export default function ShareAvailability({interviewId}: { interviewId: string }) {
   const {data: stages} = useQuery<Stage[]>({
@@ -83,18 +82,27 @@ export default function ShareAvailability({interviewId}: { interviewId: string }
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2">
           <Label htmlFor="availability-stage">Next stage</Label>
-          <select id="availability-stage" className={selectClass} value={stage} onChange={(e) => setStage(e.target.value)}>
-            <option value="" disabled>Choose…</option>
-            {stages?.filter((s) => s.stage !== "Applied").map((s) => (
-              <option key={s.id} value={s.stage}>{s.stage}</option>
-            ))}
-          </select>
+          <Select value={stage} onValueChange={setStage}>
+            <SelectTrigger id="availability-stage" className="w-full">
+              <SelectValue placeholder={stages ? "Choose…" : "Loading..."} />
+            </SelectTrigger>
+            <SelectContent>
+              {stages?.filter((s) => s.stage !== "Applied").map((s) => (
+                <SelectItem key={s.id} value={s.stage}>{s.stage}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div className="space-y-2">
           <Label htmlFor="availability-duration">Length</Label>
-          <select id="availability-duration" className={selectClass} value={duration} onChange={(e) => setDuration(e.target.value)}>
-            {[30, 45, 60, 90, 120].map((m) => <option key={m} value={m}>{m} minutes</option>)}
-          </select>
+          <Select value={duration} onValueChange={setDuration}>
+            <SelectTrigger id="availability-duration" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {[30, 45, 60, 90, 120].map((m) => <SelectItem key={m} value={String(m)}>{m} minutes</SelectItem>)}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
