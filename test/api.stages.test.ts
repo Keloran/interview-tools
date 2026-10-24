@@ -22,16 +22,19 @@ describe('GET /api/stages', () => {
   it('returns stages when authorized', async () => {
     ;(currentUser as any).mockResolvedValueOnce({id: 'user_123'})
     ;(prisma.stage.findMany as any).mockResolvedValueOnce([
-      {id: 1, stage: 'Applied'},
+      {id: 3, stage: 'Offer'},
       {id: 2, stage: 'Phone Screen'},
+      {id: 1, stage: 'Applied'},
     ])
 
     // @ts-expect-error request not used
     const res = await GET({})
     expect(res.status).toBe(200)
+    // process order, not alphabetical
     expect(await res.json()).toEqual([
       {id: 1, stage: 'Applied'},
       {id: 2, stage: 'Phone Screen'},
+      {id: 3, stage: 'Offer'},
     ])
   })
 

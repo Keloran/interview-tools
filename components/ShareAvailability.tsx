@@ -6,7 +6,7 @@ import {ChevronLeft, ChevronRight, X} from "lucide-react";
 import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
 import {Label} from "@/components/ui/label";
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
+import StageCombobox from "@/components/StageCombobox";
 import DurationSelect from "@/components/DurationSelect";
 import {GAP_BETWEEN_MINUTES, suggestSlots} from "@/lib/availability";
 import {addDays, getBusy} from "@/lib/busy";
@@ -79,16 +79,12 @@ export default function ShareAvailability({interviewId}: { interviewId: string }
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2">
           <Label htmlFor="availability-stage">Next stage</Label>
-          <Select value={stage} onValueChange={setStage}>
-            <SelectTrigger id="availability-stage" className="w-full">
-              <SelectValue placeholder={stages ? "Choose…" : "Loading..."} />
-            </SelectTrigger>
-            <SelectContent>
-              {stages?.filter((s) => s.stage !== "Applied").map((s) => (
-                <SelectItem key={s.id} value={s.stage}>{s.stage}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <StageCombobox
+            id="availability-stage"
+            stages={stages?.filter((s) => s.stage !== "Applied")}
+            value={stage}
+            onChange={setStage}
+          />
         </div>
         <div className="space-y-2">
           <Label htmlFor="availability-duration">Length</Label>

@@ -21,6 +21,7 @@ import {interviewFormSchema} from "@/lib/validations/interview";
 import {Separator} from "@/components/ui/separator";
 import {CompanyHistory, findPreviousApplications, timeAgo} from "@/lib/applications";
 import {cn, toISODate} from "@/lib/utils";
+import {sortStages} from "@/lib/stages";
 import DurationSelect from "@/components/DurationSelect";
 import {reportClientError} from "@/lib/reportClientError";
 
@@ -59,7 +60,7 @@ interface Stage {
 }
 
 // Fallback stages for unsigned (guest) users
-const guestStages: Stage[] = [
+const guestStages: Stage[] = sortStages([
   { id: 1, stage: "Phone Screen" },
   { id: 2, stage: "First Stage" },
   { id: 3, stage: "Second Stage" },
@@ -69,7 +70,7 @@ const guestStages: Stage[] = [
   { id: 7, stage: "Final Stage" },
   { id: 8, stage: "Applied" },
   { id: 9, stage: "Technical Interview" },
-];
+]);
 
 async function getCompanies() {
   const res = await fetch(`/api/companies`, { method: "GET" });
