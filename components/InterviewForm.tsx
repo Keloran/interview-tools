@@ -22,6 +22,7 @@ import {Separator} from "@/components/ui/separator";
 import {CompanyHistory, findPreviousApplications, timeAgo} from "@/lib/applications";
 import {cn} from "@/lib/utils";
 import DurationSelect from "@/components/DurationSelect";
+import {reportClientError} from "@/lib/reportClientError";
 
 export type LocationType = "phone" | "link";
 
@@ -270,7 +271,7 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
           });
 
           if (!updateRes.ok) {
-            console.error("Failed to update previous interview", await updateRes.text());
+            reportClientError("Failed to update previous interview", await updateRes.text());
             return;
           }
         }
@@ -318,7 +319,7 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
         });
 
         if (!res.ok) {
-          console.error("Failed to create interview", await res.text());
+          reportClientError("Failed to create interview", await res.text());
           return;
         }
 
@@ -328,7 +329,7 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
         router.refresh();
         onSuccess();
       } catch (e) {
-        console.error(e);
+        reportClientError("Failed to save interview", e);
       } finally {
         setIsSubmitting(false);
       }

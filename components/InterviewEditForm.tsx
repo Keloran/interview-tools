@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import DurationSelect from "@/components/DurationSelect";
 import { editInterviewSchema, type EditInterviewData } from "@/lib/validations/interview";
 import { deriveMethodFromLink } from "@/lib/utils/interviewMethod";
+import {reportClientError} from "@/lib/reportClientError";
 
 type EditFormValues = EditInterviewData;
 
@@ -192,7 +193,7 @@ export default function InterviewEditForm({ interviewId, onSuccess }: InterviewE
         onSuccess();
       }
     } catch (error) {
-      console.error("Failed to update interview:", error);
+      reportClientError("Failed to update interview", error);
     } finally {
       setIsSubmitting(false);
     }

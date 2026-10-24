@@ -20,6 +20,7 @@ import InterviewEditForm from "@/components/InterviewEditForm";
 import ShareAvailability from "@/components/ShareAvailability";
 import FreeTimes from "@/components/FreeTimes";
 import {useFlags} from "@flags-gg/react-library";
+import {reportClientError} from "@/lib/reportClientError";
 
 function inferStageMethodName(locationType?: string | null, interviewLink?: string | null): string {
   if (locationType === "phone") return "Phone";
@@ -227,7 +228,7 @@ export default function InterviewsList() {
       // Invalidate queries to refetch data
       queryClient.invalidateQueries({ queryKey: ["interviews"] });
     } catch (error) {
-      console.error("Failed to reject interview:", error);
+      reportClientError("Failed to reject interview", error);
     } finally {
       router.refresh()
     }
@@ -259,7 +260,7 @@ export default function InterviewsList() {
       // Invalidate queries to refetch data
       queryClient.invalidateQueries({ queryKey: ["interviews"] });
     } catch (error) {
-      console.error(`Failed to set ${outcome} on interview:`, error);
+      reportClientError(`Failed to set ${outcome} on interview`, error);
     } finally {
       router.refresh()
     }
