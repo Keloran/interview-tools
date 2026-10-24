@@ -7,7 +7,12 @@ vi.mock('@/components/AvailabilityLinks', () => ({default: () => null}))
 vi.mock('@tanstack/react-query', () => ({
   useQueryClient: () => ({invalidateQueries: vi.fn()}),
   // no other interviews that day, so every time between 9 and 6 is free
-  useQuery: ({queryKey}: {queryKey: string[]}) => ({data: queryKey[0] === 'busy' ? [] : [], isLoading: false}),
+  useQuery: ({queryKey}: {queryKey: string[]}) => ({
+    data: queryKey[0] === 'stages'
+      ? [{id: 1, stage: 'Applied'}, {id: 2, stage: 'Phone Screen'}, {id: 3, stage: 'First Stage'}, {id: 4, stage: 'Offer'}]
+      : [],
+    isLoading: false,
+  }),
 }))
 
 describe('ShareAvailability time picking', () => {
@@ -24,5 +29,10 @@ describe('ShareAvailability time picking', () => {
     await user.click(time)
     expect(time.getAttribute('aria-pressed')).toBe('false')
     expect(time.querySelector('svg')).toBeNull()
+  })
+
+  it('picks the next stage for you, which you can still change', () => {
+    render(<ShareAvailability interviewId="1" currentStage="Phone Screen"/>)
+    expect(document.getElementById('availability-stage')?.textContent).toBe('First Stage')
   })
 })

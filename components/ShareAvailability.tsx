@@ -7,6 +7,7 @@ import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
 import {Label} from "@/components/ui/label";
 import StageCombobox from "@/components/StageCombobox";
+import {nextStage} from "@/lib/stages";
 import DurationSelect from "@/components/DurationSelect";
 import {GAP_BETWEEN_MINUTES, suggestSlots} from "@/lib/availability";
 import {addDays, getBusy} from "@/lib/busy";
@@ -19,14 +20,15 @@ type Stage = { id: number; stage: string };
 const timeFmt = new Intl.DateTimeFormat(undefined, {hour: "numeric", minute: "2-digit"});
 const slotFmt = new Intl.DateTimeFormat(undefined, {weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit"});
 
-export default function ShareAvailability({interviewId}: { interviewId: string }) {
+// currentStage: the stage this interview is at, so the next one can be picked for you
+export default function ShareAvailability({interviewId, currentStage}: { interviewId: string; currentStage?: string }) {
   const queryClient = useQueryClient();
   const {data: stages} = useQuery<Stage[]>({
     queryKey: ["stages"],
     queryFn: async () => (await fetch("/api/stages")).json(),
   });
 
-  const [stage, setStage] = useState("");
+  const [pickedStage, setStage] = useState(""); // "" = the stage after currentStage
   const [duration, setDuration] = useState(60);
   const [meetingLink, setMeetingLink] = useState("");
   const [day, setDay] = useState(() => addDays(toISODate(new Date()), 1));
@@ -37,6 +39,8 @@ export default function ShareAvailability({interviewId}: { interviewId: string }
 
   const {data: busy, isLoading: loadingBusy} = useQuery({queryKey: ["busy", day], queryFn: () => getBusy(day)});
   const suggestions = busy ? suggestSlots(new Date(`${day}T00:00`), duration, busy) : [];
+  const stageOptions = stages?.filter((s) => s.stage !== "Applied");
+  const stage = pickedStage || (stageOptions && nextStage(currentStage, stageOptions)) || "";
   const toggle = (iso: string) => setSlots(slots.includes(iso) ? slots.filter((s) => s !== iso) : [...slots, iso].sort());
 
   const create = async () => {
@@ -81,7 +85,7 @@ export default function ShareAvailability({interviewId}: { interviewId: string }
           <Label htmlFor="availability-stage">Next stage</Label>
           <StageCombobox
             id="availability-stage"
-            stages={stages?.filter((s) => s.stage !== "Applied")}
+            stages={stageOptions}
             value={stage}
             onChange={setStage}
           />

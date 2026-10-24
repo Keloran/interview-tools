@@ -18,6 +18,14 @@ const rank = (stage: string) => {
   return i === -1 ? CUSTOM : i;
 };
 
+const compare = (a: string, b: string) => rank(a) - rank(b) || a.localeCompare(b, undefined, {sensitivity: "base"});
+
 export function sortStages<T extends { stage: string }>(stages: T[]): T[] {
-  return [...stages].sort((a, b) => rank(a.stage) - rank(b.stage) || a.stage.localeCompare(b.stage));
+  return [...stages].sort((a, b) => compare(a.stage, b.stage));
+}
+
+// The stage that logically follows `current` (e.g. Phone Screen -> First Stage); none after Offer
+export function nextStage(current: string | undefined, stages: { stage: string }[]): string | undefined {
+  if (!current) return undefined;
+  return sortStages(stages).find((s) => compare(s.stage, current) > 0)?.stage;
 }
