@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import {Prisma} from "@/app/generated/prisma/client";
 import {inferStageMethodName} from "@/lib/utils";
 import {isOfferedSlot, openSlots} from "@/lib/availability";
+import {reportError} from "@/lib/bugfixes";
 
 class BookingError extends Error {
   constructor(message: string, public status: number) {
@@ -96,12 +97,13 @@ export async function POST(request: NextRequest, {params}: { params: Promise<{ i
       return NextResponse.json({message: "Someone else is booking right now, please try again"}, {status: 409});
     }
     // ponytail: a concurrent booking has occasionally surfaced here as an unclassified error (seen twice, not reproducible);
-    // whatever it was, if the link is now booked the honest answer is "already booked"
+    // whatever it was, if the link is now booked the honest answer is "already booked". Still reported so we learn what it is.
     const current = await prisma.availabilityLink.findUnique({where: {id}, select: {bookedSlot: true}}).catch(() => null);
     if (current?.bookedSlot) {
+      reportError("POST /api/availability/[id] lost a concurrent booking with an unexpected error", error);
       return NextResponse.json({message: "Already booked"}, {status: 409});
     }
-    console.error("POST /api/availability/[id] error", error);
+    reportError("POST /api/availability/[id] error", error);
     return NextResponse.json({message: "Internal Server Error"}, {status: 500});
   }
 }

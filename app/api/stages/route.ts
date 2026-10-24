@@ -1,6 +1,7 @@
 import {NextResponse} from "next/server";
 import prisma from "@/lib/prisma";
 import {currentUser} from "@clerk/nextjs/server";
+import {reportError} from "@/lib/bugfixes";
 
 export async function GET() {
   const user = await currentUser();
@@ -16,7 +17,7 @@ export async function GET() {
 
     return NextResponse.json(stages);
   } catch (error) {
-    console.error("GET /api/stages error", error);
+    reportError("GET /api/stages error", error);
     return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
   }
 }

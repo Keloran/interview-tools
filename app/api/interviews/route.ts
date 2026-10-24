@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma"
 import type {$Enums} from "@/app/generated/prisma/client"
 import {Prisma} from "@/app/generated/prisma/client"
 import {interviewSelect, toInterviewDto} from "@/lib/interviews"
+import {reportError} from "@/lib/bugfixes"
 
 export async function GET(request: NextRequest) {
   const user = await currentUser()
@@ -134,7 +135,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(interviews.map(toInterviewDto))
   } catch (error) {
-    console.error(error)
+    reportError(error)
     return NextResponse.json({ message: "Internal Server Error" }, { status: 500 })
   }
 }

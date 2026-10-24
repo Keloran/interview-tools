@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { Prisma } from "@/app/generated/prisma/client";
 import type { $Enums } from "@/app/generated/prisma/client";
 import { interviewSelect, toInterviewDto } from "@/lib/interviews";
+import {reportError} from "@/lib/bugfixes";
 
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const user = await currentUser();
@@ -27,7 +28,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 
     return NextResponse.json(toInterviewDto(interview));
   } catch (error) {
-    console.error("GET /api/interview/[id] error", error);
+    reportError("GET /api/interview/[id] error", error);
     return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
   }
 }
@@ -104,7 +105,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json(toInterviewDto(updated));
   } catch (error) {
-    console.error("PUT /api/interview/[id] error", error);
+    reportError("PUT /api/interview/[id] error", error);
     return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
   }
 }
@@ -149,7 +150,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     return NextResponse.json(updated)
   } catch (error) {
-    console.error("PATCH /api/interview/[id] error", error)
+    reportError("PATCH /api/interview/[id] error", error)
     return NextResponse.json({ message: "Internal Server Error" }, { status: 500 })
   }
 }

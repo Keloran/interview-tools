@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import {inferStageMethodName} from "@/lib/utils";
 import {interviewSelect, toInterviewDto} from "@/lib/interviews";
 import { $Enums, Prisma } from "@/app/generated/prisma/client";
+import {reportError} from "@/lib/bugfixes";
 
 // 15m-8h, default an hour
 function validDuration(value: unknown): number {
@@ -142,7 +143,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(toInterviewDto(created), { status: 201 })
   } catch (error) {
-    console.error("POST /api/interview error", error)
+    reportError("POST /api/interview error", error)
     return NextResponse.json({ message: "Internal Server Error" }, { status: 500 })
   }
 }

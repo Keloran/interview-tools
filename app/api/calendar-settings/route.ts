@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 import { randomUUID } from "crypto";
+import {reportError} from "@/lib/bugfixes";
 
 export async function GET() {
   try {
@@ -28,7 +29,7 @@ export async function GET() {
       calendarUrl: `${baseUrl}/api/calendar/${user.calendarUuid}`,
     });
   } catch (error) {
-    console.error("Error fetching calendar settings:", error);
+    reportError("Error fetching calendar settings:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -68,7 +69,7 @@ export async function POST() {
       calendarUrl: `${baseUrl}/api/calendar/${updatedUser.calendarUuid}`,
     });
   } catch (error) {
-    console.error("Error regenerating calendar UUID:", error);
+    reportError("Error regenerating calendar UUID:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

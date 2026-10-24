@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { interviewSelect, toInterviewDto } from "@/lib/interviews";
+import {reportError} from "@/lib/bugfixes";
 
 interface InterviewWithRelations {
   id: number;
@@ -174,7 +175,7 @@ export async function GET(
       },
     });
   } catch (error) {
-    console.error('Error generating calendar:', error);
+    reportError('Error generating calendar:', error);
     return new NextResponse('Internal server error', { status: 500 });
   }
 }

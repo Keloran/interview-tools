@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 import { CompanyHistory, summarizeApplication } from "@/lib/applications";
+import {reportError} from "@/lib/bugfixes";
 
 export async function GET() {
   const user = await currentUser();
@@ -43,7 +44,7 @@ export async function GET() {
 
     return NextResponse.json(history);
   } catch (err) {
-    console.error("Error fetching companies: ", err);
+    reportError("Error fetching companies: ", err);
     return NextResponse.json(
       { message: "Failed to fetch companies" },
       { status: 500 }
