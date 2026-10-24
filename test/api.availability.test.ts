@@ -62,3 +62,13 @@ describe('/api/availability/[id] booking', () => {
     expect(p.interview.create).not.toHaveBeenCalled()
   })
 })
+
+describe('/api/availability/[id] booking race', () => {
+  it('reports a losing concurrent booking as already booked, not a server error', async () => {
+    const p = prisma as any
+    p.$transaction.mockRejectedValueOnce(new Error('something odd from the driver'))
+    p.availabilityLink.findUnique.mockResolvedValueOnce({bookedSlot: new Date()})
+    const res = await book({json: async () => ({slot: new Date().toISOString()})} as any, {params: Promise.resolve({id: 'abc'})})
+    expect(res.status).toBe(409)
+  })
+})

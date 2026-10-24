@@ -40,6 +40,7 @@ export const editInterviewSchema = z.object({
     .optional()
     .or(z.literal("")),
   stageMethodId: z.number().optional(),
+  durationMinutes: z.number().int().min(15).max(480).optional(),
 }).refine(
   (data) => {
     // Either deadline OR (date AND time) must be provided

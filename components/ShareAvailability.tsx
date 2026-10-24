@@ -2,13 +2,20 @@
 
 import {useState} from "react";
 import {useQuery} from "@tanstack/react-query";
-import {Plus, Trash2} from "lucide-react";
+import {ChevronLeft, ChevronRight, X} from "lucide-react";
 import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
 import {Label} from "@/components/ui/label";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
+import DurationSelect from "@/components/DurationSelect";
+import {GAP_BETWEEN_MINUTES, suggestSlots} from "@/lib/availability";
+import {addDays, getBusy} from "@/lib/busy";
+import {cn, toISODate} from "@/lib/utils";
 
 type Stage = { id: number; stage: string };
+
+const timeFmt = new Intl.DateTimeFormat(undefined, {hour: "numeric", minute: "2-digit"});
+const slotFmt = new Intl.DateTimeFormat(undefined, {weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit"});
 
 export default function ShareAvailability({interviewId}: { interviewId: string }) {
   const {data: stages} = useQuery<Stage[]>({
@@ -17,15 +24,18 @@ export default function ShareAvailability({interviewId}: { interviewId: string }
   });
 
   const [stage, setStage] = useState("");
-  const [duration, setDuration] = useState("60");
+  const [duration, setDuration] = useState(60);
   const [meetingLink, setMeetingLink] = useState("");
-  const [slots, setSlots] = useState<string[]>([""]); // datetime-local values, in the owner's timezone
+  const [day, setDay] = useState(() => addDays(toISODate(new Date()), 1));
+  const [slots, setSlots] = useState<string[]>([]); // ISO times picked from the suggestions
   const [url, setUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const filled = slots.filter(Boolean);
+  const {data: busy, isLoading: loadingBusy} = useQuery({queryKey: ["busy", day], queryFn: () => getBusy(day)});
+  const suggestions = busy ? suggestSlots(new Date(`${day}T00:00`), duration, busy) : [];
+  const toggle = (iso: string) => setSlots(slots.includes(iso) ? slots.filter((s) => s !== iso) : [...slots, iso].sort());
 
   const create = async () => {
     setSubmitting(true);
@@ -37,9 +47,9 @@ export default function ShareAvailability({interviewId}: { interviewId: string }
         body: JSON.stringify({
           interviewId,
           stage,
-          durationMinutes: Number(duration),
+          durationMinutes: duration,
           meetingLink: meetingLink || undefined,
-          slots: filled.map((s) => new Date(s).toISOString()),
+          slots,
         }),
       });
       const json = await res.json();
@@ -95,14 +105,7 @@ export default function ShareAvailability({interviewId}: { interviewId: string }
         </div>
         <div className="space-y-2">
           <Label htmlFor="availability-duration">Length</Label>
-          <Select value={duration} onValueChange={setDuration}>
-            <SelectTrigger id="availability-duration" className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {[30, 45, 60, 90, 120].map((m) => <SelectItem key={m} value={String(m)}>{m} minutes</SelectItem>)}
-            </SelectContent>
-          </Select>
+          <DurationSelect id="availability-duration" value={duration} onChange={setDuration} />
         </div>
       </div>
 
@@ -112,34 +115,59 @@ export default function ShareAvailability({interviewId}: { interviewId: string }
       </div>
 
       <div className="space-y-2">
-        <Label>Times you&apos;re free</Label>
-        {slots.map((s, i) => (
-          <div key={i} className="flex gap-2">
-            <Input
-              type="datetime-local"
-              aria-label={`Time ${i + 1}`}
-              value={s}
-              onChange={(e) => setSlots(slots.map((x, j) => (j === i ? e.target.value : x)))}
-            />
-            <Button
-              variant="ghost"
-              size="sm"
-              className="cursor-pointer"
-              aria-label={`Remove time ${i + 1}`}
-              disabled={slots.length === 1}
-              onClick={() => setSlots(slots.filter((_, j) => j !== i))}
-            >
-              <Trash2 />
-            </Button>
+        <Label htmlFor="availability-day">Times you&apos;re free</Label>
+        <div className="flex gap-2">
+          <Button variant="ghost" size="sm" className="cursor-pointer" aria-label="Previous day" onClick={() => setDay(addDays(day, -1))}>
+            <ChevronLeft />
+          </Button>
+          <Input id="availability-day" type="date" value={day} onChange={(e) => e.target.value && setDay(e.target.value)} />
+          <Button variant="ghost" size="sm" className="cursor-pointer" aria-label="Next day" onClick={() => setDay(addDays(day, 1))}>
+            <ChevronRight />
+          </Button>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Keeps {GAP_BETWEEN_MINUTES} minutes between interviews, so you&apos;re ready and have room for overruns and a break.
+        </p>
+        {loadingBusy ? (
+          <p className="text-sm text-muted-foreground">Checking your interviews…</p>
+        ) : suggestions.length ? (
+          <div className="flex flex-wrap gap-2">
+            {suggestions.map((d) => {
+              const iso = d.toISOString();
+              return (
+                <Button
+                  key={iso}
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  aria-pressed={slots.includes(iso)}
+                  className={cn("cursor-pointer", slots.includes(iso) && "border-primary bg-primary/10")}
+                  onClick={() => toggle(iso)}
+                >
+                  {timeFmt.format(d)}
+                </Button>
+              );
+            })}
           </div>
-        ))}
-        <Button variant="outline" size="sm" className="cursor-pointer" onClick={() => setSlots([...slots, ""])}>
-          <Plus /> Add time
-        </Button>
+        ) : (
+          <p className="text-sm text-muted-foreground">No free times that day.</p>
+        )}
+        {slots.length > 0 && (
+          <div className="flex flex-wrap gap-2 pt-2">
+            {slots.map((iso) => (
+              <span key={iso} className="inline-flex items-center gap-1 rounded-full bg-muted px-3 py-1 text-xs">
+                {slotFmt.format(new Date(iso))}
+                <button type="button" className="cursor-pointer" aria-label={`Remove ${slotFmt.format(new Date(iso))}`} onClick={() => toggle(iso)}>
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
       {error && <p className="text-sm text-destructive">{error}</p>}
-      <Button className="cursor-pointer" disabled={!stage || !filled.length || submitting} onClick={create}>
+      <Button className="cursor-pointer" disabled={!stage || !slots.length || submitting} onClick={create}>
         {submitting ? "Creating…" : "Create link"}
       </Button>
     </div>

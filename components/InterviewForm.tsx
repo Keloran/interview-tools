@@ -21,6 +21,7 @@ import {interviewFormSchema} from "@/lib/validations/interview";
 import {Separator} from "@/components/ui/separator";
 import {CompanyHistory, findPreviousApplications, timeAgo} from "@/lib/applications";
 import {cn} from "@/lib/utils";
+import DurationSelect from "@/components/DurationSelect";
 
 export type LocationType = "phone" | "link";
 
@@ -114,6 +115,7 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
   const [jobPostingLink, setJobPostingLink] = useState(initialValues?.jobPostingLink || "");
   const [date, setDate] = useState(initialDateStr);
   const [time, setTime] = useState(initialValues?.time || "09:00:00");
+  const [durationMinutes, setDurationMinutes] = useState(60);
   const [interviewer, setInterviewer] = useState(initialValues?.interviewer || "");
   const [locationType, setLocationType] = useState<LocationType>(initialValues?.locationType || "phone");
   const [interviewLink, setInterviewLink] = useState(initialValues?.interviewLink || "");
@@ -286,6 +288,7 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
           interviewLink?: string;
           notes?: string;
           previousInterviewId?: string;
+          durationMinutes?: number;
         };
 
         const body: PostInterviewBody = {
@@ -299,6 +302,7 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
           interviewLink: isTechnicalTest ? undefined : interviewLink,
           notes: isTechnicalTest ? notes : undefined,
           previousInterviewId: effectiveInterviewId,
+          durationMinutes: isTechnicalTest ? undefined : durationMinutes,
         };
 
         if (isTechnicalTest) {
@@ -492,6 +496,10 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
                 {validationErrors.time && (
                   <p className="text-xs text-destructive mt-1">{validationErrors.time}</p>
                 )}
+              </div>
+              <div className="space-y-2 md:col-span-1">
+                <Label htmlFor="interview-duration">Length</Label>
+                <DurationSelect id="interview-duration" value={durationMinutes} onChange={setDurationMinutes} />
               </div>
               <div className="space-y-2 md:col-span-1">
                 <Label htmlFor="interviewer">Interviewer</Label>
