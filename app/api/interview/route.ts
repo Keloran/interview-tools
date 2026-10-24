@@ -5,6 +5,12 @@ import {inferStageMethodName} from "@/lib/utils";
 import {interviewSelect, toInterviewDto} from "@/lib/interviews";
 import { $Enums, Prisma } from "@/app/generated/prisma/client";
 
+// 15m-8h, default an hour
+function validDuration(value: unknown): number {
+  const minutes = Number(value)
+  return Number.isInteger(minutes) && minutes >= 15 && minutes <= 480 ? minutes : 60
+}
+
 export async function POST(request: NextRequest) {
   const user = await currentUser()
   if (!user) {
@@ -26,6 +32,7 @@ export async function POST(request: NextRequest) {
       interviewLink,
       notes,
       previousInterviewId, // progressing an existing application to its next stage
+      durationMinutes,
     } = body ?? {}
 
     // Basic validations
@@ -125,6 +132,7 @@ export async function POST(request: NextRequest) {
         stageMethod: { connect: { id: stageMethod.id } },
         date: isTechnicalTest ? null : interviewDate,
         deadline: isTechnicalTest ? (deadlineDate ?? interviewDate) : null,
+        durationMinutes: validDuration(durationMinutes),
         outcome: outcome as $Enums.InterviewOutcome,
         notes: notes || null,
         link: isTechnicalTest ? null : (interviewLink || null),

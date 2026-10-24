@@ -5,6 +5,7 @@ export const interviewSelect = {
   interviewer: true,
   date: true,
   deadline: true,
+  durationMinutes: true,
   outcome: true,
   notes: true,
   link: true,

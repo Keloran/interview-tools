@@ -27,12 +27,12 @@ async function getLink(id: string) {
 
   const busy = await prisma.interview.findMany({
     where: {application: {userId: link.application.userId}, outcome: "SCHEDULED", date: {not: null}},
-    select: {date: true},
+    select: {date: true, durationMinutes: true},
   });
 
   return {
     ...link,
-    open: openSlots(link.slots, link.durationMinutes, busy.map((b) => b.date!)).map((d) => d.toISOString()),
+    open: openSlots(link.slots, link.durationMinutes, busy.map((b) => ({start: b.date!, durationMinutes: b.durationMinutes}))).map((d) => d.toISOString()),
   };
 }
 

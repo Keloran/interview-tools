@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import DurationSelect from "@/components/DurationSelect";
 import { editInterviewSchema, type EditInterviewData } from "@/lib/validations/interview";
 import { deriveMethodFromLink } from "@/lib/utils/interviewMethod";
 
@@ -31,6 +32,7 @@ interface InterviewData {
   stageMethodId?: number;
   date: string | null;
   deadline: string | null;
+  durationMinutes?: number;
   link: string | null;
   notes: string | null;
   metadata: Record<string, unknown> | null;
@@ -84,6 +86,7 @@ export default function InterviewEditForm({ interviewId, onSuccess }: InterviewE
       notes: "",
       jobPostingLink: "",
       stageMethodId: undefined,
+      durationMinutes: 60,
     },
   });
 
@@ -139,6 +142,7 @@ export default function InterviewEditForm({ interviewId, onSuccess }: InterviewE
         notes: interview.notes || "",
         jobPostingLink: (interview.metadata as { jobListing?: string })?.jobListing || "",
         stageMethodId: stageMethodId,
+        durationMinutes: interview.durationMinutes ?? 60,
       });
     }
   }, [interview, stageMethods, reset]);
@@ -172,6 +176,7 @@ export default function InterviewEditForm({ interviewId, onSuccess }: InterviewE
           notes: values.notes || null,
           metadata,
           stageMethodId: values.stageMethodId || null,
+          durationMinutes: values.durationMinutes,
         }),
       });
 
@@ -263,6 +268,16 @@ export default function InterviewEditForm({ interviewId, onSuccess }: InterviewE
             {errors.time && (
               <p className="text-xs text-destructive mt-1">{errors.time.message}</p>
             )}
+          </div>
+          <div>
+            <Label htmlFor="duration">Length</Label>
+            <Controller
+              name="durationMinutes"
+              control={control}
+              render={({ field }) => (
+                <DurationSelect id="duration" value={field.value ?? 60} onChange={field.onChange} />
+              )}
+            />
           </div>
         </div>
       )}

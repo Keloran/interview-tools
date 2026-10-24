@@ -45,9 +45,9 @@ export async function POST(request: NextRequest, {params}: { params: Promise<{ i
 
       const busy = await tx.interview.findMany({
         where: {application: {userId: link.application.userId}, outcome: "SCHEDULED", date: {not: null}},
-        select: {date: true},
+        select: {date: true, durationMinutes: true},
       });
-      if (!openSlots([start], link.durationMinutes, busy.map((b) => b.date!)).length) {
+      if (!openSlots([start], link.durationMinutes, busy.map((b) => ({start: b.date!, durationMinutes: b.durationMinutes}))).length) {
         throw new BookingError("That time is no longer available", 409);
       }
 
@@ -75,6 +75,7 @@ export async function POST(request: NextRequest, {params}: { params: Promise<{ i
           stageMethodId: method.id,
           interviewer: typeof name === "string" && name.trim() ? name.trim().slice(0, 200) : null,
           date: start,
+          durationMinutes: link.durationMinutes,
           outcome: "SCHEDULED",
           link: link.meetingLink,
         },
@@ -93,6 +94,12 @@ export async function POST(request: NextRequest, {params}: { params: Promise<{ i
     // P2028: transaction timed out waiting on a concurrent booking; P2034: write conflict
     if (error instanceof Prisma.PrismaClientKnownRequestError && ["P2028", "P2034"].includes(error.code)) {
       return NextResponse.json({message: "Someone else is booking right now, please try again"}, {status: 409});
+    }
+    // ponytail: a concurrent booking has occasionally surfaced here as an unclassified error (seen twice, not reproducible);
+    // whatever it was, if the link is now booked the honest answer is "already booked"
+    const current = await prisma.availabilityLink.findUnique({where: {id}, select: {bookedSlot: true}}).catch(() => null);
+    if (current?.bookedSlot) {
+      return NextResponse.json({message: "Already booked"}, {status: 409});
     }
     console.error("POST /api/availability/[id] error", error);
     return NextResponse.json({message: "Internal Server Error"}, {status: 500});

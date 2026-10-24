@@ -74,6 +74,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       const d = new Date(body.deadline);
       if (!isNaN(d.getTime())) data.deadline = d;
     }
+    if (Number.isInteger(body.durationMinutes) && body.durationMinutes >= 15 && body.durationMinutes <= 480) {
+      data.durationMinutes = body.durationMinutes;
+    }
     if (typeof body.interviewer === "string" || body.interviewer === null) {
       data.interviewer = body.interviewer;
     }

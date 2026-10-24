@@ -18,6 +18,7 @@ import Link from "next/link";
 import InterviewInfo from "@/components/InterviewInfo";
 import InterviewEditForm from "@/components/InterviewEditForm";
 import ShareAvailability from "@/components/ShareAvailability";
+import FreeTimes from "@/components/FreeTimes";
 import {useFlags} from "@flags-gg/react-library";
 
 function inferStageMethodName(locationType?: string | null, interviewLink?: string | null): string {
@@ -318,6 +319,7 @@ export default function InterviewsList() {
                   })}`
                 : `All ${displayedInterviews.length > 0 ? `${displayedInterviews.length} ` : ""}Upcoming Interview${displayedInterviews.length !== 1 ? "s" : ""}`}
             </h2>
+            {user && filteredDateISO && <FreeTimes day={filteredDateISO} />}
             {dateFilter && (
               <Button variant="ghost" size="sm" onClick={() => setFilteredDate(null)} className="mt-2 h-8 cursor-pointer">
                 <X className="h-3 w-3 mr-1" />

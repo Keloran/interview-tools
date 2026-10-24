@@ -5,6 +5,7 @@ import { interviewSelect, toInterviewDto } from "@/lib/interviews";
 interface InterviewWithRelations {
   id: number;
   date: Date | null;
+  durationMinutes: number;
   deadline: Date | null;
   jobTitle: string;
   clientCompany: string | null;
@@ -47,8 +48,7 @@ function generateICalEvent(interview: InterviewWithRelations): string {
     // For scheduled interviews, use the specific time
     const startDate = new Date(interview.date);
     dtstart = formatDateForICal(startDate);
-    // Assume 1 hour duration
-    const endDate = new Date(startDate.getTime() + 60 * 60 * 1000);
+    const endDate = new Date(startDate.getTime() + interview.durationMinutes * 60 * 1000);
     dtend = formatDateForICal(endDate);
   } else {
     // No date/deadline - skip this interview

@@ -102,21 +102,22 @@ model AvailabilityLink {
 
 // Interview represents a single interview stage within an application
 model Interview {
-  id            Int               @id @default(autoincrement())
-  applicationId Int
-  application   Application       @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  stageId       Int
-  stage         Stage             @relation(fields: [stageId], references: [id])
-  stageMethodId Int
-  stageMethod   StageMethod       @relation(fields: [stageMethodId], references: [id])
-  interviewer   String? // Name of person interviewing you
-  date          DateTime? // When this interview stage is scheduled
-  deadline      DateTime? // For take-home tests
-  outcome       InterviewOutcome?
-  notes         String?           @db.Text
-  link          String? // Meeting link (Teams, Google Meet, etc.)
-  created_at    DateTime          @default(now())
-  updated_at    DateTime          @updatedAt
+  id              Int               @id @default(autoincrement())
+  applicationId   Int
+  application     Application       @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  stageId         Int
+  stage           Stage             @relation(fields: [stageId], references: [id])
+  stageMethodId   Int
+  stageMethod     StageMethod       @relation(fields: [stageMethodId], references: [id])
+  interviewer     String? // Name of person interviewing you
+  date            DateTime? // When this interview stage is scheduled
+  deadline        DateTime? // For take-home tests
+  durationMinutes Int               @default(60) // used for buffers and the calendar feed end time
+  outcome         InterviewOutcome?
+  notes           String?           @db.Text
+  link            String? // Meeting link (Teams, Google Meet, etc.)
+  created_at      DateTime          @default(now())
+  updated_at      DateTime          @updatedAt
 
   // Parent-child for ordering within the application
   parentId         Int?
