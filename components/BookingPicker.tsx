@@ -5,6 +5,7 @@ import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
 import {Label} from "@/components/ui/label";
 import {cn} from "@/lib/utils";
+import {reportClientError} from "@/lib/reportClientError";
 
 // Rendered client-side so times show in the viewer's own timezone
 const dayFmt = new Intl.DateTimeFormat(undefined, {weekday: "long", day: "numeric", month: "long"});
@@ -54,7 +55,8 @@ export default function BookingPicker({linkId, slots, bookedSlot}: { linkId: str
         return;
       }
       setBooked(json.bookedSlot);
-    } catch {
+    } catch (e) {
+      reportClientError("Failed to book availability slot", e);
       setError("Couldn't book that time");
     } finally {
       setSubmitting(false);
