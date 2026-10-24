@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import {reportError} from "@/lib/bugfixes";
 
 export async function GET() {
   try {
@@ -9,7 +10,7 @@ export async function GET() {
 
     return NextResponse.json(stageMethods);
   } catch (error) {
-    console.error("GET /api/stage-methods error", error);
+    reportError("GET /api/stage-methods error", error);
     return NextResponse.json(
       { error: "Failed to fetch stage methods" },
       { status: 500 }

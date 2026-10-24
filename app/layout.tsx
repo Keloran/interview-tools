@@ -8,6 +8,7 @@ import {Button} from "@/components/ui/button";
 import {Companies} from "@/components/Company";
 import ClientProviders from "@/components/ClientProviders";
 import GuestBanner from "@/components/GuestBanner";
+import ErrorReporter from "@/components/ErrorReporter";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -44,6 +45,7 @@ export default function RootLayout({
       <ClientProviders>
         <html lang="en" className="dark">
           <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+            <ErrorReporter />
             <main className="min-h-screen bg-background p-4 md:p-8">
               <div className="mx-auto max-w-6xl">
                 <div className="mb-8 flex items-start justify-between gap-4">

@@ -29,6 +29,9 @@ export const env = createEnv({
     NEXT_PUBLIC_FLAGS_ENVIRONMENT: z.string().optional(),
 
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().optional(),
+
+    // bugfixes browser key (bfb_…): public by design, only accepted from the agent's listed sites
+    NEXT_PUBLIC_BUGFIXES_BROWSER_KEY: z.string().optional(),
   },
 
   /**
@@ -43,6 +46,8 @@ export const env = createEnv({
     NEXT_PUBLIC_FLAGS_ENVIRONMENT: process.env.NEXT_PUBLIC_FLAGS_ENVIRONMENT,
 
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
+
+    NEXT_PUBLIC_BUGFIXES_BROWSER_KEY: process.env.NEXT_PUBLIC_BUGFIXES_BROWSER_KEY,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially

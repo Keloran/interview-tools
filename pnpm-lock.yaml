@@ -50,6 +50,9 @@ importers:
       '@tanstack/react-query':
         specifier: ^5.95.2
         version: 5.95.2(react@19.2.4)
+      bugfixes:
+        specifier: ^2.3.5
+        version: 2.3.5
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -2124,6 +2127,10 @@ packages:
     resolution: {integrity: sha512-ZC5Bd0LgJXgwGqUknZY/vkUQ04r8NXnJZ3yYi4vDmSiZmC/pdSN0NbNRPxZpbtO4uAfDUAFffO8IZoM3Gj8IkA==}
     engines: {node: ^6 || ^7 || ^8 || ^9 || ^10 || ^11 || ^12 || >=13.7}
     hasBin: true
+
+  bugfixes@2.3.5:
+    resolution: {integrity: sha512-PtP5Wq6NYrPtbTlnwoy9mqDIcq0AOjjhG5y40zI0kLg1XJ2H+3l4ckilv2ykHWytSXzHJ8dQyq72TxPpN60E3A==}
+    engines: {node: '>=24.0.0'}
 
   c12@3.1.0:
     resolution: {integrity: sha512-uWoS8OU1MEIsOv8p/5a82c3H31LsWVR5qiyXVfBNOzfffjUWtPnhAb4BYI2uG2HfGmZmFjCtui5XNWaps+iFuw==}
@@ -5763,6 +5770,8 @@ snapshots:
       electron-to-chromium: 1.5.286
       node-releases: 2.0.27
       update-browserslist-db: 1.2.3(browserslist@4.28.1)
+
+  bugfixes@2.3.5: {}
 
   c12@3.1.0:
     dependencies:

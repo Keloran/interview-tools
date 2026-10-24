@@ -11,6 +11,7 @@ import DurationSelect from "@/components/DurationSelect";
 import {GAP_BETWEEN_MINUTES, suggestSlots} from "@/lib/availability";
 import {addDays, getBusy} from "@/lib/busy";
 import {cn, toISODate} from "@/lib/utils";
+import {reportClientError} from "@/lib/reportClientError";
 
 type Stage = { id: number; stage: string };
 
@@ -58,7 +59,8 @@ export default function ShareAvailability({interviewId}: { interviewId: string }
         return;
       }
       setUrl(`${window.location.origin}${json.path}`);
-    } catch {
+    } catch (e) {
+      reportClientError("Failed to create availability link", e);
       setError("Couldn't create the link");
     } finally {
       setSubmitting(false);

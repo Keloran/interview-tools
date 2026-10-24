@@ -1,6 +1,7 @@
 import {NextRequest, NextResponse} from "next/server";
 import {currentUser} from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
+import {reportError} from "@/lib/bugfixes";
 
 const MAX_SLOTS = 20;
 
@@ -46,7 +47,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({id: link.id, path: `/availability/${link.id}`}, {status: 201});
   } catch (error) {
-    console.error("POST /api/availability error", error);
+    reportError("POST /api/availability error", error);
     return NextResponse.json({message: "Internal Server Error"}, {status: 500});
   }
 }

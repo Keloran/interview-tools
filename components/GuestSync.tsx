@@ -3,6 +3,7 @@
 import {useEffect, useRef} from "react";
 import {useUser} from "@clerk/nextjs";
 import {clearGuestInterviews, listGuestInterviews} from "@/lib/guestStorage";
+import {reportClientError} from "@/lib/reportClientError";
 
 
 export default function GuestSync() {
@@ -35,11 +36,11 @@ export default function GuestSync() {
           });
           if (!res.ok) {
             // Stop on first error to avoid duplicates; try again on next login
-            console.error("GuestSync: failed to create interview", await res.text());
+            reportClientError("GuestSync: failed to create interview", await res.text());
             return;
           }
         } catch (e) {
-          console.error("GuestSync error", e);
+          reportClientError("GuestSync error", e);
           return;
         }
       }
