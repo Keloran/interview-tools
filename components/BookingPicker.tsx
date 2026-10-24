@@ -1,6 +1,6 @@
 "use client";
 
-import {useState, useSyncExternalStore} from "react";
+import {useEffect, useState, useSyncExternalStore} from "react";
 import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
 import {Label} from "@/components/ui/label";
@@ -12,6 +12,7 @@ const dayFmt = new Intl.DateTimeFormat(undefined, {weekday: "long", day: "numeri
 const timeFmt = new Intl.DateTimeFormat(undefined, {hour: "numeric", minute: "2-digit", timeZoneName: "short"});
 
 const noop = () => () => {};
+const viewed = new Set<string>(); // once per page load, even when React runs effects twice in development
 
 export default function BookingPicker({linkId, slots, bookedSlot}: { linkId: string; slots: string[]; bookedSlot: string | null }) {
   // false during SSR, so the server (UTC) never renders times the browser would disagree with
@@ -21,6 +22,13 @@ export default function BookingPicker({linkId, slots, bookedSlot}: { linkId: str
   const [booked, setBooked] = useState(bookedSlot);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // Counts as "opened" for the sender; done here rather than on the server so link previews don't count
+  useEffect(() => {
+    if (viewed.has(linkId)) return;
+    viewed.add(linkId);
+    fetch(`/api/availability/${linkId}/view`, {method: "POST", keepalive: true}).catch(() => {});
+  }, [linkId]);
 
   if (!isClient) return null;
 

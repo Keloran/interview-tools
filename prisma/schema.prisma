@@ -97,6 +97,10 @@ model AvailabilityLink {
   bookedSlot      DateTime?
   interviewId     Int?        @unique
   interview       Interview?  @relation(fields: [interviewId], references: [id], onDelete: SetNull)
+  // opens are counted from the browser, so link previews (Slack, LinkedIn, email) don't count
+  viewCount       Int         @default(0)
+  firstViewedAt   DateTime?
+  lastViewedAt    DateTime?
   created_at      DateTime    @default(now())
 }
 

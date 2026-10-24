@@ -5,6 +5,58 @@ import {reportError} from "@/lib/bugfixes";
 
 const MAX_SLOTS = 20;
 
+// The links sent for the application `interviewId` belongs to, newest first, with how far each got
+export async function GET(request: NextRequest) {
+  const user = await currentUser();
+  if (!user) {
+    return NextResponse.json({message: "unauthorized"}, {status: 401});
+  }
+
+  try {
+    const interviewId = Number(new URL(request.url).searchParams.get("interviewId"));
+    const interview = await prisma.interview.findFirst({
+      where: {id: interviewId, application: {user: {clerkId: user.id}}},
+      select: {
+        application: {
+          select: {
+            jobTitle: true,
+            clientCompany: true,
+            company: {select: {name: true}},
+            availabilityLinks: {
+              select: {
+                id: true,
+                slots: true,
+                durationMinutes: true,
+                bookedSlot: true,
+                viewCount: true,
+                firstViewedAt: true,
+                lastViewedAt: true,
+                created_at: true,
+                stage: {select: {stage: true}},
+              },
+              orderBy: {created_at: "desc"},
+            },
+          },
+        },
+      },
+    });
+    if (!interview) {
+      return NextResponse.json({message: "Interview not found"}, {status: 404});
+    }
+
+    const {application} = interview;
+    return NextResponse.json({
+      jobTitle: application.jobTitle,
+      // via a recruiter, the role is at the client
+      company: application.clientCompany || application.company.name,
+      links: application.availabilityLinks.map(({stage, ...link}) => ({...link, stage: stage.stage, path: `/availability/${link.id}`})),
+    });
+  } catch (error) {
+    reportError("GET /api/availability error", error);
+    return NextResponse.json({message: "Internal Server Error"}, {status: 500});
+  }
+}
+
 // Create a shareable availability link for the next stage of the application `interviewId` belongs to
 export async function POST(request: NextRequest) {
   const user = await currentUser();

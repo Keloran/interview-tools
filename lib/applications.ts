@@ -1,6 +1,9 @@
 // Turns an application's stages into answers: what happened, and did the company ever respond?
 
+import { LinkTracking, linkState } from "@/lib/availability";
+
 export const GHOSTED_AFTER_DAYS = 30;
+const SETTLED_OUTCOMES = ["OFFER_ACCEPTED", "OFFER_DECLINED", "OFFER_RECEIVED", "REJECTED", "WITHDREW", "SCHEDULED"];
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 export type StageSummary = {
@@ -25,13 +28,23 @@ export type CompanyHistory = {
   applications: ApplicationSummary[];
 };
 
-// stages: newest first
-export function summarizeApplication(stages: StageSummary[], now = Date.now()): Pick<ApplicationSummary, "status" | "response"> {
+// stages: newest first; links: availability links sent for it
+export function summarizeApplication(
+  stages: StageSummary[],
+  now = Date.now(),
+  links: LinkTracking[] = [],
+): Pick<ApplicationSummary, "status" | "response"> {
   const latest = stages[0];
   if (!latest) return { status: "Applied", response: "waiting" };
 
   const heardBack = stages.some((s) => s.stage !== "Applied" || (s.outcome && s.outcome !== "AWAITING_RESPONSE"));
   const response = heardBack ? "responded" : "waiting";
+
+  // They asked for your availability, then never opened the link: ghosting, unless it's since moved on
+  const ignored = links.find((l) => linkState(l, now) === "ignored");
+  if (ignored && !SETTLED_OUTCOMES.includes(latest.outcome ?? "")) {
+    return { status: `Availability link never opened (sent ${timeAgo(ignored.created_at, now)})`, response };
+  }
 
   switch (latest.outcome) {
     case "OFFER_ACCEPTED": return { status: "Offer accepted", response };
