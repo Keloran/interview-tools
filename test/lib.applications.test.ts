@@ -72,3 +72,19 @@ describe('findPreviousApplications', () => {
     expect(findPreviousApplications(history, '', '', 'Senior Engineer')).toEqual([])
   })
 })
+
+describe('summarizeApplication with availability links', () => {
+  const applied = [{stage: 'Phone Screen', outcome: 'PASSED', updatedAt: daysAgo(12)}]
+  const sent = (days: number, o: object = {}) => ({created_at: daysAgo(days), viewCount: 0, lastViewedAt: null, bookedSlot: null, ...o})
+
+  it('a link they never opened shows as ghosting', () => {
+    expect(summarizeApplication(applied, now, [sent(10)]).status).toBe('Availability link never opened (sent last week)')
+  })
+
+  it('not yet, if it was opened, or if things moved on', () => {
+    expect(summarizeApplication(applied, now, [sent(3)]).status).toBe('Passed Phone Screen')
+    expect(summarizeApplication(applied, now, [sent(10, {viewCount: 1, lastViewedAt: daysAgo(9)})]).status).toBe('Passed Phone Screen')
+    const rejected = [{stage: 'Phone Screen', outcome: 'REJECTED', updatedAt: daysAgo(1)}]
+    expect(summarizeApplication(rejected, now, [sent(10)]).status).toBe('Rejected at Phone Screen')
+  })
+})

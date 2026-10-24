@@ -75,3 +75,44 @@ export function freeWindows(
   if (dayEnd - cursor >= minMinutes * MINUTE_MS) windows.push({start: new Date(cursor), end: new Date(dayEnd)});
   return windows;
 }
+
+// Tracking a sent availability link: an unopened one is a ghosting signal
+export const LINK_IGNORED_AFTER_DAYS = 7;
+
+export type LinkTracking = {
+  created_at: string | Date;
+  viewCount: number;
+  lastViewedAt: string | Date | null;
+  bookedSlot: string | Date | null;
+};
+
+export type LinkState = "booked" | "opened" | "sent" | "ignored";
+
+export function linkState(link: LinkTracking, now = Date.now()): LinkState {
+  if (link.bookedSlot) return "booked";
+  if (link.viewCount > 0) return "opened";
+  const ageDays = (now - new Date(link.created_at).getTime()) / (24 * 60 * MINUTE_MS);
+  return ageDays >= LINK_IGNORED_AFTER_DAYS ? "ignored" : "sent";
+}
+
+// The note to paste into a reply, listing the times and the link to book one
+export function availabilityMessage({jobTitle, company, slots, url, formatSlot, timeZoneLabel}: {
+  jobTitle: string;
+  company: string;
+  slots: Date[];
+  url: string;
+  formatSlot: (d: Date) => string;
+  timeZoneLabel: string;
+}): string {
+  return [
+    "Hi,",
+    "",
+    `Thanks for getting in touch about the ${jobTitle} role at ${company}. I'm available at the following times (${timeZoneLabel}):`,
+    "",
+    ...slots.map((s) => `- ${formatSlot(s)}`),
+    "",
+    `You can book whichever suits you here: ${url}`,
+    "",
+    "Thanks",
+  ].join("\n");
+}

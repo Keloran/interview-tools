@@ -1,7 +1,7 @@
 "use client";
 
 import {useState} from "react";
-import {useQuery} from "@tanstack/react-query";
+import {useQuery, useQueryClient} from "@tanstack/react-query";
 import {ChevronLeft, ChevronRight, X} from "lucide-react";
 import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
@@ -12,6 +12,7 @@ import {GAP_BETWEEN_MINUTES, suggestSlots} from "@/lib/availability";
 import {addDays, getBusy} from "@/lib/busy";
 import {cn, toISODate} from "@/lib/utils";
 import {reportClientError} from "@/lib/reportClientError";
+import AvailabilityLinks from "@/components/AvailabilityLinks";
 
 type Stage = { id: number; stage: string };
 
@@ -19,6 +20,7 @@ const timeFmt = new Intl.DateTimeFormat(undefined, {hour: "numeric", minute: "2-
 const slotFmt = new Intl.DateTimeFormat(undefined, {weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit"});
 
 export default function ShareAvailability({interviewId}: { interviewId: string }) {
+  const queryClient = useQueryClient();
   const {data: stages} = useQuery<Stage[]>({
     queryKey: ["stages"],
     queryFn: async () => (await fetch("/api/stages")).json(),
@@ -29,8 +31,7 @@ export default function ShareAvailability({interviewId}: { interviewId: string }
   const [meetingLink, setMeetingLink] = useState("");
   const [day, setDay] = useState(() => addDays(toISODate(new Date()), 1));
   const [slots, setSlots] = useState<string[]>([]); // ISO times picked from the suggestions
-  const [url, setUrl] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [createdId, setCreatedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -58,7 +59,8 @@ export default function ShareAvailability({interviewId}: { interviewId: string }
         setError(json.message ?? "Couldn't create the link");
         return;
       }
-      setUrl(`${window.location.origin}${json.path}`);
+      await queryClient.invalidateQueries({queryKey: ["availability-links", interviewId]});
+      setCreatedId(json.id);
     } catch (e) {
       reportClientError("Failed to create availability link", e);
       setError("Couldn't create the link");
@@ -67,30 +69,13 @@ export default function ShareAvailability({interviewId}: { interviewId: string }
     }
   };
 
-  if (url) {
-    return (
-      <div className="flex flex-col gap-3">
-        <p className="text-sm text-muted-foreground">
-          Send this to whoever asked for your availability. When they pick a time it&apos;s added as a scheduled {stage}.
-        </p>
-        <div className="flex gap-2">
-          <Input readOnly value={url} onFocus={(e) => e.target.select()} aria-label="Availability link" />
-          <Button
-            className="cursor-pointer"
-            onClick={async () => {
-              await navigator.clipboard.writeText(url);
-              setCopied(true);
-            }}
-          >
-            {copied ? "Copied" : "Copy"}
-          </Button>
-        </div>
-      </div>
-    );
+  if (createdId) {
+    return <AvailabilityLinks interviewId={interviewId} justCreated={createdId} />;
   }
 
   return (
     <div className="flex flex-col gap-4">
+      <AvailabilityLinks interviewId={interviewId} />
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2">
           <Label htmlFor="availability-stage">Next stage</Label>

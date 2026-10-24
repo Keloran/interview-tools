@@ -26,6 +26,7 @@ export async function GET() {
               select: { outcome: true, updated_at: true, stage: { select: { stage: true } } },
               orderBy: { created_at: "desc" },
             },
+            availabilityLinks: { select: { created_at: true, viewCount: true, lastViewedAt: true, bookedSlot: true } },
           },
           orderBy: { applicationDate: "desc" },
         },
@@ -36,9 +37,13 @@ export async function GET() {
     const history: CompanyHistory[] = companies.map((c) => ({
       id: c.id,
       name: c.name,
-      applications: c.applications.map(({ interviews, ...a }) => ({
+      applications: c.applications.map(({ interviews, availabilityLinks, ...a }) => ({
         ...a,
-        ...summarizeApplication(interviews.map((i) => ({ stage: i.stage.stage, outcome: i.outcome, updatedAt: i.updated_at }))),
+        ...summarizeApplication(
+          interviews.map((i) => ({ stage: i.stage.stage, outcome: i.outcome, updatedAt: i.updated_at })),
+          undefined,
+          availabilityLinks,
+        ),
       })),
     }));
 
