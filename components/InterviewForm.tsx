@@ -20,7 +20,7 @@ import {addGuestInterview} from "@/lib/guestStorage";
 import {interviewFormSchema} from "@/lib/validations/interview";
 import {Separator} from "@/components/ui/separator";
 import {CompanyHistory, findPreviousApplications, timeAgo} from "@/lib/applications";
-import {cn} from "@/lib/utils";
+import {cn, toISODate} from "@/lib/utils";
 import DurationSelect from "@/components/DurationSelect";
 import {reportClientError} from "@/lib/reportClientError";
 
@@ -106,7 +106,7 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
 
   // Convert initialDate to YYYY-MM-DD format if provided
   const initialDateStr = initialDate
-    ? initialDate.toISOString().split('T')[0]
+    ? toISODate(initialDate) // local: toISOString gives the previous day east of UTC
     : initialValues?.date || "";
 
   const [stage, setStage] = useState<InterviewFormValues["stage"]>(initialValues?.stage || "Applied");

@@ -3,7 +3,7 @@
 import {useAppStore} from "@/lib/store";
 import {Card} from "@/components/ui/card";
 import {Button} from "@/components/ui/button";
-import {cn, getStageColor, isSameDay} from "@/lib/utils";
+import {cn, getStageColor, isSameDay, toISODate} from "@/lib/utils";
 import {useEffect, useMemo, useState} from "react";
 import {CalendarClock, Check, Clock, CornerUpRight, Pencil, ThumbsDown, X} from "lucide-react";
 import {useQuery, useQueryClient} from "@tanstack/react-query";
@@ -21,6 +21,7 @@ import ShareAvailability from "@/components/ShareAvailability";
 import FreeTimes from "@/components/FreeTimes";
 import {useFlags} from "@flags-gg/react-library";
 import {reportClientError} from "@/lib/reportClientError";
+import {addDays} from "@/lib/busy";
 
 function inferStageMethodName(locationType?: string | null, interviewLink?: string | null): string {
   if (locationType === "phone") return "Phone";
@@ -80,10 +81,11 @@ async function getInterviews(date: Date | string | null, company?: string | null
   } else {
     // Normal date/company filtering
     if (date) {
-      const dateStr = date instanceof Date
-        ? date.toISOString().split('T')[0]
-        : date;
-      url.searchParams.set('date', dateStr);
+      // The API filters by UTC day, but the day picked is local: ask for a day either side
+      // and let the isSameDay filter below narrow it to the local day
+      const day = date instanceof Date ? toISODate(date) : date;
+      url.searchParams.set('dateFrom', addDays(day, -1));
+      url.searchParams.set('dateTo', addDays(day, 1));
     }
     // Only send includePast when we have a company filter without a date filter
     // This allows the backend to use smart defaults otherwise
