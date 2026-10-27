@@ -20,25 +20,27 @@ import {isLink} from "@/lib/jobLinks";
 import {useAppStore} from "@/lib/store";
 import {cn} from "@/lib/utils";
 import {checkJobListing} from "@/lib/jobChecks";
+import {ListingImport} from "@/lib/listingImport";
 
-type Query = { text: string; title: string; description: string };
+type Query = { text: string; title: string; description: string; company: string };
 
 // "Have I applied for this?" before you've decided to: paste the listing's link, or type the company and title
-export default function HaveIApplied({withDescription = false}: {withDescription?: boolean}) {
+export default function HaveIApplied({withDescription = false, initialListing}: {withDescription?: boolean; initialListing?: ListingImport | null}) {
   const {user} = useUser();
   const router = useRouter();
   const setCompanyFilter = useAppStore((s) => s.setFilteredCompany);
   const {data: companies, error} = useQuery({queryKey: ["companies", user?.id], queryFn: getCompanies, enabled: !!user?.id});
-  const [text, setText] = useState("");
-  const [title, setTitle] = useState("");
+  const [text, setText] = useState(initialListing?.url ?? "");
+  const [title, setTitle] = useState(initialListing?.title ?? "");
+  const [companyHint, setCompanyHint] = useState(initialListing?.company ?? "");
   const [description, setDescription] = useState("");
-  const [query, setQuery] = useState<Query | null>(null);
+  const [query, setQuery] = useState<Query | null>(initialListing ? {text: initialListing.url, title: initialListing.title, company: initialListing.company, description: ""} : null);
   const [adding, setAdding] = useState(false);
 
   if (!user) return null;
 
   const link = query && isLink(query.text) ? query.text.trim() : "";
-  const company = query && !link ? query.text.trim() : "";
+  const company = query ? (link ? query.company : query.text).trim() : "";
   const matches = query ? findPreviousApplications(companies ?? [], company, "", query.title, link) : [];
   const applied = matches.some((m) => m.samePosting || m.sameTitle);
   const flags = query && withDescription ? checkJobListing({
@@ -49,7 +51,7 @@ export default function HaveIApplied({withDescription = false}: {withDescription
 
   const check = (e: FormEvent) => {
     e.preventDefault();
-    if (canCheck) setQuery({text, title, description: withDescription ? description : ""});
+    if (canCheck) setQuery({text, title, description: withDescription ? description : "", company: companyHint});
   };
   const checkButton = <Button type="submit" className="cursor-pointer" disabled={!canCheck}><Search /> Check</Button>;
 
@@ -78,6 +80,10 @@ export default function HaveIApplied({withDescription = false}: {withDescription
           {!withDescription && checkButton}
         </div>
         {withDescription && <>
+          {isLink(text) && <div className="space-y-2">
+            <Label htmlFor="listing-company">Company or recruiter (optional)</Label>
+            <Input id="listing-company" value={companyHint} onChange={(e) => setCompanyHint(e.target.value)} />
+          </div>}
           <div className="space-y-2">
             <Label htmlFor="job-description">Job description</Label>
             <Textarea id="job-description" rows={7} maxLength={30000} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Paste the job description here" />
@@ -89,7 +95,8 @@ export default function HaveIApplied({withDescription = false}: {withDescription
       {error && <p role="alert" className="text-sm text-destructive">Could not load your application history. Refresh the page to try again.</p>}
       {!withDescription && <Link href="/check" className="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground">Check a job description</Link>}
 
-      {query && (
+      {query && !companies && !error && <p role="status">Checking your saved applications…</p>}
+      {query && companies && !error && (
         <div role="status" className={cn("rounded-md border p-3 text-sm", applied ? "border-amber-500/50 bg-amber-500/10" : "bg-muted/30")}>
           {(link || company) && <p className="font-medium">
             {applied
