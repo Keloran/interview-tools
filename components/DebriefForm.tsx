@@ -52,6 +52,7 @@ function Form({interviewId, saved, onSuccess}: { interviewId: string; saved: Deb
       await Promise.all([
         queryClient.invalidateQueries({queryKey: ["interview", interviewId]}),
         queryClient.invalidateQueries({queryKey: ["interviews"]}),
+        queryClient.invalidateQueries({queryKey: ["questions"]}),
       ]);
       onSuccess?.();
     } catch (e) {
