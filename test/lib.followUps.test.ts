@@ -26,7 +26,16 @@ describe('followUpDueAt', () => {
   })
 
   it('waits a week after you last followed up', () => {
-    expect(followUpDueAt({applicationDate: d(1), latest: interviewed, followUps: [d(13), d(18)]}, now)).toEqual(d(25))
+    expect(followUpDueAt({applicationDate: d(1), latest: interviewed, followUps: [d(18)]}, now)).toEqual(d(25))
+  })
+
+  it('stops once it counts as ghosted: chased twice, or a month with nothing happening', () => {
+    expect(followUpDueAt({applicationDate: d(1), latest: interviewed, followUps: [d(13), d(18)]}, now)).toBeNull()
+    const months = new Date(2026, 11, 1).getTime() // 1 Dec: over a month since applying on 1 Oct
+    expect(followUpDueAt({applicationDate: d(1), latest: applied, followUps: []}, months)).toBeNull()
+    // a follow-up or promised date keeps it alive until a month after that
+    expect(followUpDueAt({applicationDate: d(1), latest: applied, followUps: [new Date(2026, 10, 10)]}, months)).toEqual(new Date(2026, 10, 17))
+    expect(followUpDueAt({applicationDate: d(1), latest: {...interviewed, replyBy: new Date(2026, 10, 6)}, followUps: []}, months)).toEqual(new Date(2026, 10, 9))
   })
 
   it('a past interview with no news counts as waiting; upcoming or settled ones do not', () => {

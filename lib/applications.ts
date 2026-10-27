@@ -1,13 +1,10 @@
 // Turns an application's stages into answers: what happened, and did the company ever respond?
 
 import { LinkTracking, linkState } from "@/lib/availability";
-import { times } from "@/lib/followUps";
+import { GHOSTED_AFTER_DAYS, GHOSTED_AFTER_FOLLOW_UPS, times } from "@/lib/followUps";
 import { FeedbackType, rejectedStatus } from "@/lib/feedback";
 import { jobKey } from "@/lib/jobLinks";
 
-export const GHOSTED_AFTER_DAYS = 30;
-// Chased this many times without ever hearing back counts as ghosted, however recent
-export const GHOSTED_AFTER_FOLLOW_UPS = 2;
 const SETTLED_OUTCOMES = ["OFFER_ACCEPTED", "OFFER_DECLINED", "OFFER_RECEIVED", "REJECTED", "WITHDREW", "SCHEDULED"];
 const DAY_MS = 24 * 60 * 60 * 1000;
 

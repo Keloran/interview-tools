@@ -83,6 +83,7 @@ export default function FollowUps() {
         <CardTitle>Due a follow-up{data?.length ? ` (${data.length})` : ""}</CardTitle>
         <CardDescription>
           Waiting on a reply: 10 days after applying, 5 after an interview, or the day after they said they&apos;d get back to you.
+          Anything quiet for a month, or chased twice already, counts as ghosted and drops off.
         </CardDescription>
       </CardHeader>
       <CardContent>

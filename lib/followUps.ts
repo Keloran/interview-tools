@@ -3,6 +3,9 @@
 export const FOLLOW_UP_AFTER_APPLYING_DAYS = 10;
 export const FOLLOW_UP_AFTER_INTERVIEW_DAYS = 5;
 export const FOLLOW_UP_AGAIN_DAYS = 7;
+// Past these it counts as ghosted (see summarizeApplication), and chasing again is pointless
+export const GHOSTED_AFTER_DAYS = 30;
+export const GHOSTED_AFTER_FOLLOW_UPS = 2;
 
 // Calendar days, so a reminder doesn't shift an hour when the clocks change
 const addDays = (d: Date, days: number) => {
@@ -32,7 +35,7 @@ function waiting({outcome, date}: LatestStage, now: number): boolean {
   return outcome === "SCHEDULED" && !!date && date.getTime() < now;
 }
 
-// When a follow-up is due for an application, or null if you're not waiting on them.
+// When a follow-up is due for an application, or null if you're not waiting on them or it's already ghosted.
 // A date they promised wins over the defaults; after you've chased, wait a week before chasing again.
 export function followUpDueAt(
   {applicationDate, latest, followUps}: { applicationDate: Date; latest: LatestStage; followUps: Date[] },
@@ -40,6 +43,12 @@ export function followUpDueAt(
 ): Date | null {
   if (!waiting(latest, now)) return null;
   const lastFollowUp = followUps.reduce<Date | null>((a, d) => (!a || d > a ? d : a), null);
+
+  // Ghosted: chased twice with no answer, or a month since anything happened
+  if (followUps.length >= GHOSTED_AFTER_FOLLOW_UPS) return null;
+  const lastActivity = Math.max(...[applicationDate, latest.date, latest.replyBy, lastFollowUp].map((d) => d?.getTime() ?? 0));
+  if (now >= addDays(new Date(lastActivity), GHOSTED_AFTER_DAYS).getTime()) return null;
+
   if (lastFollowUp) return addDays(lastFollowUp, FOLLOW_UP_AGAIN_DAYS);
   if (latest.replyBy) return nextWorkingDay(latest.replyBy);
   if (latest.stage === "Applied") return addDays(applicationDate, FOLLOW_UP_AFTER_APPLYING_DAYS);
