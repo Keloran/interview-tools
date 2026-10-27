@@ -11,6 +11,9 @@ export default function Navbar() {
   return (
     <>
       <Companies />
+      <Button asChild variant="ghost">
+        <Link href="/roadmap">Roadmap</Link>
+      </Button>
       <SignedOut>
         <SignInButton>
           <Button className={"cursor-pointer"}>Sign In</Button>
