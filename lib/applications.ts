@@ -17,6 +17,9 @@ export type StageSummary = {
 };
 
 export type ApplicationSummary = {
+  firstResponseAt?: string | Date | null;
+  furthestStage?: string;
+  ignoredLinks?: number;
   viaRecruiter?: boolean;
   recruiterName?: string | null;
   recruiterEmail?: string | null;
@@ -47,11 +50,12 @@ export function summarizeApplication(
   now = Date.now(),
   links: LinkTracking[] = [],
   followUps = 0,
+  firstResponseAt?: string | Date | null,
 ): Pick<ApplicationSummary, "status" | "response" | "feedback"> {
   const latest = stages[0];
-  if (!latest) return { status: "Applied", response: "waiting" };
+  if (!latest) return { status: firstResponseAt ? "Reply received; awaiting next step" : "Applied", response: firstResponseAt ? "responded" : "waiting" };
 
-  const heardBack = stages.some((s) => s.stage !== "Applied" || (s.outcome && s.outcome !== "AWAITING_RESPONSE"));
+  const heardBack = !!firstResponseAt || stages.some((s) => s.stage !== "Applied" || (s.outcome && s.outcome !== "AWAITING_RESPONSE"));
   const response = heardBack ? "responded" : "waiting";
 
   // They asked for your availability, then never opened the link: ghosting, unless it's since moved on

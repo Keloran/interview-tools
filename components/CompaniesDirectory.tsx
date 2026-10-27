@@ -14,6 +14,7 @@ import {feedbackRecord} from "@/lib/feedback";
 import {useAppStore} from "@/lib/store";
 import {companyKind, viaAgency} from "@/lib/recruiters";
 import RecruiterRecord from "@/components/RecruiterRecord";
+import Link from "next/link";
 
 export const PAGE_SIZE = 25;
 
@@ -44,6 +45,7 @@ export default function CompaniesDirectory() {
     <Card>
       <CardHeader className="gap-4">
         <CardTitle>Companies{data ? ` (${matches.length})` : ""}</CardTitle>
+        <Link className="text-sm underline" href="/company-insights">View company insights</Link>
         <div className="relative">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
@@ -84,6 +86,7 @@ export default function CompaniesDirectory() {
                       </div>
                     </summary>
                     <div className="mt-2 ml-1 border-l-2 border-border pl-4">
+                      <Link className="text-sm underline" href={`/companies/${c.id}`}>Company history and insights</Link>
                       {c.applications.some(viaAgency) && <RecruiterRecord applications={c.applications.filter(viaAgency)} />}
                       <PreviousApplications
                         applications={c.applications.map((a) => ({...a, companyName: c.name, sameTitle: true, samePosting: false}))}

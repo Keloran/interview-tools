@@ -37,6 +37,8 @@ describe('CompaniesDirectory', () => {
     render(withQueryClient(<CompaniesDirectory />))
     expect(await screen.findByText('Recruiter / agency')).toBeVisible()
     expect(screen.getByText('Direct employer')).toBeVisible()
+    expect(screen.getByRole('link', {name: 'View company insights'})).toHaveAttribute('href', '/company-insights')
+    expect(screen.getAllByRole('link', {name: 'Company history and insights'})[0]).toHaveAttribute('href', '/companies/1')
   })
   it('lists A–Z, a page at a time', async () => {
     render(withQueryClient(<CompaniesDirectory />))
