@@ -130,3 +130,30 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* TrackLin.es roadmap embed (/roadmap): its injected styles are light-only, so restyle it with the
+   site's tokens. Doubled class beats the widget's own <style> whatever order they load in. */
+.tl-embed.tl-embed { font: inherit; font-family: var(--font-sans); color: var(--foreground); max-width: none; }
+.tl-embed.tl-embed .tl-embed-title { font-size: 1.5rem; font-weight: 600; letter-spacing: -0.01em; }
+.tl-embed.tl-embed .tl-embed-desc { color: var(--muted-foreground); margin-bottom: 1.5rem; }
+.tl-embed.tl-embed .tl-embed-muted,
+.tl-embed.tl-embed .tl-embed-meta { color: var(--muted-foreground); }
+.tl-embed.tl-embed .tl-embed-list { gap: 0.75rem; }
+.tl-embed.tl-embed .tl-embed-item {
+  background: var(--card); color: var(--card-foreground); border: 1px solid var(--border);
+  border-radius: var(--radius, 0.75rem); padding: 1rem 1.25rem; box-shadow: 0 1px 2px rgb(0 0 0 / 0.05);
+}
+.tl-embed.tl-embed .tl-embed-item-head { gap: 0.75rem; }
+.tl-embed.tl-embed .tl-embed-item-title { font-weight: 500; }
+.tl-embed.tl-embed .tl-embed-meta { margin: 0.25rem 0 0 1.35rem; font-size: 0.875rem; }
+.tl-embed.tl-embed .tl-embed-dot { background: var(--muted-foreground); }
+.tl-embed.tl-embed .tl-embed-in_progress .tl-embed-dot { background: var(--primary); }
+.tl-embed.tl-embed .tl-embed-done .tl-embed-dot { background: oklch(0.72 0.17 150); }
+.tl-embed.tl-embed .tl-embed-badge {
+  color: var(--muted-foreground); background: var(--muted); border: 1px solid var(--border); font-weight: 500; padding: 0.125rem 0.625rem;
+}
+.tl-embed.tl-embed .tl-embed-in_progress .tl-embed-badge,
+.tl-embed.tl-embed .tl-embed-done .tl-embed-badge { border-color: transparent;
+}
+.tl-embed.tl-embed .tl-embed-in_progress .tl-embed-badge { color: var(--primary-foreground); background: var(--primary); }
+.tl-embed.tl-embed .tl-embed-done .tl-embed-badge { color: oklch(0.72 0.17 150); background: oklch(0.72 0.17 150 / 0.15); }
