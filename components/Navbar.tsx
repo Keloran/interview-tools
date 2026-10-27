@@ -16,7 +16,7 @@ export default function Navbar() {
   return (
     <nav className="flex shrink-0 items-center gap-2">
       {/* Wide screens: everything inline */}
-      <div className="hidden md:flex items-center gap-2">
+      <div className="hidden xl:flex items-center gap-2">
         <Companies />
         <NavLinks />
       </div>
@@ -46,6 +46,9 @@ function NavLinks({stacked, onNavigate}: { stacked?: boolean; onNavigate?: () =>
         <Button asChild variant="ghost" className={item}>
           <Link href="/questions" onClick={onNavigate}>Questions</Link>
         </Button>
+        <Button asChild variant="ghost" className={item}>
+          <Link href="/stories" onClick={onNavigate}>Stories</Link>
+        </Button>
       </SignedIn>
       <Button asChild variant="ghost" className={item}>
         <Link href="/roadmap" onClick={onNavigate}>Roadmap</Link>
@@ -64,14 +67,14 @@ function MobileMenu() {
   return (
     <DialogPrimitive.Root open={open} onOpenChange={setOpen}>
       <DialogPrimitive.Trigger asChild>
-        <Button variant="ghost" size="icon" className="relative md:hidden cursor-pointer" aria-label="Menu">
+        <Button variant="ghost" size="icon" className="relative xl:hidden cursor-pointer" aria-label="Menu">
           <Menu />
           <SignedIn><FollowUpDot /></SignedIn>
         </Button>
       </DialogPrimitive.Trigger>
       <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/50 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0" />
-        <DialogPrimitive.Content className="fixed inset-y-0 right-0 z-50 flex w-72 max-w-[85vw] flex-col gap-1 border-l bg-background p-4 shadow-lg data-[state=open]:animate-in data-[state=open]:slide-in-from-right data-[state=closed]:animate-out data-[state=closed]:slide-out-to-right">
+        <DialogPrimitive.Content className="fixed inset-y-0 right-0 z-50 flex w-72 max-w-[85vw] flex-col gap-1 overflow-y-auto border-l bg-background p-4 shadow-lg data-[state=open]:animate-in data-[state=open]:slide-in-from-right data-[state=closed]:animate-out data-[state=closed]:slide-out-to-right">
           <div className="mb-2 flex items-center justify-between">
             <DialogPrimitive.Title className="font-semibold">Menu</DialogPrimitive.Title>
             <DialogPrimitive.Close asChild>

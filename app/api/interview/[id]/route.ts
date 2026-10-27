@@ -90,7 +90,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       data.stageMethod = { connect: { id: body.stageMethodId } };
     }
     const debrief = parseDebrief(body.debrief);
-    if (debrief) Object.assign(data, debrief, { debriefedAt: new Date() });
+    if (debrief) {
+      const {prepNotes, ...rest} = debrief;
+      Object.assign(data, rest, {debriefedAt: new Date()}, "prepNotes" in body.debrief ? {prepNotes} : {});
+    }
     const feedback = parseFeedback(body.feedback);
     if (feedback) Object.assign(data, feedback);
     // Application-level fields live on the parent application

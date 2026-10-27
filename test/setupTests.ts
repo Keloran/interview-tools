@@ -60,6 +60,8 @@ vi.mock('@/lib/prisma', () => {
       availabilityLink: {create: fn(), findUnique: fn(), updateMany: fn(), update: fn()},
       application: {findMany: fn(), findFirst: fn()},
       followUp: {create: fn()},
+      story: {findMany: fn(), create: fn(), updateMany: fn(), deleteMany: fn()},
+      storyUse: {deleteMany: fn(), createMany: fn()},
       $transaction: fn(),
     },
   }

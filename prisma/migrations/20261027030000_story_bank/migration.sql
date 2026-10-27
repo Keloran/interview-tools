@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS "Story" (
+    "id" SERIAL PRIMARY KEY,
+    "userId" INTEGER NOT NULL REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    "title" TEXT NOT NULL,
+    "situation" TEXT NOT NULL DEFAULT '',
+    "task" TEXT NOT NULL DEFAULT '',
+    "action" TEXT NOT NULL DEFAULT '',
+    "result" TEXT NOT NULL DEFAULT '',
+    "tags" TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL
+);
+CREATE INDEX IF NOT EXISTS "Story_userId_idx" ON "Story"("userId");
+
+CREATE TABLE IF NOT EXISTS "StoryUse" (
+    "interviewId" INTEGER NOT NULL REFERENCES "InterviewStage"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    "storyId" INTEGER NOT NULL REFERENCES "Story"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "StoryUse_pkey" PRIMARY KEY ("interviewId", "storyId")
+);
+CREATE INDEX IF NOT EXISTS "StoryUse_storyId_idx" ON "StoryUse"("storyId");

@@ -8,6 +8,8 @@ import {Input} from "@/components/ui/input";
 import {Label} from "@/components/ui/label";
 import {Button} from "@/components/ui/button";
 import {filterQuestions, previousQuestions, QuestionEntry} from "@/lib/questions";
+import {questionTopics} from "@/lib/stories";
+import {StorySuggestions} from "@/components/StoryBank";
 
 function useQuestions() {
   const {user} = useUser();
@@ -24,6 +26,7 @@ function Questions({entries}: {entries: QuestionEntry[]}) {
     <p className="text-xs text-muted-foreground">{new Date(entry.date).toLocaleDateString()} · {entry.jobTitle}{entry.recruiter && ` · via ${entry.recruiter}`}</p>
     <ul className="list-disc space-y-1 pl-5">{entry.questions.map((question, index) => <li key={index} className="whitespace-pre-wrap">{question}</li>)}</ul>
     {entry.notes && <div><p className="text-sm font-medium">Your interview notes</p><p className="text-sm whitespace-pre-wrap text-muted-foreground">{entry.notes}</p></div>}
+    <StorySuggestions topics={questionTopics(entry.questions)} />
   </Card>)}</div>;
 }
 

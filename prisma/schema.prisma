@@ -22,6 +22,7 @@ model User {
   companies        Company[]
   applications     Application[]
   legacyInterviews LegacyInterview[]
+  stories          Story[]
 }
 
 model Company {
@@ -154,8 +155,36 @@ model Interview {
   parent           Interview?        @relation("InterviewChain", fields: [parentId], references: [id], onDelete: SetNull)
   children         Interview[]       @relation("InterviewChain")
   availabilityLink AvailabilityLink?
+  stories          StoryUse[]
 
   @@map("InterviewStage") // New table name to avoid conflict
+}
+
+model Story {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  situation String   @default("") @db.Text
+  task      String   @default("") @db.Text
+  action    String   @default("") @db.Text
+  result    String   @default("") @db.Text
+  tags      String[] @default([])
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  interviews StoryUse[]
+
+  @@index([userId])
+}
+
+model StoryUse {
+  interviewId Int
+  storyId     Int
+  interview   Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  story       Story     @relation(fields: [storyId], references: [id], onDelete: Cascade)
+
+  @@id([interviewId, storyId])
+  @@index([storyId])
 }
 
 model Stage {
