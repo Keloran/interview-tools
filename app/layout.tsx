@@ -1,11 +1,9 @@
 import type {Metadata} from "next";
 import {Geist, Geist_Mono} from "next/font/google";
 import "./globals.css";
-import {ClerkProvider, SignedIn, SignedOut, SignInButton, UserButton,} from "@clerk/nextjs";
+import {ClerkProvider} from "@clerk/nextjs";
 import {ReactNode} from "react";
-import Link from "next/link";
-import {Button} from "@/components/ui/button";
-import {Companies} from "@/components/Company";
+import Navbar from "@/components/Navbar";
 import ClientProviders from "@/components/ClientProviders";
 import GuestBanner from "@/components/GuestBanner";
 import ErrorReporter from "@/components/ErrorReporter";
@@ -55,9 +53,7 @@ export default function RootLayout({
                   </div>
                   <Navbar />
                 </div>
-                <SignedOut>
-                  <GuestBanner />
-                </SignedOut>
+                <GuestBanner />
                 {children}
               </div>
             </main>
@@ -67,22 +63,3 @@ export default function RootLayout({
     </ClerkProvider>
   );
 }
-
-const Navbar = () => {
-  return (
-    <>
-      <Companies />
-      <SignedOut>
-        <SignInButton>
-          <Button className={"cursor-pointer"}>Sign In</Button>
-        </SignInButton>
-      </SignedOut>
-      <SignedIn>
-        <Button asChild variant="ghost">
-          <Link href="/no-feedback">No Feedback</Link>
-        </Button>
-        <UserButton />
-      </SignedIn>
-    </>
-  );
-};
