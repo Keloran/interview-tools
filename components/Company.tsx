@@ -78,7 +78,7 @@ export function Companies() {
                 </div>
                 {company.applications.map((a) => (
                   <span key={a.id} className={"text-xs text-muted-foreground"}>
-                    {a.jobTitle}{a.clientCompany && ` (${a.clientCompany})`} · applied {timeAgo(a.applicationDate)} · {a.status}
+                    {a.jobTitle}{a.clientCompany && ` (${a.clientCompany})`} · applied {timeAgo(a.applicationDate)} · {a.status}{a.promise && ` · ${a.promise}`}
                   </span>
                 ))}
               </CommandItem>

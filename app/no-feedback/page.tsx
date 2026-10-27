@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
+import FollowUps from "@/components/FollowUps";
 import {
   Card,
   CardContent,
@@ -48,6 +49,7 @@ export default async function NoFeedbackPage() {
 
   return (
     <div className="flex flex-col gap-6">
+      <FollowUps />
       <Card>
         <CardHeader>
           <CardTitle>No Feedback (30+ Days)</CardTitle>

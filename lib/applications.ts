@@ -1,8 +1,11 @@
 // Turns an application's stages into answers: what happened, and did the company ever respond?
 
 import { LinkTracking, linkState } from "@/lib/availability";
+import { times } from "@/lib/followUps";
 
 export const GHOSTED_AFTER_DAYS = 30;
+// Chased this many times without ever hearing back counts as ghosted, however recent
+export const GHOSTED_AFTER_FOLLOW_UPS = 2;
 const SETTLED_OUTCOMES = ["OFFER_ACCEPTED", "OFFER_DECLINED", "OFFER_RECEIVED", "REJECTED", "WITHDREW", "SCHEDULED"];
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -20,6 +23,8 @@ export type ApplicationSummary = {
   status: string;
   // responded: they got back to you (interview, rejection, offer); ghosted: nothing for 30+ days
   response: "responded" | "waiting" | "ghosted";
+  // "Said they'd reply by 12 Oct; never replied"
+  promise?: string | null;
 };
 
 export type CompanyHistory = {
@@ -28,11 +33,12 @@ export type CompanyHistory = {
   applications: ApplicationSummary[];
 };
 
-// stages: newest first; links: availability links sent for it
+// stages: newest first; links: availability links sent for it; followUps: times you chased them
 export function summarizeApplication(
   stages: StageSummary[],
   now = Date.now(),
   links: LinkTracking[] = [],
+  followUps = 0,
 ): Pick<ApplicationSummary, "status" | "response"> {
   const latest = stages[0];
   if (!latest) return { status: "Applied", response: "waiting" };
@@ -57,10 +63,12 @@ export function summarizeApplication(
   }
 
   const quietDays = (now - new Date(latest.updatedAt).getTime()) / DAY_MS;
-  if (quietDays >= GHOSTED_AFTER_DAYS) {
-    return { status: `No response after ${latest.stage}`, response: heardBack ? "responded" : "ghosted" };
+  const ghosted = quietDays >= GHOSTED_AFTER_DAYS || followUps >= GHOSTED_AFTER_FOLLOW_UPS;
+  const chased = followUps ? `Followed up ${times(followUps)}, no response` : null;
+  if (ghosted) {
+    return { status: chased ?? `No response after ${latest.stage}`, response: heardBack ? "responded" : "ghosted" };
   }
-  return { status: `Awaiting response (${latest.stage})`, response };
+  return { status: chased ?? `Awaiting response (${latest.stage})`, response };
 }
 
 const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
