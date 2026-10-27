@@ -2,6 +2,7 @@
 
 import { LinkTracking, linkState } from "@/lib/availability";
 import { times } from "@/lib/followUps";
+import { jobKey } from "@/lib/jobLinks";
 
 export const GHOSTED_AFTER_DAYS = 30;
 // Chased this many times without ever hearing back counts as ghosted, however recent
@@ -20,6 +21,7 @@ export type ApplicationSummary = {
   jobTitle: string;
   clientCompany: string | null;
   applicationDate: string | Date;
+  jobPostingLink?: string | null;
   status: string;
   // responded: they got back to you (interview, rejection, offer); ghosted: nothing for 30+ days
   response: "responded" | "waiting" | "ghosted";
@@ -91,7 +93,8 @@ export function responseRecord(applications: ApplicationSummary[]): string | nul
   return `Responded to ${responded} of ${settled.length}`;
 }
 
-export type PreviousApplication = ApplicationSummary & { companyName: string; sameTitle: boolean };
+// samePosting: the same job link (or job ID on a known board), however the company was entered
+export type PreviousApplication = ApplicationSummary & { companyName: string; sameTitle: boolean; samePosting: boolean };
 
 const norm = (s: string | null | undefined) => (s ?? "").toLowerCase().replace(/\s+/g, " ").trim();
 
@@ -103,17 +106,23 @@ export function findPreviousApplications(
   companyName: string,
   clientCompany: string,
   jobTitle: string,
+  jobPostingLink?: string | null,
 ): PreviousApplication[] {
   const names = [norm(companyName), norm(clientCompany)].filter(Boolean);
-  if (!names.length) return [];
+  const key = jobKey(jobPostingLink);
+  if (!names.length && !key) return [];
   const title = norm(jobTitle);
 
   return history
     .flatMap((c) => c.applications.map((a) => ({ ...a, companyName: c.name })))
-    .filter((a) => [norm(a.companyName), norm(a.clientCompany)].some((n) => n && names.includes(n)))
     .map((a) => {
       const t = norm(a.jobTitle);
-      return { ...a, sameTitle: !!title && (t === title || t.includes(title) || title.includes(t)) };
+      return {
+        ...a,
+        sameTitle: !!title && (t === title || t.includes(title) || title.includes(t)),
+        samePosting: !!key && jobKey(a.jobPostingLink) === key,
+      };
     })
-    .sort((a, b) => Number(b.sameTitle) - Number(a.sameTitle));
+    .filter((a) => a.samePosting || [norm(a.companyName), norm(a.clientCompany)].some((n) => n && names.includes(n)))
+    .sort((a, b) => Number(b.samePosting) - Number(a.samePosting) || Number(b.sameTitle) - Number(a.sameTitle));
 }
