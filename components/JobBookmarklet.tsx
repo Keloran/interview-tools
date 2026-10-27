@@ -27,7 +27,11 @@ export default function JobBookmarklet() {
 
   return <Card className="p-4 gap-3">
     <h2 className="font-semibold">Check jobs from other sites</h2>
-    <p className="text-sm text-muted-foreground">Drag “Check this job” to your bookmarks bar. When viewing a job listing, click that bookmark to open its application check here.</p>
+    <p className="text-sm text-muted-foreground">In Helium or another desktop browser:</p>
+    <ol className="list-decimal space-y-2 pl-5 text-sm">
+      <li>Show your bookmarks bar, then drag the <strong>Check this job</strong> link below onto it.</li>
+      <li>Open a job listing, then click the saved <strong>Check this job</strong> bookmark to open its application check here.</li>
+    </ol>
     <div className="flex flex-wrap items-center gap-3">
       <a ref={link} href="#" draggable className="cursor-grab rounded-md border px-3 py-2 text-sm font-medium" onClick={(event) => {
         event.preventDefault();
