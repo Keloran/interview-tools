@@ -108,6 +108,7 @@ describe('PUT /api/interview/[id] debrief', () => {
     const {data} = (prisma.interview.update as any).mock.calls[0][0]
     expect(data).toMatchObject({rating: 5, nextStep: 'Final round', replyBy: new Date('2026-11-06T00:00:00.000Z'), questionsAsked: null})
     expect(data.debriefedAt).toBeInstanceOf(Date)
+    expect(data).not.toHaveProperty('prepNotes') // a partial debrief must not erase separately saved preparation
   })
 })
 

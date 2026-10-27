@@ -53,6 +53,7 @@ function Form({interviewId, saved, onSuccess}: { interviewId: string; saved: Deb
         queryClient.invalidateQueries({queryKey: ["interview", interviewId]}),
         queryClient.invalidateQueries({queryKey: ["interviews"]}),
         queryClient.invalidateQueries({queryKey: ["questions"]}),
+        queryClient.invalidateQueries({queryKey: ["prep"]}),
       ]);
       onSuccess?.();
     } catch (e) {

@@ -8,6 +8,7 @@ import {deriveMethodFromLink, getStageMethodButton} from "@/lib/utils/interviewM
 import {useAppStore} from "@/lib/store";
 import {FEEDBACK_LABEL, FeedbackType} from "@/lib/feedback";
 import {PreviousQuestions} from "@/components/QuestionBank";
+import InterviewPrep from "@/components/InterviewPrep";
 
 export default function InterviewInfo(props: {interviewId: string | null}) {
   const {user} = useUser();
@@ -155,7 +156,7 @@ export default function InterviewInfo(props: {interviewId: string | null}) {
 
   // Unified layout for both guest and authenticated interviews using the view model
   return (
-    <div className="space-y-4">
+    <div className="max-h-[65vh] space-y-4 overflow-y-auto pr-1">
       <div>
         <p className="text-sm font-medium text-muted-foreground">Company</p>
         <p
@@ -252,6 +253,7 @@ export default function InterviewInfo(props: {interviewId: string | null}) {
       {!isGuest && vm.outcome === "SCHEDULED" && vm.date && Date.parse(vm.date) > now && vm.stage && (vm.clientCompany || vm.company) && (
         <PreviousQuestions interviewId={Number(props.interviewId)} company={(vm.clientCompany || vm.company)!} stage={vm.stage} date={vm.date} />
       )}
+      {!isGuest && props.interviewId && <InterviewPrep interviewId={props.interviewId} />}
       {!isGuest && (interviewData as ApiInterview)?.debriefedAt && <Debrief d={interviewData as ApiInterview} />}
 
       {!isGuest && (interviewData as ApiInterview)?.feedbackType && (
@@ -282,7 +284,6 @@ function Debrief({d}: { d: { rating?: number | null; debriefNotes?: string | nul
     ["Who you met", d.peopleMet],
     ["Questions they asked", d.questionsAsked],
     ["What happens next", [d.nextStep, d.replyBy && `hear back by ${new Date(d.replyBy).toLocaleDateString(undefined, {day: "numeric", month: "long"})}`].filter(Boolean).join(", ")],
-    ["To prepare", d.prepNotes],
   ];
   return (
     <>

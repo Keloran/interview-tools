@@ -34,8 +34,10 @@ describe('Navbar on a phone', () => {
     expect(within(menu).getByRole('link', {name: 'Companies'})).toHaveAttribute('href', '/companies')
     expect(within(menu).getByRole('link', {name: /No Feedback/})).toHaveTextContent('3')
     expect(within(menu).getByRole('link', {name: 'Roadmap'})).toBeInTheDocument()
+    expect(within(menu).getByRole('link', {name: 'Questions'})).toHaveAttribute('href', '/questions')
+    expect(within(menu).getByRole('link', {name: 'Stories'})).toHaveAttribute('href', '/stories')
 
-    await user.click(within(menu).getByRole('link', {name: 'Roadmap'}))
+    await user.click(within(menu).getByRole('link', {name: 'Stories'}))
     expect(screen.queryByRole('dialog', {name: 'Menu'})).not.toBeInTheDocument()
   })
 })
