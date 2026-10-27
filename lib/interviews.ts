@@ -24,6 +24,10 @@ export const interviewSelect = {
   application: {
     select: {
       id: true,
+      viaRecruiter: true,
+      recruiterName: true,
+      recruiterEmail: true,
+      recruiterLinkedIn: true,
       jobTitle: true,
       clientCompany: true,
       applicationDate: true,
@@ -40,6 +44,10 @@ export function toInterviewDto({ application, ...interview }: InterviewRow) {
   return {
     ...interview,
     applicationId: application.id,
+    viaRecruiter: application.viaRecruiter,
+    recruiterName: application.recruiterName,
+    recruiterEmail: application.recruiterEmail,
+    recruiterLinkedIn: application.recruiterLinkedIn,
     jobTitle: application.jobTitle,
     clientCompany: application.clientCompany,
     applicationDate: application.applicationDate,

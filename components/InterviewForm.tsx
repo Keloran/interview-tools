@@ -26,10 +26,17 @@ import {nextStage, sortStages} from "@/lib/stages";
 import StageCombobox from "@/components/StageCombobox";
 import DurationSelect from "@/components/DurationSelect";
 import {reportClientError} from "@/lib/reportClientError";
+import RecruiterFields from "@/components/RecruiterFields";
+import RecruiterRecord from "@/components/RecruiterRecord";
+import {emptyContact, viaAgency} from "@/lib/recruiters";
 
 export type LocationType = "phone" | "link";
 
 export type InterviewFormValues = {
+  viaRecruiter?: boolean;
+  recruiterName?: string;
+  recruiterEmail?: string;
+  recruiterLinkedIn?: string;
   stage: string;
   companyName: string;
   clientCompany?: string;
@@ -115,6 +122,7 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
   const [stage, setStage] = useState<InterviewFormValues["stage"]>(initialValues?.stage || ""); // "" = use the default below
   const [companyName, setCompanyName] = useState(initialValues?.companyName || "");
   const [clientCompany, setClientCompany] = useState(initialValues?.clientCompany || "");
+  const [contact, setContact] = useState({...emptyContact, viaRecruiter: initialValues?.viaRecruiter ?? !!initialValues?.clientCompany, recruiterName: initialValues?.recruiterName ?? "", recruiterEmail: initialValues?.recruiterEmail ?? "", recruiterLinkedIn: initialValues?.recruiterLinkedIn ?? ""});
   const [jobTitle, setJobTitle] = useState(initialValues?.jobTitle || "");
   const [jobPostingLink, setJobPostingLink] = useState(initialValues?.jobPostingLink || "");
   const [date, setDate] = useState(initialDateStr);
@@ -178,6 +186,7 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
 
     // Build values object
     const values: InterviewFormValues = {
+      ...contact,
       stage: selectedStage,
       companyName,
       clientCompany: clientCompany || undefined,
@@ -285,6 +294,10 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
         }
 
         type PostInterviewBody = {
+          viaRecruiter?: boolean;
+          recruiterName?: string;
+          recruiterEmail?: string;
+          recruiterLinkedIn?: string;
           stage?: string;
           companyName?: string;
           clientCompany?: string;
@@ -301,6 +314,8 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
         };
 
         const body: PostInterviewBody = {
+          ...contact,
+          viaRecruiter: contact.viaRecruiter || !!clientCompany.trim(),
           stage: selectedStage,
           companyName,
           clientCompany: clientCompany || undefined,
@@ -412,7 +427,7 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
             id="client-company"
             placeholder="e.g. End client if via recruiter"
             value={clientCompany}
-            onChange={(e) => setClientCompany(e.target.value)}
+            onChange={(e) => {setClientCompany(e.target.value); if (e.target.value.trim()) setContact({...contact, viaRecruiter: true});}}
           />
         </div>
         <div className="space-y-2 md:col-span-2">
@@ -427,6 +442,10 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
             <p className="text-xs text-destructive mt-1">{validationErrors.jobTitle}</p>
           )}
         </div>
+        {!!user && !isProgressing && <div className="md:col-span-2 space-y-3">
+          <RecruiterFields value={contact} onChange={setContact} agency={companyName} disabled={isSubmitting} error={validationErrors.recruiterName || validationErrors.recruiterEmail || validationErrors.recruiterLinkedIn} />
+          {companies?.filter((company) => company.name.trim().toLowerCase() === companyName.trim().toLowerCase() && company.applications.some(viaAgency)).map((company) => <div className="rounded-md border p-3" key={company.id}><p className="text-sm font-medium">{company.name}: your agency record</p><RecruiterRecord applications={company.applications.filter(viaAgency)} /></div>)}
+        </div>}
         {previousApplications.length > 0 && (
           <div
             role="status"

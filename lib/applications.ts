@@ -17,6 +17,10 @@ export type StageSummary = {
 };
 
 export type ApplicationSummary = {
+  viaRecruiter?: boolean;
+  recruiterName?: string | null;
+  recruiterEmail?: string | null;
+  recruiterLinkedIn?: string | null;
   id: number;
   jobTitle: string;
   clientCompany: string | null;
@@ -131,6 +135,6 @@ export function findPreviousApplications(
 export function searchCompanies(history: CompanyHistory[], query: string): CompanyHistory[] {
   const q = norm(query);
   return history
-    .filter((c) => !q || [c.name, ...c.applications.flatMap((a) => [a.clientCompany, a.jobTitle])].some((s) => norm(s).includes(q)))
+    .filter((c) => !q || [c.name, ...c.applications.flatMap((a) => [a.clientCompany, a.jobTitle, a.recruiterName, a.recruiterEmail])].some((s) => norm(s).includes(q)))
     .sort((a, b) => a.name.localeCompare(b.name, undefined, {sensitivity: "base"}));
 }

@@ -12,6 +12,8 @@ import {getCompanies} from "@/components/Company";
 import {responseRecord, searchCompanies, timeAgo} from "@/lib/applications";
 import {feedbackRecord} from "@/lib/feedback";
 import {useAppStore} from "@/lib/store";
+import {companyKind, viaAgency} from "@/lib/recruiters";
+import RecruiterRecord from "@/components/RecruiterRecord";
 
 export const PAGE_SIZE = 25;
 
@@ -70,6 +72,7 @@ export default function CompaniesDirectory() {
                     <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
                       <div className="min-w-0">
                         <p className="font-medium">{c.name}</p>
+                        <p className="text-xs text-muted-foreground">{companyKind(c.applications)}</p>
                         <p className="text-xs text-muted-foreground">
                           {c.applications.length} application{c.applications.length === 1 ? "" : "s"}
                           {lastApplied && ` · last applied ${timeAgo(lastApplied)}`}
@@ -81,6 +84,7 @@ export default function CompaniesDirectory() {
                       </div>
                     </summary>
                     <div className="mt-2 ml-1 border-l-2 border-border pl-4">
+                      {c.applications.some(viaAgency) && <RecruiterRecord applications={c.applications.filter(viaAgency)} />}
                       <PreviousApplications
                         applications={c.applications.map((a) => ({...a, companyName: c.name, sameTitle: true, samePosting: false}))}
                         onShow={() => {

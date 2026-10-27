@@ -1,5 +1,7 @@
 "use client"
 
+import RecruiterContact from "@/components/RecruiterContact";
+import type {RecruiterContact as Contact} from "@/lib/recruiters";
 import {useQuery} from "@tanstack/react-query";
 import {useUser} from "@clerk/nextjs";
 import {listGuestInterviews} from "@/lib/guestStorage";
@@ -155,6 +157,7 @@ export default function InterviewInfo(props: {interviewId: string | null}) {
   };
 
   // Unified layout for both guest and authenticated interviews using the view model
+  const applicationContact = interviewData as Contact & {applicationId?: number};
   return (
     <div className="max-h-[65vh] space-y-4 overflow-y-auto pr-1">
       <div>
@@ -254,6 +257,7 @@ export default function InterviewInfo(props: {interviewId: string | null}) {
         <PreviousQuestions interviewId={Number(props.interviewId)} company={(vm.clientCompany || vm.company)!} stage={vm.stage} date={vm.date} />
       )}
       {!isGuest && props.interviewId && <InterviewPrep interviewId={props.interviewId} />}
+      {!isGuest && applicationContact.applicationId && <RecruiterContact key={applicationContact.applicationId} applicationId={applicationContact.applicationId} agency={vm.company ?? ""} clientCompany={vm.clientCompany} contact={applicationContact} />}
       {!isGuest && (interviewData as ApiInterview)?.debriefedAt && <Debrief d={interviewData as ApiInterview} />}
 
       {!isGuest && (interviewData as ApiInterview)?.feedbackType && (

@@ -4,6 +4,7 @@ import type {Story} from "@/lib/stories";
 
 export const applicationExportSelect = {
   id: true, jobTitle: true, clientCompany: true, applicationDate: true, jobPostingLink: true, created_at: true, updated_at: true,
+  viaRecruiter: true, recruiterName: true, recruiterEmail: true, recruiterLinkedIn: true,
   company: {select: {id: true, name: true}},
   interviews: {orderBy: [{created_at: "desc"}, {id: "desc"}], select: {
     id: true, parentId: true, date: true, deadline: true, durationMinutes: true, outcome: true, interviewer: true, notes: true, link: true,
@@ -15,7 +16,7 @@ export const applicationExportSelect = {
 type ApplicationExport = Prisma.ApplicationGetPayload<{select: typeof applicationExportSelect}>;
 const columns = ["exportFormat", "applicationId", "company", "clientCompany", "jobTitle", "applicationDate", "jobPostingLink", "applicationCreatedAt", "applicationUpdatedAt",
   "interviewId", "previousInterviewId", "stage", "stageMethod", "date", "deadline", "durationMinutes", "outcome", "interviewer", "notes", "meetingLink",
-  "debriefedAt", "rating", "debriefNotes", "peopleMet", "questionsAsked", "prepNotes", "nextStep", "replyBy", "feedbackType", "feedbackText", "stageCreatedAt", "stageUpdatedAt"];
+  "debriefedAt", "rating", "debriefNotes", "peopleMet", "questionsAsked", "prepNotes", "nextStep", "replyBy", "feedbackType", "feedbackText", "stageCreatedAt", "stageUpdatedAt", "viaRecruiter", "recruiterName", "recruiterEmail", "recruiterLinkedIn"];
 
 export function exportApplications(applications: ApplicationExport[]): string {
   const rows = applications.flatMap((application) => (application.interviews.length ? application.interviews : [null]).map((stage) => {
@@ -27,6 +28,7 @@ export function exportApplications(applications: ApplicationExport[]): string {
       debriefedAt: stage?.debriefedAt, rating: stage?.rating, debriefNotes: stage?.debriefNotes, peopleMet: stage?.peopleMet, questionsAsked: stage?.questionsAsked,
       prepNotes: stage?.prepNotes, nextStep: stage?.nextStep, replyBy: stage?.replyBy, feedbackType: stage?.feedbackType, feedbackText: stage?.feedbackText,
       stageCreatedAt: stage?.created_at, stageUpdatedAt: stage?.updated_at,
+      viaRecruiter: application.viaRecruiter ? "true" : "false", recruiterName: application.recruiterName, recruiterEmail: application.recruiterEmail, recruiterLinkedIn: application.recruiterLinkedIn,
     };
     return columns.map((column) => row[column]);
   }));
