@@ -9,6 +9,7 @@ import {Search} from "lucide-react";
 import {useAppStore} from "@/lib/store";
 import {useFlags} from "@flags-gg/react-library";
 import {CompanyHistory, responseRecord, timeAgo} from "@/lib/applications";
+import {feedbackRecord} from "@/lib/feedback";
 
 type Company = CompanyHistory;
 
@@ -61,7 +62,7 @@ export function Companies() {
         <CommandList>
           <CommandEmpty>You haven&apos;t done anything with this company.</CommandEmpty>
           {data?.map((company) => {
-            const record = responseRecord(company.applications)
+            const record = [responseRecord(company.applications), feedbackRecord(company.applications)].filter(Boolean).join(" · ")
             return (
               <CommandItem
                 className={"cursor-pointer p-2 flex-col items-start gap-0.5"}

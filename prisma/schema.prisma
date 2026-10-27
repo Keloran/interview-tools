@@ -142,6 +142,10 @@ model Interview {
   nextStep       String? // what they said happens next
   replyBy        DateTime? // when they said you'd hear back
 
+  // Did they say why? Mostly asked on rejection, can be added to any stage
+  feedbackType FeedbackType?
+  feedbackText String?       @db.Text
+
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
@@ -167,6 +171,12 @@ model StageMethod {
   method           String            @unique
   interviews       Interview[]
   legacyInterviews LegacyInterview[]
+}
+
+enum FeedbackType {
+  NONE // No feedback
+  GENERIC // "We went with someone else"
+  SPECIFIC // Something you can act on
 }
 
 enum InterviewOutcome {

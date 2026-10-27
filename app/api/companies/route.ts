@@ -25,7 +25,7 @@ export async function GET() {
             applicationDate: true,
             jobPostingLink: true,
             interviews: {
-              select: { outcome: true, updated_at: true, created_at: true, replyBy: true, stage: { select: { stage: true } } },
+              select: { outcome: true, updated_at: true, created_at: true, replyBy: true, feedbackType: true, stage: { select: { stage: true } } },
               orderBy: { created_at: "desc" },
             },
             availabilityLinks: { select: { created_at: true, viewCount: true, lastViewedAt: true, bookedSlot: true } },
@@ -43,7 +43,7 @@ export async function GET() {
       applications: c.applications.map(({ interviews, availabilityLinks, _count, ...a }) => ({
         ...a,
         ...summarizeApplication(
-          interviews.map((i) => ({ stage: i.stage.stage, outcome: i.outcome, updatedAt: i.updated_at })),
+          interviews.map((i) => ({ stage: i.stage.stage, outcome: i.outcome, updatedAt: i.updated_at, feedbackType: i.feedbackType })),
           undefined,
           availabilityLinks,
           _count.followUps,

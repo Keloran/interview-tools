@@ -6,6 +6,7 @@ import {listGuestInterviews} from "@/lib/guestStorage";
 import {useMemo} from "react";
 import {deriveMethodFromLink, getStageMethodButton} from "@/lib/utils/interviewMethod";
 import {useAppStore} from "@/lib/store";
+import {FEEDBACK_LABEL, FeedbackType} from "@/lib/feedback";
 
 export default function InterviewInfo(props: {interviewId: string | null}) {
   const {user} = useUser();
@@ -72,6 +73,8 @@ export default function InterviewInfo(props: {interviewId: string | null}) {
     nextStep?: string | null;
     replyBy?: string | null;
     prepNotes?: string | null;
+    feedbackType?: FeedbackType | null;
+    feedbackText?: string | null;
   }
 
   interface ViewModel {
@@ -245,6 +248,16 @@ export default function InterviewInfo(props: {interviewId: string | null}) {
       )}
 
       {!isGuest && (interviewData as ApiInterview)?.debriefedAt && <Debrief d={interviewData as ApiInterview} />}
+
+      {!isGuest && (interviewData as ApiInterview)?.feedbackType && (
+        <div>
+          <p className="text-sm font-medium text-muted-foreground">Feedback</p>
+          <p className="text-base whitespace-pre-wrap">
+            {FEEDBACK_LABEL[(interviewData as ApiInterview).feedbackType!]}
+            {(interviewData as ApiInterview).feedbackText && `: ${(interviewData as ApiInterview).feedbackText}`}
+          </p>
+        </div>
+      )}
 
       {vm.notes && (
         <div>
