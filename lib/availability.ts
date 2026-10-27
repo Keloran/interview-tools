@@ -94,25 +94,3 @@ export function linkState(link: LinkTracking, now = Date.now()): LinkState {
   const ageDays = (now - new Date(link.created_at).getTime()) / (24 * 60 * MINUTE_MS);
   return ageDays >= LINK_IGNORED_AFTER_DAYS ? "ignored" : "sent";
 }
-
-// The note to paste into a reply, listing the times and the link to book one
-export function availabilityMessage({jobTitle, company, slots, url, formatSlot, timeZoneLabel}: {
-  jobTitle: string;
-  company: string;
-  slots: Date[];
-  url: string;
-  formatSlot: (d: Date) => string;
-  timeZoneLabel: string;
-}): string {
-  return [
-    "Hi,",
-    "",
-    `Thanks for getting in touch about the ${jobTitle} role at ${company}. I'm available at the following times (${timeZoneLabel}):`,
-    "",
-    ...slots.map((s) => `- ${formatSlot(s)}`),
-    "",
-    `You can book whichever suits you here: ${url}`,
-    "",
-    "Thanks",
-  ].join("\n");
-}
