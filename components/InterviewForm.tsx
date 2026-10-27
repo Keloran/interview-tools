@@ -364,7 +364,7 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
           <Label htmlFor="company-name">Company name</Label>
           <Popover open={companyOpen} onOpenChange={setCompanyOpen}>
             <PopoverTrigger asChild>
-              <Button variant={"outline"} role={"combobox"} className={"w-[200px] justify-between"}>
+              <Button id="company-name" variant={"outline"} role={"combobox"} className={"w-[200px] justify-between"}>
                 {companyName !== "" ? companyName : "Company"}
                 <ChevronsUpDown className="opacity-50" />
               </Button>
