@@ -49,6 +49,9 @@ function NavLinks({stacked, onNavigate}: { stacked?: boolean; onNavigate?: () =>
         <Button asChild variant="ghost" className={item}>
           <Link href="/stories" onClick={onNavigate}>Stories</Link>
         </Button>
+        <Button asChild variant="ghost" className={item}>
+          <Link href="/data" onClick={onNavigate}>Your data</Link>
+        </Button>
       </SignedIn>
       <Button asChild variant="ghost" className={item}>
         <Link href="/roadmap" onClick={onNavigate}>Roadmap</Link>
