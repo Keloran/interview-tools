@@ -22,6 +22,9 @@ export default function Navbar() {
         </SignInButton>
       </SignedOut>
       <SignedIn>
+        <Button asChild variant="ghost">
+          <Link href="/companies">Companies</Link>
+        </Button>
         <NoFeedbackLink />
         <UserButton>
           <UserButton.MenuItems>
