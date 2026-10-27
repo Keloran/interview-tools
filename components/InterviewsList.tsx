@@ -5,7 +5,7 @@ import {Card} from "@/components/ui/card";
 import {Button} from "@/components/ui/button";
 import {cn, getStageColor, isSameDay, toISODate} from "@/lib/utils";
 import {useEffect, useMemo, useState} from "react";
-import {CalendarClock, Check, Clock, CornerUpRight, MessageSquare, Pencil, ThumbsDown, X} from "lucide-react";
+import {CalendarClock, Check, Clock, CornerUpRight, MessageSquare, NotebookPen, Pencil, ThumbsDown, X} from "lucide-react";
 import {useQuery, useQueryClient} from "@tanstack/react-query";
 import {useUser} from "@clerk/nextjs";
 import { getStageMethodButton } from "@/lib/utils/interviewMethod";
@@ -21,6 +21,8 @@ import ShareAvailability from "@/components/ShareAvailability";
 import FreeTimes from "@/components/FreeTimes";
 import SendMessage from "@/components/SendMessage";
 import {templatesFor} from "@/lib/messages";
+import DebriefForm from "@/components/DebriefForm";
+import {needsDebrief} from "@/lib/debrief";
 import {useFlags} from "@flags-gg/react-library";
 import {reportClientError} from "@/lib/reportClientError";
 import {addDays} from "@/lib/busy";
@@ -51,6 +53,7 @@ interface InterviewApiItem {
   stageMethod?: { method: string } | null;
   link?: string | null;
   interviewer?: string | null;
+  debriefedAt?: string | null;
   company: { name: string; id: number };
   clientCompany?: string | null;
   jobPostingLink?: string | null;
@@ -67,6 +70,7 @@ interface Interview {
   outcome: string;
   link: string;
   interviewer?: string;
+  debriefedAt?: string;
   company: {
     name: string;
     id: number
@@ -130,6 +134,7 @@ export default function InterviewsList() {
   const [infoDialogOpen, setInfoDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [messageDialogOpen, setMessageDialogOpen] = useState(false);
+  const [debriefDialogOpen, setDebriefDialogOpen] = useState(false);
   const [selectedInterview, setSelectedInterview] = useState<Interview | null>(null);
   const [guestInterviews, setGuestInterviews] = useState<Interview[]>([]);
   const {is} = useFlags()
@@ -207,6 +212,7 @@ export default function InterviewsList() {
     stageMethod: item.stageMethod?.method || "Unknown",
     link: item.link as string,
     interviewer: item.interviewer ?? undefined,
+    debriefedAt: item.debriefedAt ?? undefined,
     company: {
       name: item.company.name,
       id: item.company.id,
@@ -443,6 +449,27 @@ export default function InterviewsList() {
                           <TooltipContent>Edit Interview Details</TooltipContent>
                         </Tooltip>
                       )}
+                      {interview.stage !== "Applied" && interview.date.getTime() < Date.now() && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant={"ghost"}
+                              size={"sm"}
+                              // stands out until it's been done
+                              className={cn("cursor-pointer", needsDebrief(interview) && "text-primary")}
+                              aria-label={interview.debriefedAt ? "Edit debrief" : "Debrief"}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedInterview(interview);
+                                setDebriefDialogOpen(true);
+                              }}
+                            >
+                              <NotebookPen />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>{interview.debriefedAt ? "Edit debrief" : "Debrief: how did it go?"}</TooltipContent>
+                        </Tooltip>
+                      )}
                       {templatesFor(interview).length > 0 && (
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -655,6 +682,17 @@ export default function InterviewsList() {
                 date: selectedInterview.date,
               }}
             />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={debriefDialogOpen} onOpenChange={setDebriefDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Debrief - {selectedInterview?.title}</DialogTitle>
+          </DialogHeader>
+          {selectedInterview && (
+            <DebriefForm key={selectedInterview.id} interviewId={selectedInterview.id} onSuccess={() => setDebriefDialogOpen(false)} />
           )}
         </DialogContent>
       </Dialog>

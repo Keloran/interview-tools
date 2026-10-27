@@ -64,6 +64,14 @@ export default function InterviewInfo(props: {interviewId: string | null}) {
     link?: string | null;
     jobPostingLink?: string | null;
     metadata?: { jobListing?: string } | null;
+    debriefedAt?: string | null;
+    rating?: number | null;
+    debriefNotes?: string | null;
+    peopleMet?: string | null;
+    questionsAsked?: string | null;
+    nextStep?: string | null;
+    replyBy?: string | null;
+    prepNotes?: string | null;
   }
 
   interface ViewModel {
@@ -236,6 +244,8 @@ export default function InterviewInfo(props: {interviewId: string | null}) {
         </div>
       )}
 
+      {!isGuest && (interviewData as ApiInterview)?.debriefedAt && <Debrief d={interviewData as ApiInterview} />}
+
       {vm.notes && (
         <div>
           <p className="text-sm font-medium text-muted-foreground">Notes</p>
@@ -243,5 +253,27 @@ export default function InterviewInfo(props: {interviewId: string | null}) {
         </div>
       )}
     </div>
+  );
+}
+const RATING_LABEL = ["", "Badly", "Not great", "OK", "Well", "Great"];
+
+function Debrief({d}: { d: { rating?: number | null; debriefNotes?: string | null; peopleMet?: string | null; questionsAsked?: string | null; nextStep?: string | null; replyBy?: string | null; prepNotes?: string | null } }) {
+  const rows: [string, string | null | undefined][] = [
+    ["How it went", d.rating ? RATING_LABEL[d.rating] : null],
+    ["Debrief", d.debriefNotes],
+    ["Who you met", d.peopleMet],
+    ["Questions they asked", d.questionsAsked],
+    ["What happens next", [d.nextStep, d.replyBy && `hear back by ${new Date(d.replyBy).toLocaleDateString(undefined, {day: "numeric", month: "long"})}`].filter(Boolean).join(", ")],
+    ["To prepare", d.prepNotes],
+  ];
+  return (
+    <>
+      {rows.filter(([, v]) => v).map(([label, value]) => (
+        <div key={label}>
+          <p className="text-sm font-medium text-muted-foreground">{label}</p>
+          <p className="text-base whitespace-pre-wrap">{value}</p>
+        </div>
+      ))}
+    </>
   );
 }

@@ -120,8 +120,19 @@ model Interview {
   outcome         InterviewOutcome?
   notes           String?           @db.Text
   link            String? // Meeting link (Teams, Google Meet, etc.)
-  created_at      DateTime          @default(now())
-  updated_at      DateTime          @updatedAt
+
+  // Debrief, written straight after the interview while it's fresh
+  debriefedAt    DateTime?
+  rating         Int? // how it went, 1-5
+  debriefNotes   String?   @db.Text
+  peopleMet      String?   @db.Text
+  questionsAsked String?   @db.Text // one per line
+  prepNotes      String?   @db.Text // for the next round
+  nextStep       String? // what they said happens next
+  replyBy        DateTime? // when they said you'd hear back
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   // Parent-child for ordering within the application
   parentId         Int?
