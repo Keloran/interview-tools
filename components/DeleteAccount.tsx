@@ -1,6 +1,7 @@
 "use client";
 
 import {useState} from "react";
+import Link from "next/link";
 import {SignedIn, SignedOut, useClerk} from "@clerk/nextjs";
 import {Button} from "@/components/ui/button";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
@@ -42,6 +43,7 @@ function DeleteForm() {
   return (
     <div className="flex flex-col gap-4">
       <div className="text-sm space-y-2">
+        <p><Link href="/data" className="underline underline-offset-4">Export your applications, stages and stories first</Link></p>
         <p>This permanently deletes:</p>
         <ul className="list-disc pl-5 text-muted-foreground space-y-1">
           <li>every application, interview stage, debrief and note</li>

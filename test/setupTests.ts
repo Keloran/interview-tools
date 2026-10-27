@@ -55,14 +55,15 @@ vi.mock('@/lib/prisma', () => {
       user: {upsert: fn(), deleteMany: fn()},
       company: {findMany: fn(), upsert: fn()},
       stage: {findMany: fn(), upsert: fn()},
-      stageMethod: {findFirst: fn(), create: fn()},
+      stageMethod: {findFirst: fn(), create: fn(), upsert: fn()},
       interview: {findMany: fn(), findFirst: fn(), create: fn(), update: fn()},
       availabilityLink: {create: fn(), findUnique: fn(), updateMany: fn(), update: fn()},
-      application: {findMany: fn(), findFirst: fn()},
+      application: {findMany: fn(), findFirst: fn(), create: fn()},
       followUp: {create: fn()},
       story: {findMany: fn(), create: fn(), updateMany: fn(), deleteMany: fn()},
       storyUse: {deleteMany: fn(), createMany: fn()},
       $transaction: fn(),
+      $queryRaw: fn(),
     },
   }
 })
