@@ -3,6 +3,7 @@ import {Geist, Geist_Mono} from "next/font/google";
 import "./globals.css";
 import {ClerkProvider} from "@clerk/nextjs";
 import {ReactNode} from "react";
+import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import ClientProviders from "@/components/ClientProviders";
 import GuestBanner from "@/components/GuestBanner";
@@ -48,7 +49,11 @@ export default function RootLayout({
               <div className="mx-auto max-w-6xl">
                 <div className="mb-8 flex items-start justify-between gap-4">
                   <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-balance">Interview Planner</h1>
+                    <h1 className="text-3xl font-bold tracking-tight text-balance">
+                      <Link href="/" className="transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                        Interview Planner
+                      </Link>
+                    </h1>
                     <p className="text-muted-foreground mt-2">Manage your interview schedule, and see what companies you have applied with in the past</p>
                   </div>
                   <Navbar />
