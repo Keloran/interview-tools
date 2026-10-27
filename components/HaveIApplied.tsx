@@ -11,7 +11,8 @@ import {Input} from "@/components/ui/input";
 import {Dialog, DialogContent, DialogHeader, DialogTitle} from "@/components/ui/dialog";
 import InterviewForm from "@/components/InterviewForm";
 import {getCompanies} from "@/components/Company";
-import {findPreviousApplications, timeAgo} from "@/lib/applications";
+import {findPreviousApplications} from "@/lib/applications";
+import PreviousApplications from "@/components/PreviousApplications";
 import {isLink} from "@/lib/jobLinks";
 import {useAppStore} from "@/lib/store";
 import {cn} from "@/lib/utils";
@@ -73,26 +74,14 @@ export default function HaveIApplied() {
                 : "No, you haven't applied for this"}
           </p>
           {matches.length > 0 && (
-            <ul className="mt-2 space-y-1 text-muted-foreground">
-              {matches.slice(0, 8).map((m) => (
-                <li key={m.id} className="flex flex-wrap items-center gap-x-2">
-                  <span className={cn((m.samePosting || m.sameTitle) && "text-foreground")}>
-                    {m.samePosting && "Same posting: "}{m.jobTitle}
-                  </span>
-                  <span>
-                    {m.clientCompany ? `at ${m.clientCompany} via ${m.companyName}` : `at ${m.companyName}, direct`}
-                    {" · applied "}{timeAgo(m.applicationDate)}{" · "}{m.status}
-                  </span>
-                  <Button variant="link" size="sm" className="h-auto p-0 cursor-pointer" onClick={() => {
-                      // the application shows in the list on the home page, filtered to its company
-                      setCompanyFilter(m.companyName);
-                      router.push("/");
-                    }}>
-                    Show
-                  </Button>
-                </li>
-              ))}
-            </ul>
+            <PreviousApplications
+              applications={matches.slice(0, 8)}
+              onShow={(m) => {
+                // the application shows in the list on the home page, filtered to its company
+                setCompanyFilter(m.companyName);
+                router.push("/");
+              }}
+            />
           )}
           {!applied && (
             <Button size="sm" variant="outline" className="mt-3 cursor-pointer" onClick={() => setAdding(true)}>
