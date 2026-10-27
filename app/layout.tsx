@@ -47,14 +47,14 @@ export default function RootLayout({
             <ErrorReporter />
             <main className="min-h-screen bg-background p-4 md:p-8">
               <div className="mx-auto max-w-6xl">
-                <div className="mb-8 flex items-start justify-between gap-4">
-                  <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-balance">
+                <div className="mb-6 md:mb-8 flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-balance">
                       <Link href="/" className="transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                         Interview Planner
                       </Link>
                     </h1>
-                    <p className="text-muted-foreground mt-2">Manage your interview schedule, and see what companies you have applied with in the past</p>
+                    <p className="text-muted-foreground mt-1 md:mt-2 text-sm md:text-base">Manage your interview schedule, and see what companies you have applied with in the past</p>
                   </div>
                   <Navbar />
                 </div>
