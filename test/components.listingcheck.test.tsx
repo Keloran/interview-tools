@@ -106,14 +106,18 @@ describe("bookmark installation", () => {
     const link = screen.getByRole("link", {name: "Check this job"});
     expect(link.getAttribute("href")).toMatch(/^javascript:/);
     expect(link).toHaveAttribute("draggable", "true");
+    await user.click(screen.getByText("Install manually instead"));
+    expect(screen.getByText(/Pasting it into the browser’s address\/search bar/)).toBeVisible();
     await user.click(screen.getByRole("button", {name: "Copy bookmark URL"}));
     expect(copy).toHaveBeenCalledWith(link.getAttribute("href"));
     expect(screen.getByRole("status")).toHaveTextContent("Copied");
+    expect(screen.getByRole("status")).toHaveTextContent("bookmark’s URL or Location field");
   });
   it("explains drag installation if the clipboard fails", async () => {
     const user = userEvent.setup();
     vi.spyOn(navigator.clipboard, "writeText").mockRejectedValueOnce(new Error("denied"));
     render(<JobBookmarklet />);
+    await user.click(screen.getByText("Install manually instead"));
     await user.click(screen.getByRole("button", {name: "Copy bookmark URL"}));
     expect(screen.getByRole("status")).toHaveTextContent("Drag");
   });

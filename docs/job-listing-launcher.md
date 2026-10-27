@@ -54,6 +54,12 @@ The setup instructions offer copying the bookmark URL when dragging is unavailab
 and pasting the listing's ordinary link into `/check` when script execution is blocked.
 No attempt is made to bypass the site's policy.
 
+Live feedback in Helium (IT-79) showed that the copied bookmarklet was pasted into
+the address/search bar and treated as a long search query. Manual installation now
+explains creating and editing a saved bookmark before presenting the copy button,
+and identifies the bookmark's URL/Location field as the destination. Dragging the
+link to the bookmarks bar remains the primary installation path.
+
 Structured data varies by site and can be missing, invalid or stale. Imported text
 is a suggestion, not trusted HTML or a confirmed application. The launcher never
 infers an unnamed client, imports the full job description, or saves on the user's behalf.
