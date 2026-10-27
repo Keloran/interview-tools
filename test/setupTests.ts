@@ -52,7 +52,7 @@ vi.mock('@/lib/prisma', () => {
   const fn = vi.fn
   return {
     default: {
-      user: {upsert: fn()},
+      user: {upsert: fn(), deleteMany: fn()},
       company: {findMany: fn(), upsert: fn()},
       stage: {findMany: fn(), upsert: fn()},
       stageMethod: {findFirst: fn(), create: fn()},

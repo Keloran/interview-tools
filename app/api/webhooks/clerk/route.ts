@@ -27,6 +27,11 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // Deleted from Clerk's side (dashboard, or our own DELETE /api/account): make sure the data goes too
+    if (eventType === "user.deleted" && id) {
+      await prisma.user.deleteMany({ where: { clerkId: id } }); // cascades to all their data
+    }
+
     return new Response("Webhook received", { status: 200 });
   } catch (err) {
     reportError("Error verifying webhook:", err);
