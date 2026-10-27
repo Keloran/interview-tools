@@ -127,3 +127,12 @@ export function findPreviousApplications(
     .filter((a) => a.samePosting || [norm(a.companyName), norm(a.clientCompany)].some((n) => n && names.includes(n)))
     .sort((a, b) => Number(b.samePosting) - Number(a.samePosting) || Number(b.sameTitle) - Number(a.sameTitle));
 }
+
+// The companies page: A–Z ignoring case, matching the company, a recruiter's client or a job title.
+// ponytail: filters the whole history in the browser, fine for hundreds of companies; page on the server past that
+export function searchCompanies(history: CompanyHistory[], query: string): CompanyHistory[] {
+  const q = norm(query);
+  return history
+    .filter((c) => !q || [c.name, ...c.applications.flatMap((a) => [a.clientCompany, a.jobTitle])].some((s) => norm(s).includes(q)))
+    .sort((a, b) => a.name.localeCompare(b.name, undefined, {sensitivity: "base"}));
+}

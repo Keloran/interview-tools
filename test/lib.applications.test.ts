@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest'
-import {findPreviousApplications, responseRecord, summarizeApplication, timeAgo} from '@/lib/applications'
+import {findPreviousApplications, responseRecord, searchCompanies, summarizeApplication, timeAgo} from '@/lib/applications'
 
 const now = new Date('2026-06-01T00:00:00Z').getTime()
 const daysAgo = (d: number) => new Date(now - d * 864e5)
@@ -121,5 +121,25 @@ describe('findPreviousApplications by job link', () => {
   it('a link alone is enough to search', () => {
     expect(findPreviousApplications(history, '', '', '', 'linkedin.com/jobs/view/4012345678').map((f) => f.id)).toEqual([1])
     expect(findPreviousApplications(history, '', '', '', 'https://example.com/jobs/1')).toEqual([])
+  })
+})
+
+describe('searchCompanies', () => {
+  const app = (jobTitle: string, clientCompany: string | null = null) =>
+    ({id: 1, jobTitle, clientCompany, applicationDate: '', status: '', response: 'waiting' as const})
+  const history = [
+    {id: 1, name: 'zebra Ltd', applications: [app('Engineer')]},
+    {id: 2, name: 'Hays', applications: [app('Platform Engineer', 'Admiral')]},
+    {id: 3, name: 'admiral', applications: [app('Tester')]},
+  ]
+
+  it('sorts A–Z ignoring case', () => {
+    expect(searchCompanies(history, '').map((c) => c.name)).toEqual(['admiral', 'Hays', 'zebra Ltd'])
+  })
+
+  it('matches the company, a recruiter\'s client or a job title', () => {
+    expect(searchCompanies(history, 'ADMIRAL').map((c) => c.name)).toEqual(['admiral', 'Hays'])
+    expect(searchCompanies(history, 'tester').map((c) => c.name)).toEqual(['admiral'])
+    expect(searchCompanies(history, 'nope')).toEqual([])
   })
 })
