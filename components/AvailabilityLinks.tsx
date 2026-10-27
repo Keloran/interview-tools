@@ -4,7 +4,8 @@ import {useState} from "react";
 import {useQuery} from "@tanstack/react-query";
 import {Button} from "@/components/ui/button";
 import {Textarea} from "@/components/ui/textarea";
-import {availabilityMessage, LinkState, linkState} from "@/lib/availability";
+import {LinkState, linkState} from "@/lib/availability";
+import {availabilityMessage} from "@/lib/messages";
 import {timeAgo} from "@/lib/applications";
 import {cn} from "@/lib/utils";
 
@@ -53,7 +54,7 @@ export function useAvailabilityLinks(interviewId: string) {
   });
 }
 
-function CopyButton({text, label}: { text: string; label: string }) {
+export function CopyButton({text, label}: { text: string; label: string }) {
   const [copied, setCopied] = useState(false);
   return (
     <Button

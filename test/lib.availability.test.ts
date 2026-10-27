@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest'
-import {availabilityMessage, clashes, freeWindows, isOfferedSlot, linkState, openSlots, suggestSlots} from '@/lib/availability'
+import {clashes, freeWindows, isOfferedSlot, linkState, openSlots, suggestSlots} from '@/lib/availability'
 
 // local times, like the owner's browser
 const at = (h: number, m = 0) => new Date(2026, 5, 1, h, m)
@@ -78,17 +78,5 @@ describe('linkState', () => {
   it('a link never opened after a week is ignored (ghosting)', () => {
     expect(linkState(link({created_at: new Date(now - 7 * day)}), now)).toBe('ignored')
     expect(linkState(link({created_at: new Date(now - 8 * day), viewCount: 1}), now)).toBe('opened')
-  })
-})
-
-describe('availabilityMessage', () => {
-  it('lists the times and the booking link', () => {
-    const msg = availabilityMessage({
-      jobTitle: 'Senior Engineer', company: 'Payter', slots: [at(10), at(14)], url: 'https://x/availability/abc',
-      formatSlot: hhmm, timeZoneLabel: 'BST',
-    })
-    expect(msg).toContain('the Senior Engineer role at Payter')
-    expect(msg).toContain('(BST):\n\n- 10:00\n- 14:00\n')
-    expect(msg).toContain('book whichever suits you here: https://x/availability/abc')
   })
 })

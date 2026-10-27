@@ -5,7 +5,7 @@ import {Card} from "@/components/ui/card";
 import {Button} from "@/components/ui/button";
 import {cn, getStageColor, isSameDay, toISODate} from "@/lib/utils";
 import {useEffect, useMemo, useState} from "react";
-import {CalendarClock, Check, Clock, CornerUpRight, Pencil, ThumbsDown, X} from "lucide-react";
+import {CalendarClock, Check, Clock, CornerUpRight, MessageSquare, Pencil, ThumbsDown, X} from "lucide-react";
 import {useQuery, useQueryClient} from "@tanstack/react-query";
 import {useUser} from "@clerk/nextjs";
 import { getStageMethodButton } from "@/lib/utils/interviewMethod";
@@ -19,6 +19,8 @@ import InterviewInfo from "@/components/InterviewInfo";
 import InterviewEditForm from "@/components/InterviewEditForm";
 import ShareAvailability from "@/components/ShareAvailability";
 import FreeTimes from "@/components/FreeTimes";
+import SendMessage from "@/components/SendMessage";
+import {templatesFor} from "@/lib/messages";
 import {useFlags} from "@flags-gg/react-library";
 import {reportClientError} from "@/lib/reportClientError";
 import {addDays} from "@/lib/busy";
@@ -48,6 +50,7 @@ interface InterviewApiItem {
   stage?: { stage: string } | null;
   stageMethod?: { method: string } | null;
   link?: string | null;
+  interviewer?: string | null;
   company: { name: string; id: number };
   clientCompany?: string | null;
   jobPostingLink?: string | null;
@@ -63,6 +66,7 @@ interface Interview {
   stageMethod: string;
   outcome: string;
   link: string;
+  interviewer?: string;
   company: {
     name: string;
     id: number
@@ -125,6 +129,7 @@ export default function InterviewsList() {
   const [availabilityDialogOpen, setAvailabilityDialogOpen] = useState(false);
   const [infoDialogOpen, setInfoDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [messageDialogOpen, setMessageDialogOpen] = useState(false);
   const [selectedInterview, setSelectedInterview] = useState<Interview | null>(null);
   const [guestInterviews, setGuestInterviews] = useState<Interview[]>([]);
   const {is} = useFlags()
@@ -201,6 +206,7 @@ export default function InterviewsList() {
     stage: item.stage?.stage || "Unknown",
     stageMethod: item.stageMethod?.method || "Unknown",
     link: item.link as string,
+    interviewer: item.interviewer ?? undefined,
     company: {
       name: item.company.name,
       id: item.company.id,
@@ -437,6 +443,26 @@ export default function InterviewsList() {
                           <TooltipContent>Edit Interview Details</TooltipContent>
                         </Tooltip>
                       )}
+                      {templatesFor(interview).length > 0 && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant={"ghost"}
+                              size={"sm"}
+                              className={"cursor-pointer"}
+                              aria-label="Send a message"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedInterview(interview);
+                                setMessageDialogOpen(true);
+                              }}
+                            >
+                              <MessageSquare />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Send a message</TooltipContent>
+                        </Tooltip>
+                      )}
                       {interview.stage !== "Offer" && !["REJECTED", "WITHDREW", "OFFER_ACCEPTED", "OFFER_DECLINED"].includes(interview.outcome.toUpperCase()) && (
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -608,6 +634,28 @@ export default function InterviewsList() {
             <DialogTitle>Share availability - {selectedInterview?.title}</DialogTitle>
           </DialogHeader>
           {selectedInterview && <ShareAvailability key={selectedInterview.id} interviewId={selectedInterview.id} currentStage={selectedInterview.stage} />}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={messageDialogOpen} onOpenChange={setMessageDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Send a message - {selectedInterview?.title}</DialogTitle>
+          </DialogHeader>
+          {selectedInterview && (
+            <SendMessage
+              key={selectedInterview.id}
+              templates={templatesFor(selectedInterview)}
+              context={{
+                jobTitle: selectedInterview.title,
+                company: selectedInterview.company.name,
+                clientCompany: selectedInterview.clientCompany,
+                stage: selectedInterview.stage,
+                interviewer: selectedInterview.interviewer,
+                date: selectedInterview.date,
+              }}
+            />
+          )}
         </DialogContent>
       </Dialog>
 
