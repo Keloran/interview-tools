@@ -88,3 +88,19 @@ describe('summarizeApplication with availability links', () => {
     expect(summarizeApplication(rejected, now, [sent(10)]).status).toBe('Rejected at Phone Screen')
   })
 })
+
+describe('summarizeApplication with follow-ups', () => {
+  const now = new Date('2026-06-01T12:00:00Z').getTime()
+  const daysAgo = (n: number) => new Date(now - n * 864e5)
+  const applied = [{stage: 'Applied', outcome: 'AWAITING_RESPONSE', updatedAt: daysAgo(14)}]
+
+  it('says you chased them, and two unanswered follow-ups count as ghosting', () => {
+    expect(summarizeApplication(applied, now, [], 1)).toEqual({status: 'Followed up once, no response', response: 'waiting'})
+    expect(summarizeApplication(applied, now, [], 2)).toEqual({status: 'Followed up twice, no response', response: 'ghosted'})
+  })
+
+  it('once they have replied, follow-ups do not make it ghosting', () => {
+    const interviewed = [{stage: 'Technical', outcome: 'AWAITING_RESPONSE', updatedAt: daysAgo(14)}, ...applied]
+    expect(summarizeApplication(interviewed, now, [], 3).response).toBe('responded')
+  })
+})

@@ -3,6 +3,7 @@ import { currentUser } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 import { CompanyHistory, summarizeApplication } from "@/lib/applications";
 import {reportError} from "@/lib/bugfixes";
+import { brokenPromise } from "@/lib/followUps";
 
 export async function GET() {
   const user = await currentUser();
@@ -23,10 +24,11 @@ export async function GET() {
             clientCompany: true,
             applicationDate: true,
             interviews: {
-              select: { outcome: true, updated_at: true, stage: { select: { stage: true } } },
+              select: { outcome: true, updated_at: true, created_at: true, replyBy: true, stage: { select: { stage: true } } },
               orderBy: { created_at: "desc" },
             },
             availabilityLinks: { select: { created_at: true, viewCount: true, lastViewedAt: true, bookedSlot: true } },
+            _count: { select: { followUps: true } },
           },
           orderBy: { applicationDate: "desc" },
         },
@@ -37,12 +39,16 @@ export async function GET() {
     const history: CompanyHistory[] = companies.map((c) => ({
       id: c.id,
       name: c.name,
-      applications: c.applications.map(({ interviews, availabilityLinks, ...a }) => ({
+      applications: c.applications.map(({ interviews, availabilityLinks, _count, ...a }) => ({
         ...a,
         ...summarizeApplication(
           interviews.map((i) => ({ stage: i.stage.stage, outcome: i.outcome, updatedAt: i.updated_at })),
           undefined,
           availabilityLinks,
+          _count.followUps,
+        ),
+        promise: brokenPromise(
+          interviews.map((i) => ({ outcome: i.outcome, replyBy: i.replyBy, createdAt: i.created_at, updatedAt: i.updated_at })),
         ),
       })),
     }));

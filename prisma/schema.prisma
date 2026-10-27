@@ -78,10 +78,21 @@ model Application {
   jobPostingLink    String? // URL of job posting
   interviews        Interview[]
   availabilityLinks AvailabilityLink[]
+  followUps         FollowUp[]
   created_at        DateTime           @default(now())
   updated_at        DateTime           @updatedAt
 
   @@unique([userId, companyId, jobTitle, applicationDate, clientCompany])
+}
+
+// You chased the company about an application
+model FollowUp {
+  id            Int         @id @default(autoincrement())
+  applicationId Int
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  sentAt        DateTime    @default(now())
+
+  @@index([applicationId])
 }
 
 // Shareable "here's when I'm free" link for an application's next stage; booking a slot schedules it
