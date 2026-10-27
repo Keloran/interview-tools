@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import {Trash2} from "lucide-react";
 import {SignedIn, SignedOut, SignInButton, UserButton} from "@clerk/nextjs";
 import {Button} from "@/components/ui/button";
 import {Companies} from "@/components/Company";
@@ -22,7 +23,11 @@ export default function Navbar() {
       </SignedOut>
       <SignedIn>
         <NoFeedbackLink />
-        <UserButton />
+        <UserButton>
+          <UserButton.MenuItems>
+            <UserButton.Link label="Delete account" labelIcon={<Trash2 className="h-4 w-4" />} href="/deleteme" />
+          </UserButton.MenuItems>
+        </UserButton>
       </SignedIn>
     </>
   );
