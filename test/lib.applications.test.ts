@@ -104,3 +104,22 @@ describe('summarizeApplication with follow-ups', () => {
     expect(summarizeApplication(interviewed, now, [], 3).response).toBe('responded')
   })
 })
+
+describe('findPreviousApplications by job link', () => {
+  const app = (id: number, jobTitle: string, jobPostingLink: string | null) =>
+    ({id, jobTitle, clientCompany: null, jobPostingLink, applicationDate: '', status: '', response: 'waiting' as const})
+  const history = [
+    {id: 1, name: 'Hays', applications: [app(1, 'Software Engineer', 'https://www.linkedin.com/jobs/view/4012345678/?trackingId=a')]},
+    {id: 2, name: 'Acme', applications: [app(2, 'Senior Engineer', null)]},
+  ]
+
+  it('the same posting matches even when the company was entered differently, and comes first', () => {
+    const found = findPreviousApplications(history, 'Acme', '', 'Senior Engineer', 'https://uk.linkedin.com/jobs/view/4012345678?refId=b')
+    expect(found.map((f) => [f.id, f.samePosting, f.sameTitle])).toEqual([[1, true, false], [2, false, true]])
+  })
+
+  it('a link alone is enough to search', () => {
+    expect(findPreviousApplications(history, '', '', '', 'linkedin.com/jobs/view/4012345678').map((f) => f.id)).toEqual([1])
+    expect(findPreviousApplications(history, '', '', '', 'https://example.com/jobs/1')).toEqual([])
+  })
+})

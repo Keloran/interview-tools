@@ -23,6 +23,7 @@ export async function GET() {
             jobTitle: true,
             clientCompany: true,
             applicationDate: true,
+            jobPostingLink: true,
             interviews: {
               select: { outcome: true, updated_at: true, created_at: true, replyBy: true, stage: { select: { stage: true } } },
               orderBy: { created_at: "desc" },

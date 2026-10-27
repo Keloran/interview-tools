@@ -12,7 +12,7 @@ import {CompanyHistory, responseRecord, timeAgo} from "@/lib/applications";
 
 type Company = CompanyHistory;
 
-async function getCompanies() {
+export async function getCompanies() {
   const res = await fetch(`/api/companies`, {
     method: "GET",
   })
