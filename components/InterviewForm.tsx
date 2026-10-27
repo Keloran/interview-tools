@@ -19,7 +19,8 @@ import {useRouter} from "next/navigation";
 import {addGuestInterview} from "@/lib/guestStorage";
 import {interviewFormSchema} from "@/lib/validations/interview";
 import {Separator} from "@/components/ui/separator";
-import {CompanyHistory, findPreviousApplications, timeAgo} from "@/lib/applications";
+import {CompanyHistory, findPreviousApplications} from "@/lib/applications";
+import PreviousApplications from "@/components/PreviousApplications";
 import {cn, toISODate} from "@/lib/utils";
 import {nextStage, sortStages} from "@/lib/stages";
 import StageCombobox from "@/components/StageCombobox";
@@ -414,7 +415,7 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
             onChange={(e) => setClientCompany(e.target.value)}
           />
         </div>
-        <div className="space-y-2 md:col-span-1">
+        <div className="space-y-2 md:col-span-2">
           <Label htmlFor="job-title">Job title</Label>
           <Input
             id="job-title"
@@ -439,16 +440,7 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
                 ? "You've already applied for this job"
                 : previousApplications[0].sameTitle ? "You may have already applied for this job" : "You've applied to this company before"}
             </p>
-            <ul className="mt-1 space-y-0.5 text-muted-foreground">
-              {previousApplications.slice(0, 5).map((a) => (
-                <li key={a.id}>
-                  {a.samePosting && <span className="text-foreground">Same posting: </span>}
-                  <span className={cn(a.sameTitle && "text-foreground")}>{a.jobTitle}</span>
-                  {a.clientCompany ? ` at ${a.clientCompany} via ${a.companyName}` : ` at ${a.companyName}`}
-                  {" · applied "}{timeAgo(a.applicationDate)}{" · "}{a.status}
-                </li>
-              ))}
-            </ul>
+            <PreviousApplications applications={previousApplications.slice(0, 5)} />
           </div>
         )}
         <div className="space-y-2 md:col-span-2">

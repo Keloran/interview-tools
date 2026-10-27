@@ -30,8 +30,8 @@ describe('HaveIApplied', () => {
   it('yes: a pasted link matches the same posting, even through a recruiter', async () => {
     const status = await check('https://uk.linkedin.com/jobs/view/4012345678?refId=zzz')
     expect(status).toHaveTextContent("Yes, you've applied for this")
-    expect(status).toHaveTextContent('Same posting: Senior Engineer')
-    expect(status).toHaveTextContent('at BigBank via Hays · applied 3 weeks ago')
+    expect(status).toHaveTextContent('Senior EngineerSame posting')
+    expect(status).toHaveTextContent('BigBank via Hays · applied 3 weeks ago')
     expect(screen.queryByRole('button', {name: 'Add it'})).not.toBeInTheDocument()
   })
 
