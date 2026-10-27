@@ -1,6 +1,7 @@
 import {Button} from "@/components/ui/button";
 import {PreviousApplication, timeAgo} from "@/lib/applications";
 import {cn} from "@/lib/utils";
+import Link from "next/link";
 
 // Colour the outcome so a scan down the list tells the story
 function statusTone(a: PreviousApplication): string {
@@ -37,6 +38,7 @@ export default function PreviousApplications({applications, onShow}: {
                 </Button>
               )}
             </p>
+            <Link className="text-xs underline underline-offset-2" href={`/applications/${a.id}`}>View application timeline</Link>
           </div>
           <span className={cn("shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium", statusTone(a))}>{a.status}</span>
         </li>

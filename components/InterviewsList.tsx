@@ -47,6 +47,7 @@ function inferStageMethodName(locationType?: string | null, interviewLink?: stri
 
 interface InterviewApiItem {
   id: string | number;
+  applicationId?: number;
   jobTitle: string;
   date?: string | Date | null;
   deadline?: string | Date | null;
@@ -64,6 +65,7 @@ interface InterviewApiItem {
 
 interface Interview {
   id: string;
+  applicationId?: number;
   title: string;
   date: Date;
   stage: string;
@@ -209,6 +211,7 @@ export default function InterviewsList() {
   // Map API data to component interface
   const interviews: Interview[] = (interviewData || []).map((item: InterviewApiItem) => ({
     id: String(item.id),
+    applicationId: item.applicationId,
     title: item.jobTitle,
     date: new Date((item.date ?? item.deadline) as string),
     stage: item.stage?.stage || "Unknown",
@@ -408,6 +411,7 @@ export default function InterviewsList() {
                         })}
                       </p>
                       <div className="mt-2">
+                        {interview.applicationId && <Link className="mr-3 text-sm underline underline-offset-2" href={`/applications/${interview.applicationId}`} onClick={(event) => event.stopPropagation()}>Timeline</Link>}
                         {interview.jobPostingLink && (
                           <Link href={interview.jobPostingLink}><Button variant={"outline"}>Job Posting</Button></Link>
                         )}&nbsp;
