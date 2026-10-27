@@ -3,13 +3,15 @@
 import {useQuery} from "@tanstack/react-query";
 import {useUser} from "@clerk/nextjs";
 import {listGuestInterviews} from "@/lib/guestStorage";
-import {useMemo} from "react";
+import {useMemo, useState} from "react";
 import {deriveMethodFromLink, getStageMethodButton} from "@/lib/utils/interviewMethod";
 import {useAppStore} from "@/lib/store";
 import {FEEDBACK_LABEL, FeedbackType} from "@/lib/feedback";
+import {PreviousQuestions} from "@/components/QuestionBank";
 
 export default function InterviewInfo(props: {interviewId: string | null}) {
   const {user} = useUser();
+  const [now] = useState(() => Date.now());
   const isGuest = typeof props.interviewId === 'string' && props.interviewId.startsWith('guest_');
   const setCompanyFilter = useAppStore((s) => s.setFilteredCompany);
 
@@ -247,6 +249,9 @@ export default function InterviewInfo(props: {interviewId: string | null}) {
         </div>
       )}
 
+      {!isGuest && vm.outcome === "SCHEDULED" && vm.date && Date.parse(vm.date) > now && vm.stage && (vm.clientCompany || vm.company) && (
+        <PreviousQuestions interviewId={Number(props.interviewId)} company={(vm.clientCompany || vm.company)!} stage={vm.stage} date={vm.date} />
+      )}
       {!isGuest && (interviewData as ApiInterview)?.debriefedAt && <Debrief d={interviewData as ApiInterview} />}
 
       {!isGuest && (interviewData as ApiInterview)?.feedbackType && (
