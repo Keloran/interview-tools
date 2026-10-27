@@ -71,6 +71,21 @@ describe('findPreviousApplications', () => {
   it('nothing without a company', () => {
     expect(findPreviousApplications(history, '', '', 'Senior Engineer')).toEqual([])
   })
+
+  it('recognises title variations through a recruiter and ranks them before other roles', () => {
+    const history = [{id: 1, name: 'Recruit Co', applications: [
+      app(1, 'Engineering Manager', 'BigBank'),
+      app(2, 'Sr. Back-end Dev (m/f/d) - Remote', 'BigBank'),
+    ]}]
+    expect(findPreviousApplications(history, 'BigBank', '', 'Senior Backend Engineer')
+      .map((a) => [a.id, a.sameTitle])).toEqual([[2, true], [1, false]])
+  })
+
+  it('keeps a different role as company history without flagging it as the same title', () => {
+    const history = [{id: 1, name: 'BigBank', applications: [app(1, 'Engineering Manager')]}]
+    expect(findPreviousApplications(history, 'BigBank', '', 'Engineer')[0])
+      .toMatchObject({id: 1, sameTitle: false})
+  })
 })
 
 describe('summarizeApplication with availability links', () => {

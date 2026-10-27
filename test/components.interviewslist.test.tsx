@@ -130,7 +130,7 @@ describe('InterviewsList Component', () => {
     });
   });
 
-  it.skip('should show progress dialog when progress button is clicked', async () => {
+  it('should show progress dialog when progress button is clicked', async () => {
     const user = userEvent.setup();
     const mockInterviews = [
       {
@@ -148,30 +148,24 @@ describe('InterviewsList Component', () => {
       },
     ];
 
-    (useQuery as any).mockReturnValue({
-      data: mockInterviews,
+    (useQuery as any).mockImplementation(({queryKey}: {queryKey: string[]}) => ({
+      data: queryKey[0] === 'interviews' ? mockInterviews
+        : queryKey[0] === 'interview' ? mockInterviews[0]
+        : queryKey[0] === 'stages' ? [{id: 1, stage: 'Phone Screen'}, {id: 2, stage: 'Technical Interview'}]
+        : [],
       isLoading: false,
       error: null,
-    });
+    }));
 
     render(<InterviewsList />);
 
-    await waitFor(() => {
-      expect(screen.getByText(/Senior Frontend Engineer/)).toBeInTheDocument();
-    });
-
-    // Find and click the progress button (CornerUpRight icon button)
-    const progressButtons = screen.getAllByRole('button');
-    const progressButton = progressButtons.find((btn) =>
-      btn.querySelector('svg') // Find button with SVG (icon button)
+    const progressButton = screen.getAllByRole('button').find((btn) =>
+      btn.querySelector('svg.lucide-corner-up-right')
     );
+    expect(progressButton).toBeDefined();
+    await user.click(progressButton!);
 
-    if (progressButton) {
-      await user.click(progressButton);
-
-      await waitFor(() => {
-        expect(screen.getByText(/Progress Interview/)).toBeInTheDocument();
-      });
-    }
+    expect(await screen.findByRole('dialog', {name: /Progress Interview/})).toBeInTheDocument();
+    expect(screen.getByLabelText('Job title')).toHaveValue('Senior Frontend Engineer');
   });
 });

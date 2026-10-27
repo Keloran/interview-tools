@@ -39,6 +39,10 @@ describe('HaveIApplied', () => {
     expect(await check('BigBank', 'senior engineer')).toHaveTextContent("Yes, you've applied for this")
   })
 
+  it('yes: recognises an abbreviated developer title as the same engineer role', async () => {
+    expect(await check('BigBank', 'Sr. Dev. (m/f/d) - Remote')).toHaveTextContent("Yes, you've applied for this")
+  })
+
   it('no: offers to add it', async () => {
     const status = await check('Initech', 'Engineer')
     expect(status).toHaveTextContent("No, you haven't applied for this")
