@@ -4,6 +4,7 @@ import { LinkTracking, linkState } from "@/lib/availability";
 import { GHOSTED_AFTER_DAYS, GHOSTED_AFTER_FOLLOW_UPS, times } from "@/lib/followUps";
 import { FeedbackType, rejectedStatus } from "@/lib/feedback";
 import { jobKey } from "@/lib/jobLinks";
+import { jobTitlesMatch } from "@/lib/jobTitles";
 
 const SETTLED_OUTCOMES = ["OFFER_ACCEPTED", "OFFER_DECLINED", "OFFER_RECEIVED", "REJECTED", "WITHDREW", "SCHEDULED"];
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -101,7 +102,6 @@ const norm = (s: string | null | undefined) => (s ?? "").toLowerCase().replace(/
 
 // The same job gets listed on several sites and by recruiters, so match the company against both
 // the company and the client company of every past application, either way round.
-// ponytail: title match is equal-or-contains after lowercasing; "Sr" vs "Senior" won't match, the company match still surfaces it
 export function findPreviousApplications(
   history: CompanyHistory[],
   companyName: string,
@@ -112,15 +112,13 @@ export function findPreviousApplications(
   const names = [norm(companyName), norm(clientCompany)].filter(Boolean);
   const key = jobKey(jobPostingLink);
   if (!names.length && !key) return [];
-  const title = norm(jobTitle);
 
   return history
     .flatMap((c) => c.applications.map((a) => ({ ...a, companyName: c.name })))
     .map((a) => {
-      const t = norm(a.jobTitle);
       return {
         ...a,
-        sameTitle: !!title && (t === title || t.includes(title) || title.includes(t)),
+        sameTitle: jobTitlesMatch(a.jobTitle, jobTitle),
         samePosting: !!key && jobKey(a.jobPostingLink) === key,
       };
     })
