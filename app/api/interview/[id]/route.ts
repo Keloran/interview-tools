@@ -6,6 +6,7 @@ import type { $Enums } from "@/app/generated/prisma/client";
 import { interviewSelect, toInterviewDto } from "@/lib/interviews";
 import {reportError} from "@/lib/bugfixes";
 import {parseDebrief} from "@/lib/debrief";
+import {parseFeedback} from "@/lib/feedback";
 
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const user = await currentUser();
@@ -90,6 +91,8 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     }
     const debrief = parseDebrief(body.debrief);
     if (debrief) Object.assign(data, debrief, { debriefedAt: new Date() });
+    const feedback = parseFeedback(body.feedback);
+    if (feedback) Object.assign(data, feedback);
     // Application-level fields live on the parent application
     const application: Prisma.ApplicationUpdateWithoutInterviewsInput = {};
     if (typeof body.clientCompany === "string" || body.clientCompany === null) {

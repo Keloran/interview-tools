@@ -2,6 +2,7 @@
 
 import { LinkTracking, linkState } from "@/lib/availability";
 import { times } from "@/lib/followUps";
+import { FeedbackType, rejectedStatus } from "@/lib/feedback";
 import { jobKey } from "@/lib/jobLinks";
 
 export const GHOSTED_AFTER_DAYS = 30;
@@ -14,6 +15,7 @@ export type StageSummary = {
   stage: string;
   outcome: string | null;
   updatedAt: string | Date;
+  feedbackType?: FeedbackType | null;
 };
 
 export type ApplicationSummary = {
@@ -27,6 +29,8 @@ export type ApplicationSummary = {
   response: "responded" | "waiting" | "ghosted";
   // "Said they'd reply by 12 Oct; never replied"
   promise?: string | null;
+  // whether a rejection came with feedback, when you've noted it
+  feedback?: FeedbackType | null;
 };
 
 export type CompanyHistory = {
@@ -41,7 +45,7 @@ export function summarizeApplication(
   now = Date.now(),
   links: LinkTracking[] = [],
   followUps = 0,
-): Pick<ApplicationSummary, "status" | "response"> {
+): Pick<ApplicationSummary, "status" | "response" | "feedback"> {
   const latest = stages[0];
   if (!latest) return { status: "Applied", response: "waiting" };
 
@@ -58,7 +62,7 @@ export function summarizeApplication(
     case "OFFER_ACCEPTED": return { status: "Offer accepted", response };
     case "OFFER_DECLINED": return { status: "Offer declined", response };
     case "OFFER_RECEIVED": return { status: "Offer received", response };
-    case "REJECTED": return { status: `Rejected at ${latest.stage}`, response };
+    case "REJECTED": return { status: rejectedStatus(latest.stage, latest.feedbackType), response, feedback: latest.feedbackType ?? null };
     case "WITHDREW": return { status: "Withdrew", response };
     case "SCHEDULED": return { status: `${latest.stage} scheduled`, response };
     case "PASSED": return { status: `Passed ${latest.stage}`, response };

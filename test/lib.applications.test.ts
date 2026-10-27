@@ -24,7 +24,7 @@ describe('summarizeApplication', () => {
 
   it('rejection straight from applied is a response', () => {
     expect(summarizeApplication([{stage: 'Applied', outcome: 'REJECTED', updatedAt: daysAgo(10)}], now))
-      .toEqual({status: 'Rejected at Applied', response: 'responded'})
+      .toEqual({status: 'Rejected at Applied', response: 'responded', feedback: null})
   })
 
   it('offers', () => {

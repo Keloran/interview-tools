@@ -5,7 +5,7 @@ import {Card} from "@/components/ui/card";
 import {Button} from "@/components/ui/button";
 import {cn, getStageColor, isSameDay, toISODate} from "@/lib/utils";
 import {useEffect, useMemo, useState} from "react";
-import {CalendarClock, Check, Clock, CornerUpRight, MessageSquare, NotebookPen, Pencil, ThumbsDown, X} from "lucide-react";
+import {CalendarClock, Check, Clock, CornerUpRight, MessageSquare, MessageSquareQuote, NotebookPen, Pencil, ThumbsDown, X} from "lucide-react";
 import {useQuery, useQueryClient} from "@tanstack/react-query";
 import {useUser} from "@clerk/nextjs";
 import { getStageMethodButton } from "@/lib/utils/interviewMethod";
@@ -22,6 +22,7 @@ import FreeTimes from "@/components/FreeTimes";
 import SendMessage from "@/components/SendMessage";
 import {templatesFor} from "@/lib/messages";
 import DebriefForm from "@/components/DebriefForm";
+import FeedbackForm from "@/components/FeedbackForm";
 import {needsDebrief} from "@/lib/debrief";
 import {useFlags} from "@flags-gg/react-library";
 import {reportClientError} from "@/lib/reportClientError";
@@ -135,6 +136,8 @@ export default function InterviewsList() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [messageDialogOpen, setMessageDialogOpen] = useState(false);
   const [debriefDialogOpen, setDebriefDialogOpen] = useState(false);
+  // "reject" asks for feedback while marking it rejected; "edit" changes feedback already noted
+  const [feedbackDialog, setFeedbackDialog] = useState<"reject" | "edit" | null>(null);
   const [selectedInterview, setSelectedInterview] = useState<Interview | null>(null);
   const [guestInterviews, setGuestInterviews] = useState<Interview[]>([]);
   const {is} = useFlags()
@@ -470,6 +473,26 @@ export default function InterviewsList() {
                           <TooltipContent>{interview.debriefedAt ? "Edit debrief" : "Debrief: how did it go?"}</TooltipContent>
                         </Tooltip>
                       )}
+                      {interview.outcome.toUpperCase() === "REJECTED" && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant={"ghost"}
+                              size={"sm"}
+                              className={"cursor-pointer"}
+                              aria-label="Feedback"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedInterview(interview);
+                                setFeedbackDialog("edit");
+                              }}
+                            >
+                              <MessageSquareQuote />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Feedback they gave</TooltipContent>
+                        </Tooltip>
+                      )}
                       {templatesFor(interview).length > 0 && (
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -572,7 +595,8 @@ export default function InterviewsList() {
                                 className={"cursor-pointer"}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleRejectInterview(interview);
+                                  setSelectedInterview(interview);
+                                  setFeedbackDialog("reject");
                                 }}
                               >
                                 <X />
@@ -693,6 +717,25 @@ export default function InterviewsList() {
           </DialogHeader>
           {selectedInterview && (
             <DebriefForm key={selectedInterview.id} interviewId={selectedInterview.id} onSuccess={() => setDebriefDialogOpen(false)} />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!feedbackDialog} onOpenChange={(open) => !open && setFeedbackDialog(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{feedbackDialog === "reject" ? "Rejected" : "Feedback"} - {selectedInterview?.title}</DialogTitle>
+          </DialogHeader>
+          {selectedInterview && feedbackDialog && (
+            <FeedbackForm
+              key={selectedInterview.id}
+              interviewId={selectedInterview.id}
+              reject={feedbackDialog === "reject"}
+              onSuccess={() => {
+                setFeedbackDialog(null);
+                router.refresh();
+              }}
+            />
           )}
         </DialogContent>
       </Dialog>

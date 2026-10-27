@@ -17,6 +17,8 @@ export const interviewSelect = {
   prepNotes: true,
   nextStep: true,
   replyBy: true,
+  feedbackType: true,
+  feedbackText: true,
   stage: { select: { id: true, stage: true } },
   stageMethod: { select: { id: true, method: true } },
   application: {

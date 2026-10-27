@@ -110,3 +110,20 @@ describe('PUT /api/interview/[id] debrief', () => {
     expect(data.debriefedAt).toBeInstanceOf(Date)
   })
 })
+
+describe('PUT /api/interview/[id] feedback', () => {
+  it('saves feedback alongside a rejection', async () => {
+    const {PUT} = await import('@/app/api/interview/[id]/route')
+    ;(prisma.interview.findFirst as any).mockResolvedValueOnce({id: 7})
+    ;(prisma.interview.update as any).mockResolvedValueOnce({
+      id: 7, stage: {id: 1, stage: 'Technical'}, application: {id: 1, jobTitle: 'SE', clientCompany: null, applicationDate: new Date(), jobPostingLink: null, company: {id: 1, name: 'Acme'}},
+    })
+    const req = new Request('http://localhost/api/interview/7', {
+      method: 'PUT',
+      body: JSON.stringify({outcome: 'REJECTED', feedback: {type: 'SPECIFIC', text: 'More system design'}}),
+    })
+    expect((await PUT(req as any, {params: Promise.resolve({id: '7'})})).status).toBe(200)
+    const {data} = (prisma.interview.update as any).mock.calls.at(-1)[0]
+    expect(data).toMatchObject({outcome: 'REJECTED', feedbackType: 'SPECIFIC', feedbackText: 'More system design'})
+  })
+})
