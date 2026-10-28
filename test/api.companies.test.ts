@@ -38,7 +38,7 @@ describe('GET /api/companies', () => {
     expect(json).toEqual([
       {id: 1, name: 'Acme', applications: [{
         id: 5, jobTitle: 'SE', clientCompany: null, applicationDate: '2025-01-01T00:00:00.000Z',
-        status: 'Rejected at Technical', response: 'responded', feedback: null, promise: null,
+        status: 'Rejected at Technical', response: 'responded', feedback: null, promise: null, furthestStage: 'Technical', ignoredLinks: 0,
       }]},
       {id: 2, name: 'Beta', applications: []},
     ])

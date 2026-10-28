@@ -4,6 +4,8 @@ import prisma from "@/lib/prisma";
 import { CompanyHistory, summarizeApplication } from "@/lib/applications";
 import {reportError} from "@/lib/bugfixes";
 import { brokenPromise } from "@/lib/followUps";
+import {linkState} from "@/lib/availability";
+import {sortStages} from "@/lib/stages";
 
 export async function GET() {
   const user = await currentUser();
@@ -27,6 +29,7 @@ export async function GET() {
             jobTitle: true,
             clientCompany: true,
             applicationDate: true,
+            firstResponseAt: true,
             jobPostingLink: true,
             interviews: {
               select: { outcome: true, updated_at: true, created_at: true, replyBy: true, feedbackType: true, stage: { select: { stage: true } } },
@@ -51,7 +54,10 @@ export async function GET() {
           undefined,
           availabilityLinks,
           _count.followUps,
+          a.firstResponseAt,
         ),
+        furthestStage: sortStages(interviews.map((interview) => ({stage: interview.stage.stage}))).at(-1)?.stage ?? "Applied",
+        ignoredLinks: (availabilityLinks ?? []).filter((link) => linkState(link) === "ignored").length,
         promise: brokenPromise(
           interviews.map((i) => ({ outcome: i.outcome, replyBy: i.replyBy, createdAt: i.created_at, updatedAt: i.updated_at })),
         ),

@@ -81,6 +81,7 @@ model Application {
   recruiterName     String?
   recruiterEmail    String?
   recruiterLinkedIn String?
+  firstResponseAt   DateTime?          @db.Date
   interviews        Interview[]
   availabilityLinks AvailabilityLink[]
   followUps         FollowUp[]
