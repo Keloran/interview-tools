@@ -4,6 +4,7 @@ import {Prisma} from "@/app/generated/prisma/client";
 import {inferStageMethodName} from "@/lib/utils";
 import {isOfferedSlot, openSlots} from "@/lib/availability";
 import {reportError} from "@/lib/bugfixes";
+import {externalBusyAroundSlots} from "@/lib/externalBusy";
 
 class BookingError extends Error {
   constructor(message: string, public status: number) {
@@ -21,6 +22,10 @@ export async function POST(request: NextRequest, {params}: { params: Promise<{ i
     if (isNaN(start.getTime())) {
       return NextResponse.json({message: "Invalid slot"}, {status: 400});
     }
+
+    // The owner's calendar is fetched before the transaction so it never waits on Google
+    const owner = await prisma.availabilityLink.findUnique({where: {id}, select: {slots: true, application: {select: {user: {select: {clerkId: true}}}}}});
+    const calendar = owner ? await externalBusyAroundSlots(owner.application.user.clerkId, owner.slots) : [];
 
     const booked = await prisma.$transaction(async (tx) => {
       const link = await tx.availabilityLink.findUnique({
@@ -48,7 +53,7 @@ export async function POST(request: NextRequest, {params}: { params: Promise<{ i
         where: {application: {userId: link.application.userId}, outcome: "SCHEDULED", date: {not: null}, NOT: {stage: {stage: {equals: "Offer", mode: "insensitive"}}}},
         select: {date: true, durationMinutes: true},
       });
-      if (!openSlots([start], link.durationMinutes, busy.map((b) => ({start: b.date!, durationMinutes: b.durationMinutes}))).length) {
+      if (!openSlots([start], link.durationMinutes, [...busy.map((b) => ({start: b.date!, durationMinutes: b.durationMinutes})), ...calendar]).length) {
         throw new BookingError("That time is no longer available", 409);
       }
 

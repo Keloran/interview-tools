@@ -1,6 +1,7 @@
 import {notFound} from "next/navigation";
 import prisma from "@/lib/prisma";
 import {openSlots} from "@/lib/availability";
+import {externalBusyAroundSlots} from "@/lib/externalBusy";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
 import BookingPicker from "@/components/BookingPicker";
 
@@ -18,21 +19,24 @@ async function getLink(id: string) {
           jobTitle: true,
           clientCompany: true,
           company: {select: {name: true}},
-          user: {select: {name: true}},
+          user: {select: {name: true, clerkId: true}},
         },
       },
     },
   });
   if (!link) return null;
 
-  const busy = await prisma.interview.findMany({
-    where: {application: {userId: link.application.userId}, outcome: "SCHEDULED", date: {not: null}},
-    select: {date: true, durationMinutes: true},
-  });
+  const [busy, calendar] = await Promise.all([
+    prisma.interview.findMany({
+      where: {application: {userId: link.application.userId}, outcome: "SCHEDULED", date: {not: null}},
+      select: {date: true, durationMinutes: true},
+    }),
+    externalBusyAroundSlots(link.application.user.clerkId, link.slots),
+  ]);
 
   return {
     ...link,
-    open: openSlots(link.slots, link.durationMinutes, busy.map((b) => ({start: b.date!, durationMinutes: b.durationMinutes}))).map((d) => d.toISOString()),
+    open: openSlots(link.slots, link.durationMinutes, [...busy.map((b) => ({start: b.date!, durationMinutes: b.durationMinutes})), ...calendar]).map((d) => d.toISOString()),
   };
 }
 
