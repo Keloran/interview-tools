@@ -1,3 +1,4 @@
+import {compensationSelect, Compensation} from "@/lib/compensation";
 import {z} from "zod";
 import type {Prisma} from "@/app/generated/prisma/client";
 import {importDate} from "@/lib/csvImport";
@@ -12,16 +13,17 @@ export const offerMutationSchema = z.object({deadline: offerDaySchema.nullable()
   .refine((value) => !value.decision || value.confirmDecision === true, "Confirm that you want to record this decision");
 export type OfferMutation = z.infer<typeof offerMutationSchema>;
 export const offerApplicationSelect = {
-  id: true, jobTitle: true, clientCompany: true, applicationDate: true, company: {select: {name: true}},
-  interviews: {select: {id: true, parentId: true, created_at: true, updated_at: true, deadline: true, outcome: true, interviewer: true, stage: {select: {stage: true}}}},
+  advertisedSalary: true, id: true, jobTitle: true, clientCompany: true, applicationDate: true, company: {select: {name: true}},
+  interviews: {select: {...compensationSelect, id: true, parentId: true, created_at: true, updated_at: true, deadline: true, outcome: true, interviewer: true, stage: {select: {stage: true}}}},
 } satisfies Prisma.ApplicationSelect;
 export type OfferApplication = Prisma.ApplicationGetPayload<{select: typeof offerApplicationSelect}>;
-export type OfferSummary = {applicationId: number; interviewId: number; jobTitle: string; company: string; agency: string | null; interviewer: string | null; deadline: string | null; outcome: string | null};
+export type OfferSummary = Compensation & {applicationId: number; interviewId: number; jobTitle: string; company: string; agency: string | null; interviewer: string | null; deadline: string | null; outcome: string | null};
 export function openOffers(applications: OfferApplication[]): OfferSummary[] {
   return applications.flatMap((application) => {
     const current = orderedStages(application.interviews).at(-1);
     return current && isOpenOffer(current.stage.stage, current.outcome) ? [{applicationId: application.id, interviewId: current.id, jobTitle: application.jobTitle,
       company: application.clientCompany || application.company.name, agency: application.clientCompany ? application.company.name : null,
+      advertisedSalary: application.advertisedSalary, offerBase: current.offerBase, offerBonus: current.offerBonus, offerEquity: current.offerEquity, offerBenefits: current.offerBenefits, offerNotice: current.offerNotice, offerLocation: current.offerLocation,
       interviewer: current.interviewer, deadline: current.deadline?.toISOString().slice(0, 10) ?? null, outcome: current.outcome}] : [];
   }).sort((a, b) => (a.deadline ?? "9999-99-99").localeCompare(b.deadline ?? "9999-99-99") || a.company.localeCompare(b.company) || a.applicationId - b.applicationId);
 }

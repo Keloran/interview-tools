@@ -13,7 +13,7 @@ async function main() {
     const company = await prisma.company.create({data: {userId: owner.id, name: "Offer fixture"}});
     const stage = await prisma.stage.upsert({where: {stage: "Offer"}, update: {}, create: {stage: "Offer"}});
     const method = await prisma.stageMethod.upsert({where: {method: "Not recorded"}, update: {}, create: {method: "Not recorded"}});
-    const app = await prisma.application.create({data: {userId: owner.id, companyId: company.id, jobTitle: "Offer fixture", applicationDate: new Date(), interviews: {create: {stageId: stage.id, stageMethodId: method.id, outcome: "OFFER_RECEIVED", date: new Date(), deadline: new Date("2026-11-01"), notes: "Keep these offer notes"}}}, include: {interviews: true}});
+    const app = await prisma.application.create({data: {userId: owner.id, companyId: company.id, jobTitle: "Offer fixture", advertisedSalary: "£70–80k/year", applicationDate: new Date(), interviews: {create: {stageId: stage.id, stageMethodId: method.id, outcome: "OFFER_RECEIVED", offerBase: "£75k/year", offerBenefits: "Private benefits", date: new Date(), deadline: new Date("2026-11-01"), notes: "Keep these offer notes"}}}, include: {interviews: true}});
     const id = app.interviews[0].id;
     assert.equal((await updateOffer(`${token}-other`, id, {deadline: null})).status, 404);
     assert.equal((await updateOffer(token, id, {deadline: "2026-11-02"})).status, 200);
@@ -25,6 +25,8 @@ async function main() {
     assert.deepEqual(decisions.map((result) => result.status).sort(), [200, 409]);
     assert.ok(["OFFER_ACCEPTED", "OFFER_DECLINED"].includes((await prisma.interview.findUniqueOrThrow({where: {id}})).outcome!));
     assert.equal((await updateOffer(token, id, {deadline: "2026-11-03"})).status, 409);
+    const retained = await prisma.interview.findUniqueOrThrow({where: {id}, include: {application: true}});
+    assert.equal(retained.offerBase, "£75k/year"); assert.equal(retained.offerBenefits, "Private benefits"); assert.equal(retained.application.advertisedSalary, "£70–80k/year");
     console.log("Offer transactions passed: ownership, UTC calendar-day storage, clearing, preserved notes and one concurrent decision winner.");
   } finally {await prisma.user.deleteMany({where: {id: {in: [owner.id, other.id]}}});}
 }

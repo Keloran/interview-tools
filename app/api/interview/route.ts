@@ -6,6 +6,7 @@ import {interviewSelect, toInterviewDto} from "@/lib/interviews";
 import { $Enums, Prisma } from "@/app/generated/prisma/client";
 import {reportError} from "@/lib/bugfixes";
 import {contactData, recruiterSchema} from "@/lib/recruiters";
+import {compensationSchema, cleanCompensation} from "@/lib/compensation";
 import {offerDaySchema} from "@/lib/offers";
 
 // 15m-8h, default an hour
@@ -47,6 +48,9 @@ export async function POST(request: NextRequest) {
     }
     const isOffer = String(stage).trim().toLowerCase() === "offer";
     if (isOffer && offerDeadline != null && offerDeadline !== "" && !offerDaySchema.safeParse(offerDeadline).success) return NextResponse.json({message: "Enter a valid respond-by date"}, {status: 400});
+
+    const compensation = compensationSchema.safeParse({advertisedSalary: body.advertisedSalary ?? null});
+    if (!compensation.success) return NextResponse.json({message: compensation.error.issues[0].message}, {status: 400});
 
     // Parse date/deadline
     let interviewDate: Date | null = null
@@ -131,6 +135,7 @@ export async function POST(request: NextRequest) {
                 clientCompany: clientCompany || null,
                 jobTitle,
                 applicationDate: new Date(),
+                advertisedSalary: cleanCompensation(compensation.data).advertisedSalary,
                 jobPostingLink: jobPostingLink || null,
                 ...contactData(contact.data),
                 viaRecruiter: !!contact.data.viaRecruiter || !!clientCompany?.trim(),

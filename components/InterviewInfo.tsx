@@ -1,5 +1,6 @@
 "use client"
 
+import ApplicationCompensation from "@/components/Compensation";
 import RecruiterContact from "@/components/RecruiterContact";
 import type {RecruiterContact as Contact} from "@/lib/recruiters";
 import FirstReplyDate from "@/components/FirstReplyDate";
@@ -261,6 +262,7 @@ export default function InterviewInfo(props: {interviewId: string | null}) {
       {!isGuest && vm.outcome === "SCHEDULED" && vm.date && Date.parse(vm.date) > now && vm.stage && (vm.clientCompany || vm.company) && (
         <PreviousQuestions interviewId={Number(props.interviewId)} company={(vm.clientCompany || vm.company)!} stage={vm.stage} date={vm.date} />
       )}
+      {!isGuest && props.interviewId && <ApplicationCompensation key={props.interviewId} interviewId={Number(props.interviewId)} />}
       {!isGuest && props.interviewId && <InterviewPrep interviewId={props.interviewId} />}
       {!isGuest && applicationContact.applicationId && <RecruiterContact key={applicationContact.applicationId} applicationId={applicationContact.applicationId} agency={vm.company ?? ""} clientCompany={vm.clientCompany} contact={applicationContact} />}
       {!isGuest && applicationContact.applicationId && applicationContact.applicationDate && <FirstReplyDate applicationId={applicationContact.applicationId} applied={applicationContact.applicationDate} value={applicationContact.firstResponseAt} />}
