@@ -22,6 +22,7 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 describe("company insights pages", () => {
   it("shows response rates, monthly cohorts and ranks only known reply dates", async () => {
+    const user = userEvent.setup();
     render(withQueryClient(<CompanyInsights />));
     expect(await screen.findByRole("heading", {name: "Company insights"})).toBeVisible();
     expect(screen.getByText("1 day · 1 known date")).toBeVisible();
@@ -30,6 +31,10 @@ describe("company insights pages", () => {
     expect(screen.getByText("2026-01")).toBeVisible();
     expect(screen.getByText("2026-02")).toBeVisible();
     expect(screen.getByText(/unknown historical dates are excluded/)).toBeVisible();
+    expect(screen.getByRole("link", {name: "Search report"})).toHaveAttribute("href", "/report");
+    expect(screen.getByRole("navigation", {name: "Insights navigation"})).toBeVisible();
+    await user.click(screen.getByRole("button", {name: "Community lookup"}));
+    expect(screen.getByRole("dialog", {name: "Community employer lookup"})).toBeVisible();
   });
   it("shows the company history and refreshes its median after explicitly recording a reply", async () => {
     const user = userEvent.setup();
