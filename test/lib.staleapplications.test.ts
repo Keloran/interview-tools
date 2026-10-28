@@ -8,6 +8,10 @@ import {application, stage} from "./fixtures/timeline";
 import {OLD, STALE_NOW, staleApplication} from "./fixtures/staleApplications";
 
 describe("stale eligibility", () => {
+  it("protects legacy Offer stages even when their outcome is still Scheduled", () => {
+    const app = staleApplication(); app.interviews[0].stage.stage = "Offer"; app.interviews[0].outcome = "SCHEDULED";
+    expect(staleCandidate(app, 60, STALE_NOW)).toBeNull();
+  });
   it("requires the configured elapsed time since the latest actual change", () => {
     expect(staleCandidate(staleApplication(), 60, STALE_NOW)).toMatchObject({id: 1, quietDays: 100, latestId: 10});
     expect(staleCandidate(staleApplication(), 101, STALE_NOW)).toBeNull();

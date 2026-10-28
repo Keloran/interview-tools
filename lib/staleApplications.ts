@@ -14,6 +14,7 @@ export type StaleCandidate = {id: number; company: string; jobTitle: string; las
 const waiting = new Set(["AWAITING_RESPONSE", "SCHEDULED", "PASSED"]);
 export function staleCandidate(application: StaleApplication, days: number, now = Date.now()): StaleCandidate | null {
   const latest = orderedStages(application.interviews).at(-1);
+  if (latest?.stage.stage.trim().toLowerCase() === "offer") return null;
   if (latest?.outcome && !waiting.has(latest.outcome)) return null;
   const dates = [application.applicationDate, application.updated_at, application.firstResponseAt,
     ...application.interviews.flatMap((stage) => [stage.created_at, stage.updated_at, stage.date, stage.deadline, stage.replyBy]),
