@@ -98,6 +98,11 @@ describe("community consent", () => {
     await withdrawCommunityConsent("user_123");
     expect(prisma.communityContribution.deleteMany).not.toHaveBeenCalled();
   });
+  it("does not invalidate results when a non-contributor deletes their account", async () => {
+    await deleteAccountData("user_123");
+    expect(prisma.user.deleteMany).toHaveBeenCalled();
+    expect(prisma.communityControl.update).not.toHaveBeenCalled();
+  });
   it("fails closed if locking/invalidation is unavailable", async () => {
     vi.mocked(prisma.$queryRaw).mockResolvedValue([]);
     expect((await PUT(req({enabled: false}))).status).toBe(503);
@@ -108,6 +113,7 @@ describe("community consent", () => {
     expect(snapshotCurrent({...control(), publicationEnabled: false}, {noticeVersion: COMMUNITY_NOTICE_VERSION, revocationEpoch: 4})).toBe(false);
   });
   it("invalidates snapshots atomically with account cascade deletion, and makes retries harmless", async () => {
+    vi.mocked(prisma.communityContribution.count).mockResolvedValue(1);
     await deleteAccountData("user_123");
     expect(prisma.user.deleteMany).toHaveBeenCalledWith({where: {clerkId: "user_123"}});
     expect(prisma.communityControl.update).toHaveBeenCalledTimes(1);

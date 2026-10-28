@@ -54,7 +54,7 @@ mismatch, missing controls or a database failure must suppress the response. Do
 not serve an unchecked cached snapshot. A monthly rebuild can create fresh
 snapshots from current eligible contributors; it must never reuse withdrawn rows.
 
-Account deletion increments the epoch and cascades private data, consent and
+Account deletion increments the epoch when contributions exist, and cascades private data, consent and
 contributions in one transaction, before deleting the Clerk login. Both the account
 endpoint and the verified Clerk webhook use the same function. If database deletion
 fails, private records roll back and durable withdrawal is attempted before the

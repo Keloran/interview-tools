@@ -66,7 +66,8 @@ export async function deleteAccountData(clerkId: string) {
       await lockCommunity(tx);
       const user = await tx.user.findUnique({where: {clerkId}, select: {id: true}});
       if (!user) return {count: 0};
-      await tx.communityControl.update({where: {id: "global"}, data: {revocationEpoch: {increment: 1}}});
+      const contributions = await tx.communityContribution.count({where: {userId: user.id}});
+      if (contributions) await tx.communityControl.update({where: {id: "global"}, data: {revocationEpoch: {increment: 1}}});
       return tx.user.deleteMany({where: {clerkId}}); // cascades private data, consent and contributions atomically
     });
   } catch (error) {
