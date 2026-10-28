@@ -45,7 +45,7 @@ export async function POST(request: NextRequest, {params}: { params: Promise<{ i
       if (!isOfferedSlot(link.slots, start)) throw new BookingError("That time wasn't offered", 400);
 
       const busy = await tx.interview.findMany({
-        where: {application: {userId: link.application.userId}, outcome: "SCHEDULED", date: {not: null}},
+        where: {application: {userId: link.application.userId}, outcome: "SCHEDULED", date: {not: null}, NOT: {stage: {stage: {equals: "Offer", mode: "insensitive"}}}},
         select: {date: true, durationMinutes: true},
       });
       if (!openSlots([start], link.durationMinutes, busy.map((b) => ({start: b.date!, durationMinutes: b.durationMinutes}))).length) {

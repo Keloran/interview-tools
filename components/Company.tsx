@@ -10,6 +10,7 @@ import {useAppStore} from "@/lib/store";
 import {useFlags} from "@flags-gg/react-library";
 import {CompanyHistory, responseRecord, timeAgo} from "@/lib/applications";
 import {feedbackRecord} from "@/lib/feedback";
+import {CommunityRecords} from "@/components/CommunityRecord";
 import {companyKind} from "@/lib/recruiters";
 
 type Company = CompanyHistory;
@@ -78,6 +79,7 @@ export function Companies() {
                   <span className={"font-medium"}>{company.name} <span className="text-xs text-muted-foreground">({companyKind(company.applications)})</span></span>
                   {record && <span className={"text-xs text-muted-foreground"}>{record}</span>}
                 </div>
+                <CommunityRecords applications={company.applications} compact />
                 {company.applications.map((a) => (
                   <span key={a.id} className={"text-xs text-muted-foreground"}>
                     {a.jobTitle}{a.clientCompany && ` (${a.clientCompany})`} · applied {timeAgo(a.applicationDate)} · {a.status}{a.promise && ` · ${a.promise}`}

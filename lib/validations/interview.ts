@@ -1,9 +1,12 @@
 import { z } from "zod";
 import {recruiterSchema} from "@/lib/recruiters";
+import {offerDaySchema} from "@/lib/offers";
 
 // Shared validation schema for interview forms
 export const interviewFormSchema = z.object({
   ...recruiterSchema.shape,
+  advertisedSalary: z.string().trim().max(500).optional(),
+  offerDeadline: offerDaySchema.optional().or(z.literal("")),
   stage: z.string().min(1, "Stage is required"),
   companyName: z.string().min(1, "Company name is required"),
   clientCompany: z.string().optional(),
@@ -29,6 +32,7 @@ export type InterviewFormData = z.infer<typeof interviewFormSchema>;
 
 // Validation schema for editing interviews
 export const editInterviewSchema = z.object({
+  isOffer: z.boolean().optional(),
   clientCompany: z.string().optional(),
   date: z.string().optional(),
   time: z.string().optional(),
@@ -48,7 +52,7 @@ export const editInterviewSchema = z.object({
     // Either deadline OR (date AND time) must be provided
     const hasDeadline = !!data.deadline;
     const hasDateTime = !!data.date && !!data.time;
-    return hasDeadline || hasDateTime;
+    return data.isOffer || hasDeadline || hasDateTime;
   },
   {
     message: "Either deadline or date/time is required",

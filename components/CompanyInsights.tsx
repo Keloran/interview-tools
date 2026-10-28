@@ -1,5 +1,9 @@
 "use client";
 
+import {Table, TableHeader, TableBody, TableRow, TableHead, TableCell} from "@/components/ui/table";
+import CommunityLookup from "@/components/CommunityLookup";
+import {CommunityRecords} from "@/components/CommunityRecord";
+import CommunityEmployerConfirmation from "@/components/CommunityEmployerConfirmation";
 import Link from "next/link";
 import {useUser} from "@clerk/nextjs";
 import {useQuery} from "@tanstack/react-query";
@@ -35,9 +39,11 @@ export default function CompanyInsights({companyId}: {companyId?: string}) {
     <nav className="flex flex-wrap gap-4 text-sm"><Link className="underline" href="/companies">Companies</Link>{company && <Link className="underline" href="/company-insights">All company insights</Link>}</nav>
     <h2 className="text-xl font-semibold">{company ? `${company.name}: your history` : "Company insights"}</h2>
     <Link className="text-sm underline" href="/report">Your job-search report</Link>
+    <CommunityLookup />
     <p className="text-sm text-muted-foreground">Based only on your applications. Response and ghost rates use settled histories; waiting applications are excluded. Feedback uses only rejections where you recorded whether feedback was given. Response times use explicit first-reply dates; unknown historical dates are excluded, without estimates.</p>
     <Card className="p-4"><Metrics value={company ? insights(company.applications) : overview.overall} /></Card>
     {company ? <>
+      <Card className="p-4"><CommunityRecords applications={company.applications} /></Card>
       <p>{responseRecord(company.applications) ?? "No settled response history yet."}</p>
       <h3 className="text-lg font-semibold">Applications</h3>
       {!company.applications.length && <p>No applications recorded.</p>}
@@ -45,12 +51,13 @@ export default function CompanyInsights({companyId}: {companyId?: string}) {
         <h4 className="font-semibold">{application.jobTitle}{application.clientCompany && ` · ${application.clientCompany}`}</h4>
         <p className="text-sm">Applied {new Date(application.applicationDate).toISOString().slice(0, 10)} · {application.status}</p>
         {application.promise && <p className="text-sm">{application.promise}</p>}
+        <CommunityEmployerConfirmation applicationId={application.id} />
         <FirstReplyDate applicationId={application.id} applied={new Date(application.applicationDate).toISOString()} value={application.firstResponseAt ? new Date(application.firstResponseAt).toISOString() : null} />
       </Card></li>)}</ul>
     </> : <>
       <h3 className="text-lg font-semibold">Ghost rate by application month</h3>
       <p className="text-sm text-muted-foreground">Current outcomes grouped by the month you applied, rather than historical monthly snapshots.</p>
-      {!overview.months.length ? <p>No application history yet.</p> : <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr>{["Applied", "Applications", "Responded", "Ghosted", "Waiting", "Ghost rate"].map((label) => <th className="p-2 border-b" key={label}>{label}</th>)}</tr></thead><tbody>{overview.months.map((month) => <tr key={month.month}><td className="p-2">{month.month}</td><td className="p-2">{month.roles}</td><td className="p-2">{month.responded}</td><td className="p-2">{month.ghosted}</td><td className="p-2">{month.waiting}</td><td className="p-2">{rate(month.ghostRate)}</td></tr>)}</tbody></table></div>}
+      {!overview.months.length ? <p>No application history yet.</p> : <div className="overflow-x-auto"><Table className="w-full text-left text-sm"><TableHeader><TableRow>{["Applied", "Applications", "Responded", "Ghosted", "Waiting", "Ghost rate"].map((label) => <TableHead className="p-2 border-b" key={label}>{label}</TableHead>)}</TableRow></TableHeader><TableBody>{overview.months.map((month) => <TableRow key={month.month}><TableCell className="p-2">{month.month}</TableCell><TableCell className="p-2">{month.roles}</TableCell><TableCell className="p-2">{month.responded}</TableCell><TableCell className="p-2">{month.ghosted}</TableCell><TableCell className="p-2">{month.waiting}</TableCell><TableCell className="p-2">{rate(month.ghostRate)}</TableCell></TableRow>)}</TableBody></Table></div>}
       <div className="grid gap-4 md:grid-cols-2"><Card className="p-4 gap-3"><h3 className="font-semibold">Most ghosted applications</h3>{!overview.ghostMost.length ? <p className="text-sm">No ghosted applications recorded.</p> : <ol className="space-y-2">{overview.ghostMost.map((company) => <li className="text-sm" key={company.id}><Link className="underline" href={`/companies/${company.id}`}>{company.name}</Link> · {company.ghosted} ghosted of {company.roles} applications ({rate(company.ghostRate)} of settled histories)</li>)}</ol>}</Card>
         <Card className="p-4 gap-3"><h3 className="font-semibold">Fastest first replies</h3>{!overview.fastest.length ? <p className="text-sm">Record a first-reply date on an application to start comparing response times.</p> : <ol className="space-y-2">{overview.fastest.map((company) => <li className="text-sm" key={company.id}><Link className="underline" href={`/companies/${company.id}`}>{company.name}</Link> · median {days(company.medianReplyDays)} ({company.replyDates} known date{company.replyDates === 1 ? "" : "s"})</li>)}</ol>}</Card></div>
     </>}

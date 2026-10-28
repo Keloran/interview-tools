@@ -1,6 +1,7 @@
 import {verifyWebhook} from "@clerk/nextjs/webhooks";
 import {NextRequest} from "next/server";
 import prisma from "@/lib/prisma";
+import {deleteAccountData} from "@/lib/communityConsent";
 import {reportError} from "@/lib/bugfixes";
 
 export async function POST(req: NextRequest) {
@@ -29,7 +30,7 @@ export async function POST(req: NextRequest) {
 
     // Deleted from Clerk's side (dashboard, or our own DELETE /api/account): make sure the data goes too
     if (eventType === "user.deleted" && id) {
-      await prisma.user.deleteMany({ where: { clerkId: id } }); // cascades to all their data
+      await deleteAccountData(id); // cascades to all their data
     }
 
     return new Response("Webhook received", { status: 200 });

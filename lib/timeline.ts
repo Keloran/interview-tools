@@ -20,12 +20,13 @@ type Serialized<T> = T extends Date ? string : T extends object ? {[K in keyof T
 export type TimelineApplication = Serialized<Prisma.ApplicationGetPayload<{select: typeof timelineSelect}>>;
 export type TimelineStage = TimelineApplication["interviews"][number];
 
-const timestamp = (date: string) => Date.parse(date);
+const timestamp = (date: string | Date) => new Date(date).getTime();
 const day = 86400000;
-const terminal = new Set(["REJECTED", "WITHDREW", "OFFER_ACCEPTED", "OFFER_DECLINED"]);
+const terminal = new Set(["REJECTED", "WITHDREW", "OFFER_ACCEPTED", "OFFER_DECLINED", "NO_RESPONSE"]);
 export const OUTCOME_LABELS: Record<string, string> = {
   SCHEDULED: "Scheduled", PASSED: "Passed", REJECTED: "Rejected", AWAITING_RESPONSE: "Awaiting response",
   OFFER_RECEIVED: "Offer received", OFFER_ACCEPTED: "Offer accepted", OFFER_DECLINED: "Offer declined", WITHDREW: "Withdrew",
+  NO_RESPONSE: "No response (closed as ghosted)",
 };
 export function daysBetween(from: string, to: string): number | null {
   const difference = timestamp(to) - timestamp(from);
@@ -33,6 +34,7 @@ export function daysBetween(from: string, to: string): number | null {
 }
 export const dayLabel = (days: number) => `${days} day${days === 1 ? "" : "s"}`;
 export function stageDate(stage: TimelineStage, applied: string): {date: string; label: string} {
+  if (stage.stage.stage.trim().toLowerCase() === "offer") return {date: stage.deadline || stage.created_at, label: stage.deadline ? "Respond by" : "Offer recorded"};
   if (stage.stage.stage === "Applied") return {date: applied, label: "Applied"};
   if (stage.date) return {date: stage.date, label: "Scheduled for"};
   if (stage.deadline) return {date: stage.deadline, label: "Deadline"};
@@ -42,11 +44,11 @@ export function stageDate(stage: TimelineStage, applied: string): {date: string;
 // Parents precede children even when dates or IDs disagree. Roots, siblings and
 // disconnected records have a stable creation-time/ID order. Break malformed
 // cycles once, retaining every stage rather than hiding history or looping.
-export function orderedStages(stages: TimelineStage[]): TimelineStage[] {
+export function orderedStages<T extends {id: number; parentId: number | null; created_at: string | Date}>(stages: T[]): T[] {
   const pending = [...stages].sort((a, b) => timestamp(a.created_at) - timestamp(b.created_at) || a.id - b.id);
   const ids = new Set(stages.map((stage) => stage.id));
   const visited = new Set<number>();
-  const result: TimelineStage[] = [];
+  const result: T[] = [];
   while (pending.length) {
     const ready = pending.findIndex((stage) => stage.parentId === null || !ids.has(stage.parentId) || visited.has(stage.parentId));
     const [stage] = pending.splice(ready < 0 ? 0 : ready, 1);

@@ -21,9 +21,11 @@ model User {
   calendarUuid     String            @unique @default(uuid())
   companies        Company[]
   applications     Application[]
-  legacyInterviews LegacyInterview[]
   stories          Story[]
   activityEntries  ActivityEntry[]
+  staleAfterDays   Int               @default(60)
+  communityConsent CommunityConsent?
+  communityContributions CommunityContribution[]
 }
 
 model Company {
@@ -32,39 +34,9 @@ model Company {
   userId           Int
   user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   applications     Application[]
-  legacyInterviews LegacyInterview[]
   created_at       DateTime          @default(now())
 
   @@unique([userId, name])
-}
-
-// LegacyInterview - the old interview table, kept for existing data
-// Maps to the existing "Interview" table in the database
-model LegacyInterview {
-  id              Int               @id @default(autoincrement())
-  companyId       Int
-  company         Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  clientCompany   String?
-  jobTitle        String
-  applicationDate DateTime
-  interviewer     String?
-  stageId         Int
-  stage           Stage             @relation(fields: [stageId], references: [id])
-  stageMethodId   Int
-  stageMethod     StageMethod       @relation(fields: [stageMethodId], references: [id])
-  userId          Int
-  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  date            DateTime?
-  deadline        DateTime?
-  outcome         InterviewOutcome?
-  notes           String?           @db.Text
-  metadata        Json?
-  created_at      DateTime          @default(now())
-  updated_at      DateTime          @updatedAt
-  link            String?
-
-  @@unique([userId, companyId, jobTitle, applicationDate, clientCompany])
-  @@map("Interview") // Maps to existing Interview table
 }
 
 // Application represents a job application - the root entity for tracking
@@ -83,6 +55,12 @@ model Application {
   recruiterEmail    String?
   recruiterLinkedIn String?
   firstResponseAt   DateTime?          @db.Date
+  advertisedSalary  String?           @db.Text
+  communityEmployerId String?
+  communityEmployer CommunityEmployer? @relation(fields: [communityEmployerId], references: [id], onDelete: SetNull)
+  communityEmployerConfirmedAt DateTime?
+  communityEmployerChangedAt DateTime?
+  communityEmployerIdentity String?
   interviews        Interview[]
   availabilityLinks AvailabilityLink[]
   followUps         FollowUp[]
@@ -155,6 +133,14 @@ model Interview {
   notes           String?           @db.Text
   link            String? // Meeting link (Teams, Google Meet, etc.)
 
+  // Private offer details, kept as entered (currency, period and conditions included)
+  offerBase       String? @db.Text
+  offerBonus      String? @db.Text
+  offerEquity     String? @db.Text
+  offerBenefits   String? @db.Text
+  offerNotice     String? @db.Text
+  offerLocation   String? @db.Text
+
   // Debrief, written straight after the interview while it's fresh
   debriefedAt    DateTime?
   rating         Int? // how it went, 1-5
@@ -213,7 +199,6 @@ model Stage {
   id                Int                @id @default(autoincrement())
   stage             String             @unique
   interviews        Interview[]
-  legacyInterviews  LegacyInterview[]
   availabilityLinks AvailabilityLink[]
 }
 
@@ -221,7 +206,6 @@ model StageMethod {
   id               Int               @id @default(autoincrement())
   method           String            @unique
   interviews       Interview[]
-  legacyInterviews LegacyInterview[]
 }
 
 enum FeedbackType {
@@ -231,6 +215,7 @@ enum FeedbackType {
 }
 
 enum InterviewOutcome {
+  NO_RESPONSE // Explicitly closed as ghosted by the owner
   SCHEDULED // Interview is scheduled
   PASSED // You progressed to next stage
   REJECTED // You didn't get through
@@ -239,4 +224,64 @@ enum InterviewOutcome {
   OFFER_ACCEPTED // You accepted the offer
   OFFER_DECLINED // You declined the offer
   WITHDREW // You withdrew your application
+}
+
+// Singleton release controls. Publication and collection are separate, default-off gates.
+model CommunityControl {
+  id String @id @default("global")
+  noticeVersion String?
+  noticePublishedAt DateTime?
+  collectionEnabled Boolean @default(false)
+  publicationEnabled Boolean @default(false)
+  revocationEpoch Int @default(0)
+  lastPublicationMonth String?
+}
+
+// Latest choice only; cascades with the account. Never an analytics/event log.
+model CommunityConsent {
+  userId Int @id
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  noticeVersion String
+  grantedAt DateTime?
+  withdrawnAt DateTime?
+  revision Int @default(1)
+  purgePending Boolean @default(false)
+  quarantinedAt DateTime?
+}
+
+// Foundations for IT-81. No contributions or snapshots are created by the consent API.
+model CommunityEmployer {
+  id String @id @default(uuid())
+  name String
+  domain String?
+  jurisdiction String?
+  aliases String[] @default([])
+  cohortReviewedAt DateTime?
+  applications Application[]
+  reviewedAt DateTime?
+  suppressedAt DateTime?
+  contributions CommunityContribution[]
+  snapshot CommunitySnapshot?
+}
+model CommunityContribution {
+  userId Int
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  employerId String
+  employer CommunityEmployer @relation(fields: [employerId], references: [id], onDelete: Cascade)
+  noticeVersion String
+  consentRevision Int
+  observedAt DateTime
+  responded Boolean?
+  ghosted Boolean?
+  feedbackGiven Boolean?
+  replyDays Int?
+  @@id([userId, employerId])
+}
+model CommunitySnapshot {
+  employerId String @id
+  employer CommunityEmployer @relation(fields: [employerId], references: [id], onDelete: Cascade)
+  revocationEpoch Int
+  noticeVersion String
+  publishedAt DateTime
+  data Json
 }

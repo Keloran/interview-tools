@@ -19,6 +19,8 @@ import {useRouter} from "next/navigation";
 import {addGuestInterview} from "@/lib/guestStorage";
 import {interviewFormSchema} from "@/lib/validations/interview";
 import {Separator} from "@/components/ui/separator";
+import CommunityLookup from "@/components/CommunityLookup";
+import {CommunityRecords} from "@/components/CommunityRecord";
 import {CompanyHistory, findPreviousApplications} from "@/lib/applications";
 import PreviousApplications from "@/components/PreviousApplications";
 import {cn, toISODate} from "@/lib/utils";
@@ -33,6 +35,8 @@ import {emptyContact, viaAgency} from "@/lib/recruiters";
 export type LocationType = "phone" | "link";
 
 export type InterviewFormValues = {
+  advertisedSalary?: string;
+  offerDeadline?: string;
   viaRecruiter?: boolean;
   recruiterName?: string;
   recruiterEmail?: string;
@@ -126,6 +130,8 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
   const [jobTitle, setJobTitle] = useState(initialValues?.jobTitle || "");
   const [jobPostingLink, setJobPostingLink] = useState(initialValues?.jobPostingLink || "");
   const [date, setDate] = useState(initialDateStr);
+  const [advertisedSalary, setAdvertisedSalary] = useState(initialValues?.advertisedSalary ?? "");
+  const [offerDeadline, setOfferDeadline] = useState(initialValues?.offerDeadline ?? "");
   const [time, setTime] = useState(initialValues?.time || "09:00:00");
   const [durationMinutes, setDurationMinutes] = useState(60);
   const [interviewer, setInterviewer] = useState(initialValues?.interviewer || "");
@@ -174,7 +180,8 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
 
   // All stages except "Applied" and "Offer" require scheduling (time, interviewer, etc.)
   const isTechnicalTest = selectedStage === "Technical Test";
-  const requiresScheduling = selectedStage !== "Applied" && selectedStage !== "Offer";
+  const isOffer = selectedStage.trim().toLowerCase() === "offer";
+  const requiresScheduling = selectedStage !== "Applied" && !isOffer;
 
   const handleSubmit = async () => {
     // Prevent double submission
@@ -186,6 +193,8 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
 
     // Build values object
     const values: InterviewFormValues = {
+      advertisedSalary,
+      offerDeadline: isOffer ? offerDeadline : undefined,
       ...contact,
       stage: selectedStage,
       companyName,
@@ -294,6 +303,8 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
         }
 
         type PostInterviewBody = {
+          advertisedSalary?: string;
+          offerDeadline?: string | null;
           viaRecruiter?: boolean;
           recruiterName?: string;
           recruiterEmail?: string;
@@ -314,6 +325,8 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
         };
 
         const body: PostInterviewBody = {
+          advertisedSalary: !isProgressing ? advertisedSalary : undefined,
+          offerDeadline: isOffer ? offerDeadline || null : undefined,
           ...contact,
           viaRecruiter: contact.viaRecruiter || !!clientCompany.trim(),
           stage: selectedStage,
@@ -331,7 +344,7 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
 
         if (isTechnicalTest) {
           body.deadline = dateWithTime.toISOString();
-        } else {
+        } else if (!isOffer) {
           body.date = dateWithTime.toISOString();
         }
 
@@ -446,6 +459,7 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
           <RecruiterFields value={contact} onChange={setContact} agency={companyName} disabled={isSubmitting} error={validationErrors.recruiterName || validationErrors.recruiterEmail || validationErrors.recruiterLinkedIn} />
           {companies?.filter((company) => company.name.trim().toLowerCase() === companyName.trim().toLowerCase() && company.applications.some(viaAgency)).map((company) => <div className="rounded-md border p-3" key={company.id}><p className="text-sm font-medium">{company.name}: your agency record</p><RecruiterRecord applications={company.applications.filter(viaAgency)} /></div>)}
         </div>}
+        {!!user && !isProgressing && companyName.trim() && <div className="md:col-span-2"><CommunityLookup initialQuery={clientCompany || companyName} /></div>}
         {previousApplications.length > 0 && (
           <div
             role="status"
@@ -460,6 +474,7 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
                 : previousApplications[0].sameTitle ? "You may have already applied for this job" : "You've applied to this company before"}
             </p>
             <PreviousApplications applications={previousApplications.slice(0, 5)} />
+            <CommunityRecords applications={previousApplications} />
           </div>
         )}
         <div className="space-y-2 md:col-span-2">
@@ -477,6 +492,8 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
         </div>
       </div>
 
+      {!!user && !isProgressing && <div className="space-y-2"><Label htmlFor="advertised-salary">Advertised salary range (optional)</Label><Input id="advertised-salary" value={advertisedSalary} maxLength={500} placeholder="e.g. £70,000–80,000 per year" disabled={isSubmitting} onChange={(event) => setAdvertisedSalary(event.target.value)} /><p className="text-sm text-muted-foreground">Private. Include the currency and pay period as advertised.</p></div>}
+      {!!user && isOffer && <div className="space-y-2"><Label htmlFor="offer-deadline">Respond by (optional)</Label><Input id="offer-deadline" type="date" value={offerDeadline} disabled={isSubmitting} onChange={(event) => setOfferDeadline(event.target.value)} />{validationErrors.offerDeadline && <p className="text-sm text-destructive">{validationErrors.offerDeadline}</p>}</div>}
       {requiresScheduling && (
         <div className="grid gap-4 md:grid-cols-2">
           {isProgressing && (

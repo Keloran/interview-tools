@@ -13,7 +13,12 @@ const del = (confirm?: string) =>
   DELETE(new Request('http://x/api/account', {method: 'DELETE', body: JSON.stringify({confirm})}) as any)
 
 describe('DELETE /api/account', () => {
-  beforeEach(() => vi.clearAllMocks())
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(prisma.$queryRaw).mockResolvedValue([{id: 'global'}])
+    vi.mocked(prisma.user.findUnique).mockResolvedValue({id: 1} as never)
+    vi.mocked(prisma.$transaction).mockImplementation(async (callback: any) => callback(prisma))
+  })
 
   it('needs the confirmation typed out, and deletes nothing without it', async () => {
     expect((await del('yes')).status).toBe(400)
@@ -45,6 +50,9 @@ describe('DELETE /api/account', () => {
 
 describe('Clerk user.deleted webhook', () => {
   it('removes the data of a user deleted from Clerk', async () => {
+    vi.mocked(prisma.$queryRaw).mockResolvedValue([{id: 'global'}])
+    vi.mocked(prisma.user.findUnique).mockResolvedValue({id: 1} as never)
+    vi.mocked(prisma.$transaction).mockImplementation(async (callback: any) => callback(prisma))
     const {POST} = await import('@/app/api/webhooks/clerk/route')
     const res = await POST(new Request('http://x/api/webhooks/clerk', {method: 'POST'}) as any)
     expect(res.status).toBe(200)

@@ -28,6 +28,8 @@ export const getStageColor = (outcome: string) => {
     case "REJECTED":
     case "WITHDREW":
       return "bg-red-500";
+    case "NO_RESPONSE":
+      return "bg-amber-600";
     case "OFFER_RECEIVED":
       return "bg-orange-600";
     case "OFFER_DECLINED":
