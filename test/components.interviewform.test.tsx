@@ -29,7 +29,7 @@ describe('Components/InterviewForm', () => {
     render(
       <Providers>
         <InterviewForm
-          initialValues={{stage: 'Applied', companyName: 'Acme', jobTitle: 'SE'}}
+          initialValues={{stage: 'Applied', companyName: 'Acme', jobTitle: 'SE', advertisedSalary: '£70–80k/year'}}
           onSubmit={onSubmit}
         />
       </Providers>
@@ -42,6 +42,7 @@ describe('Components/InterviewForm', () => {
     expect(onSubmit).toHaveBeenCalledWith(
       expect.objectContaining({
         stage: 'Applied',
+        advertisedSalary: '£70–80k/year',
         companyName: 'Acme',
         jobTitle: 'SE',
       })

@@ -84,6 +84,7 @@ model Application {
   recruiterEmail    String?
   recruiterLinkedIn String?
   firstResponseAt   DateTime?          @db.Date
+  advertisedSalary  String?           @db.Text
   interviews        Interview[]
   availabilityLinks AvailabilityLink[]
   followUps         FollowUp[]
@@ -155,6 +156,14 @@ model Interview {
   outcome         InterviewOutcome?
   notes           String?           @db.Text
   link            String? // Meeting link (Teams, Google Meet, etc.)
+
+  // Private offer details, kept as entered (currency, period and conditions included)
+  offerBase       String? @db.Text
+  offerBonus      String? @db.Text
+  offerEquity     String? @db.Text
+  offerBenefits   String? @db.Text
+  offerNotice     String? @db.Text
+  offerLocation   String? @db.Text
 
   // Debrief, written straight after the interview while it's fresh
   debriefedAt    DateTime?

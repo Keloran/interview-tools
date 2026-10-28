@@ -5,6 +5,7 @@ import {offerDaySchema} from "@/lib/offers";
 // Shared validation schema for interview forms
 export const interviewFormSchema = z.object({
   ...recruiterSchema.shape,
+  advertisedSalary: z.string().trim().max(500).optional(),
   offerDeadline: offerDaySchema.optional().or(z.literal("")),
   stage: z.string().min(1, "Stage is required"),
   companyName: z.string().min(1, "Company name is required"),

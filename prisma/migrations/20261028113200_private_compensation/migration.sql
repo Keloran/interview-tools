@@ -1,0 +1,8 @@
+ALTER TABLE "Application" ADD COLUMN IF NOT EXISTS "advertisedSalary" TEXT;
+ALTER TABLE "InterviewStage"
+  ADD COLUMN IF NOT EXISTS "offerBase" TEXT,
+  ADD COLUMN IF NOT EXISTS "offerBonus" TEXT,
+  ADD COLUMN IF NOT EXISTS "offerEquity" TEXT,
+  ADD COLUMN IF NOT EXISTS "offerBenefits" TEXT,
+  ADD COLUMN IF NOT EXISTS "offerNotice" TEXT,
+  ADD COLUMN IF NOT EXISTS "offerLocation" TEXT;

@@ -1,5 +1,6 @@
 "use client";
 
+import {OfferComparison, OfferCompensation} from "@/components/Compensation";
 import Link from "next/link";
 import {useState} from "react";
 import {useUser} from "@clerk/nextjs";
@@ -36,7 +37,7 @@ export default function Offers() {
   const {data, isPending, error, refetch} = useOffers();
   if (!user) return null;
   return <section className="space-y-4"><h2 className="text-xl font-semibold">Your open offers</h2><p className="text-sm text-muted-foreground">Sorted by respond-by date, including overdue offers. Deadlines are calendar days in your local time. Reminders appear here and on the home page one day before; your calendar feed also includes an all-day deadline and reminder.</p>
-    {error ? <div role="alert">Could not load offers. <Button onClick={() => refetch()}>Try again</Button></div> : isPending ? <p role="status">Loading offers…</p> : !data?.length ? <p>No open offers. Add an Offer stage to an application to start.</p> : <ul className="space-y-4">{data.map((offer) => <li key={offer.interviewId}><OfferCard offer={offer} /></li>)}</ul>}
+    {error ? <div role="alert">Could not load offers. <Button onClick={() => refetch()}>Try again</Button></div> : isPending ? <p role="status">Loading offers…</p> : !data?.length ? <p>No open offers. Add an Offer stage to an application to start.</p> : <><OfferComparison offers={data} /><ul className="space-y-4">{data.map((offer) => <li key={offer.interviewId}><OfferCard offer={offer} /></li>)}</ul></>}
   </section>;
 }
 function OfferCard({offer}: {offer: OfferSummary}) {
@@ -60,6 +61,7 @@ function OfferCard({offer}: {offer: OfferSummary}) {
     <p className={state.remind ? "font-medium text-amber-600 dark:text-amber-400" : "text-sm"}>{offer.deadline ? `Respond by ${offer.deadline} · ${state.label}` : state.label}</p>
     <Link className="text-sm underline" href={`/applications/${offer.applicationId}`}>Application timeline</Link>
     {editing ? <div className="space-y-2"><Label htmlFor={`offer-date-${offer.interviewId}`}>Respond by (optional)</Label><Input id={`offer-date-${offer.interviewId}`} type="date" value={deadline} disabled={busy} onChange={(event) => setDeadline(event.target.value)} /><div className="flex gap-2"><Button size="sm" disabled={busy} onClick={() => {if (deadline && !offerDaySchema.safeParse(deadline).success) {setError("Enter a valid respond-by date"); return;} save({deadline: deadline || null});}}>Save deadline</Button><Button size="sm" variant="outline" disabled={busy} onClick={() => setEditing(false)}>Cancel</Button></div></div> : <Button size="sm" variant="outline" className="self-start" disabled={busy} onClick={() => {setDeadline(offer.deadline ?? ""); setError(""); setEditing(true);}}>Edit respond-by date</Button>}
+    <OfferCompensation offer={offer} />
     <div className="flex flex-wrap gap-2"><Button size="sm" variant="outline" disabled={busy} onClick={() => {setError(""); setDecision("OFFER_ACCEPTED");}}>Accept offer message</Button><Button size="sm" variant="outline" disabled={busy} onClick={() => {setError(""); setDecision("OFFER_DECLINED");}}>Decline offer message</Button></div>
     {error && !decision && <p role="alert" className="text-sm text-destructive">{error}</p>}
     <Dialog open={!!decision} onOpenChange={(open) => {if (!open && !busy) setDecision(null);}}><DialogContent><DialogHeader><DialogTitle>{decision === "OFFER_ACCEPTED" ? "Accept" : "Decline"} offer · {offer.company}</DialogTitle></DialogHeader>{decision && <>

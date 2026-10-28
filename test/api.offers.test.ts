@@ -31,7 +31,7 @@ describe("private offer API", () => {
     const response = await GET();
     expect(prisma.application.findMany).toHaveBeenCalledWith({where: {user: {clerkId: "user_123"}}, select: offerApplicationSelect});
     expect(response.headers.get("Cache-Control")).toBe("private, no-store");
-    expect(await response.json()).toEqual([{applicationId: 1, interviewId: 10, jobTitle: "Engineer", company: "Client", agency: "Agency", interviewer: "Jane", deadline: "2020-01-01", outcome: "OFFER_RECEIVED"}]);
+    expect(await response.json()).toEqual([{advertisedSalary: null, offerBase: null, offerBonus: null, offerEquity: null, offerBenefits: null, offerNotice: null, offerLocation: null, applicationId: 1, interviewId: 10, jobTitle: "Engineer", company: "Client", agency: "Agency", interviewer: "Jane", deadline: "2020-01-01", outcome: "OFFER_RECEIVED"}]);
   });
   it("validates deadline dates and explicit decision confirmation before writing", async () => {
     expect((await PUT(request({deadline: "2026-02-30"}), context)).status).toBe(400);
