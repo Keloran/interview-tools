@@ -109,6 +109,9 @@ All routes authenticate via Clerk's `currentUser()`.
 - `recruiterRecords` per agency and per recruiter contact, each with `stats` from `recruiterStats`
 - Both load the same history as `GET /api/companies` via `loadCompanyHistory` in `lib/companyHistory.ts`
 
+**GET /api/report/summary?from=&through=** and **GET /api/activity-log/rows?from=&through=[&format=csv]** (for the apps)
+- The same `searchReport` / `activityRows` + `activityCSV` the website runs in the browser, worked out on the server (days in server time)
+
 **POST /api/webhooks/clerk**
 - Webhook handler for Clerk `user.created` events
 - Syncs new users to local database
