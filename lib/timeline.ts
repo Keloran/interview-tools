@@ -34,6 +34,7 @@ export function daysBetween(from: string, to: string): number | null {
 }
 export const dayLabel = (days: number) => `${days} day${days === 1 ? "" : "s"}`;
 export function stageDate(stage: TimelineStage, applied: string): {date: string; label: string} {
+  if (stage.stage.stage.trim().toLowerCase() === "offer") return {date: stage.deadline || stage.created_at, label: stage.deadline ? "Respond by" : "Offer recorded"};
   if (stage.stage.stage === "Applied") return {date: applied, label: "Applied"};
   if (stage.date) return {date: stage.date, label: "Scheduled for"};
   if (stage.deadline) return {date: stage.deadline, label: "Deadline"};

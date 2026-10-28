@@ -33,6 +33,7 @@ import {emptyContact, viaAgency} from "@/lib/recruiters";
 export type LocationType = "phone" | "link";
 
 export type InterviewFormValues = {
+  offerDeadline?: string;
   viaRecruiter?: boolean;
   recruiterName?: string;
   recruiterEmail?: string;
@@ -126,6 +127,7 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
   const [jobTitle, setJobTitle] = useState(initialValues?.jobTitle || "");
   const [jobPostingLink, setJobPostingLink] = useState(initialValues?.jobPostingLink || "");
   const [date, setDate] = useState(initialDateStr);
+  const [offerDeadline, setOfferDeadline] = useState(initialValues?.offerDeadline ?? "");
   const [time, setTime] = useState(initialValues?.time || "09:00:00");
   const [durationMinutes, setDurationMinutes] = useState(60);
   const [interviewer, setInterviewer] = useState(initialValues?.interviewer || "");
@@ -174,7 +176,8 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
 
   // All stages except "Applied" and "Offer" require scheduling (time, interviewer, etc.)
   const isTechnicalTest = selectedStage === "Technical Test";
-  const requiresScheduling = selectedStage !== "Applied" && selectedStage !== "Offer";
+  const isOffer = selectedStage.trim().toLowerCase() === "offer";
+  const requiresScheduling = selectedStage !== "Applied" && !isOffer;
 
   const handleSubmit = async () => {
     // Prevent double submission
@@ -186,6 +189,7 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
 
     // Build values object
     const values: InterviewFormValues = {
+      offerDeadline: isOffer ? offerDeadline : undefined,
       ...contact,
       stage: selectedStage,
       companyName,
@@ -294,6 +298,7 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
         }
 
         type PostInterviewBody = {
+          offerDeadline?: string | null;
           viaRecruiter?: boolean;
           recruiterName?: string;
           recruiterEmail?: string;
@@ -314,6 +319,7 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
         };
 
         const body: PostInterviewBody = {
+          offerDeadline: isOffer ? offerDeadline || null : undefined,
           ...contact,
           viaRecruiter: contact.viaRecruiter || !!clientCompany.trim(),
           stage: selectedStage,
@@ -331,7 +337,7 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
 
         if (isTechnicalTest) {
           body.deadline = dateWithTime.toISOString();
-        } else {
+        } else if (!isOffer) {
           body.date = dateWithTime.toISOString();
         }
 
@@ -477,6 +483,7 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
         </div>
       </div>
 
+      {!!user && isOffer && <div className="space-y-2"><Label htmlFor="offer-deadline">Respond by (optional)</Label><Input id="offer-deadline" type="date" value={offerDeadline} disabled={isSubmitting} onChange={(event) => setOfferDeadline(event.target.value)} />{validationErrors.offerDeadline && <p className="text-sm text-destructive">{validationErrors.offerDeadline}</p>}</div>}
       {requiresScheduling && (
         <div className="grid gap-4 md:grid-cols-2">
           {isProgressing && (

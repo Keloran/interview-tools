@@ -9,6 +9,7 @@ import {Button} from "@/components/ui/button";
 import {Companies} from "@/components/Company";
 import {useDueFollowUps} from "@/components/FollowUps";
 import {cn} from "@/lib/utils";
+import {OffersLink} from "@/components/Offers";
 
 // Client side on purpose: the server versions of SignedIn/SignedOut call auth(), which throws on
 // requests the proxy matcher skips (anything that looks like a static file), turning a 404 into a 500
@@ -48,6 +49,7 @@ function NavLinks({stacked, onNavigate}: { stacked?: boolean; onNavigate?: () =>
         </Button>
         <Button asChild variant="ghost" className={item}><Link href="/recruiters" onClick={onNavigate}>Recruiters</Link></Button>
         <Button asChild variant="ghost" className={item}><Link href="/report" onClick={onNavigate}>Report</Link></Button>
+        <OffersLink className={item} onNavigate={onNavigate} />
       </SignedIn>
       <Button asChild variant="ghost" className={item}>
         <Link href="/roadmap" onClick={onNavigate}>Roadmap</Link>

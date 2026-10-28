@@ -27,6 +27,8 @@ import {needsDebrief} from "@/lib/debrief";
 import {useFlags} from "@flags-gg/react-library";
 import {reportClientError} from "@/lib/reportClientError";
 import {addDays} from "@/lib/busy";
+import {isOpenOffer, offerDeadlineState} from "@/lib/offers";
+import {parseLocalDay} from "@/lib/searchReport";
 
 function inferStageMethodName(locationType?: string | null, interviewLink?: string | null): string {
   if (locationType === "phone") return "Phone";
@@ -66,6 +68,9 @@ interface InterviewApiItem {
 
 interface Interview {
   id: string;
+  offer?: boolean;
+  offerOpen?: boolean;
+  respondBy?: string | null;
   applicationId?: number;
   title: string;
   date: Date;
@@ -216,8 +221,11 @@ export default function InterviewsList() {
   const interviews: Interview[] = (interviewData || []).map((item: InterviewApiItem) => ({
     id: String(item.id),
     applicationId: item.applicationId,
+    offer: item.stage?.stage.trim().toLowerCase() === "offer",
+    offerOpen: isOpenOffer(item.stage?.stage, item.outcome),
+    respondBy: item.stage?.stage.trim().toLowerCase() === "offer" && item.deadline ? new Date(item.deadline).toISOString().slice(0, 10) : null,
     title: item.jobTitle,
-    date: new Date(item.date ?? item.deadline ?? item.applicationDate ?? ""),
+    date: item.stage?.stage.trim().toLowerCase() === "offer" && item.deadline ? parseLocalDay(new Date(item.deadline).toISOString().slice(0, 10))! : new Date(item.date ?? item.deadline ?? item.applicationDate ?? ""),
     stage: item.stage?.stage || "Unknown",
     stageMethod: item.stageMethod?.method || "Unknown",
     link: item.link as string,
@@ -410,7 +418,7 @@ export default function InterviewsList() {
                         {interview.clientCompany && <span className="text-muted-foreground font-normal"> (for {interview.clientCompany})</span>}
                       </p>
                       <p className="text-sm text-muted-foreground mt-1">
-                        {interview.date.toLocaleDateString("en-US", {
+                        {interview.offer ? interview.respondBy ? `Respond by ${interview.respondBy}${interview.offerOpen ? ` · ${offerDeadlineState(interview.respondBy).label}` : ""}` : "No respond-by date recorded" : interview.date.toLocaleDateString("en-US", {
                           month: "long",
                           day: "numeric",
                           year: "numeric",

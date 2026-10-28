@@ -9,8 +9,8 @@ import {Card} from "@/components/ui/card";
 import {FEEDBACK_LABEL} from "@/lib/feedback";
 import {dayLabel, daysBetween, OUTCOME_LABELS, stageDate, TimelineApplication, TimelineStage, timelineActivity, timelineSummary} from "@/lib/timeline";
 
-function DateLabel({date}: {date: string}) {
-  return <time dateTime={date}>{new Date(date).toLocaleString(undefined, {year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit"})}</time>;
+function DateLabel({date, dateOnly = false}: {date: string; dateOnly?: boolean}) {
+  return <time dateTime={dateOnly ? date.slice(0, 10) : date}>{dateOnly ? date.slice(0, 10) : new Date(date).toLocaleString(undefined, {year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit"})}</time>;
 }
 
 export default function ApplicationTimeline({applicationId}: {applicationId: string}) {
@@ -51,8 +51,8 @@ export default function ApplicationTimeline({applicationId}: {applicationId: str
           const gap = daysBetween(previousDate, date.date);
           return <li key={stage.id} className="space-y-2 break-words">
             <h4 className="font-semibold">{stage.stage.stage}</h4>
-            <p className="text-sm">{date.label} <DateLabel date={date.date} /></p>
-            {stage.date && stage.deadline && <p className="text-sm">Deadline <DateLabel date={stage.deadline} /></p>}
+            <p className="text-sm">{date.label} <DateLabel date={date.date} dateOnly={date.label === "Respond by"} /></p>
+            {stage.date && stage.deadline && date.label !== "Respond by" && <p className="text-sm">Deadline <DateLabel date={stage.deadline} /></p>}
             {stage.stage.stage !== "Applied" && gap !== null && <p className="text-sm text-muted-foreground">{dayLabel(gap)} after {parent?.stage.stage ?? "applying"}</p>}
             {stage.stage.stage !== "Applied" && gap === null && <p className="text-sm text-muted-foreground">Dates overlap or precede the previous step; shown in progression order.</p>}
             <p>{stage.stageMethod.method}{stage.interviewer && ` · ${stage.interviewer}`}</p>

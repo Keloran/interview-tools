@@ -79,6 +79,7 @@ export default function InterviewEditForm({ interviewId, onSuccess }: InterviewE
   const { register, handleSubmit, formState: { errors }, reset, control } = useForm<EditFormValues>({
     resolver: zodResolver(editInterviewSchema),
     defaultValues: {
+      isOffer: false,
       clientCompany: "",
       date: "",
       time: "",
@@ -93,7 +94,8 @@ export default function InterviewEditForm({ interviewId, onSuccess }: InterviewE
   });
 
   // Track if this interview has a deadline
-  const hasDeadline = !!interview?.deadline;
+  const isOffer = interview?.stage.stage.trim().toLowerCase() === "offer";
+  const hasDeadline = isOffer || !!interview?.deadline;
 
   // Reset form when interview data loads
   useEffect(() => {
@@ -113,7 +115,7 @@ export default function InterviewEditForm({ interviewId, onSuccess }: InterviewE
 
       // Format deadline as YYYY-MM-DDTHH:MM for datetime-local input
       const formattedDeadline = deadlineDate
-        ? deadlineDate.toISOString().slice(0, 16)
+        ? deadlineDate.toISOString().slice(0, isOffer ? 10 : 16)
         : "";
 
       // Determine the correct stageMethodId with robust fallbacks
@@ -135,6 +137,7 @@ export default function InterviewEditForm({ interviewId, onSuccess }: InterviewE
       }
 
       reset({
+        isOffer,
         clientCompany: interview.clientCompany || "",
         date: formattedDate,
         time: formattedTime,
@@ -147,7 +150,7 @@ export default function InterviewEditForm({ interviewId, onSuccess }: InterviewE
         durationMinutes: interview.durationMinutes ?? 60,
       });
     }
-  }, [interview, stageMethods, reset]);
+  }, [interview, stageMethods, reset, isOffer]);
 
   const onSubmit = async (values: EditFormValues) => {
     setIsSubmitting(true);
@@ -158,7 +161,7 @@ export default function InterviewEditForm({ interviewId, onSuccess }: InterviewE
         : null;
 
       const deadline = values.deadline
-        ? new Date(values.deadline)
+        ? new Date(isOffer ? `${values.deadline}T00:00:00.000Z` : values.deadline)
         : null;
 
       const metadata = {
@@ -171,7 +174,7 @@ export default function InterviewEditForm({ interviewId, onSuccess }: InterviewE
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           clientCompany: values.clientCompany || null,
-          date: dateTime?.toISOString() || null,
+          date: isOffer ? null : dateTime?.toISOString() || null,
           deadline: deadline?.toISOString() || null,
           link: values.link || null,
           interviewer: values.interviewer || null,
@@ -237,10 +240,10 @@ export default function InterviewEditForm({ interviewId, onSuccess }: InterviewE
       {/* Show deadline OR date/time based on interview type */}
       {hasDeadline ? (
         <div>
-          <Label htmlFor="deadline">Deadline</Label>
+          <Label htmlFor="deadline">{isOffer ? "Respond by (optional)" : "Deadline"}</Label>
           <Input
             id="deadline"
-            type="datetime-local"
+            type={isOffer ? "date" : "datetime-local"}
             {...register("deadline")}
           />
           {errors.deadline && (

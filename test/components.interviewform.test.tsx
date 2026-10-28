@@ -1,5 +1,5 @@
 import {describe, expect, it, vi} from 'vitest'
-import {render, screen} from '@testing-library/react'
+import {fireEvent, render, screen} from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import InterviewForm from '@/components/InterviewForm'
 import {Providers} from './utils'
@@ -93,5 +93,17 @@ describe('Components/InterviewForm', () => {
 
     // the label names the combobox; the picked stage is its text
     await screen.findByText('First Stage', {selector: '#interview-stage span'})
+  })
+})
+
+describe('Offer stages', () => {
+  it.each(['', '2027-01-06'])('records an optional respond-by day without scheduling a call: %s', async (day) => {
+    mockFetchOnce()
+    const onSubmit = vi.fn(), user = userEvent.setup()
+    render(<Providers><InterviewForm initialValues={{stage: 'Offer', companyName: 'Acme', jobTitle: 'SE'}} onSubmit={onSubmit} /></Providers>)
+    const deadline = screen.getByLabelText('Respond by (optional)')
+    if (day) fireEvent.change(deadline, {target: {value: day}})
+    await user.click(await screen.findByRole('button', {name: /add interview stage/i}))
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({stage: 'Offer', offerDeadline: day, interviewer: undefined, locationType: undefined}))
   })
 })

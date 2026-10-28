@@ -7,6 +7,7 @@ import { interviewSelect, toInterviewDto } from "@/lib/interviews";
 import {reportError} from "@/lib/bugfixes";
 import {parseDebrief} from "@/lib/debrief";
 import {parseFeedback} from "@/lib/feedback";
+import {offerDaySchema} from "@/lib/offers";
 
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const user = await currentUser();
@@ -52,7 +53,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     const owned = await prisma.interview.findFirst({
       where: { id, application: { user: { clerkId: user.id } } },
-      select: { id: true },
+      select: { id: true, stage: {select: {stage: true}} },
     });
     if (!owned) return NextResponse.json({ message: "Not Found" }, { status: 404 });
 
@@ -76,6 +77,15 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (body.deadline) {
       const d = new Date(body.deadline);
       if (!isNaN(d.getTime())) data.deadline = d;
+    }
+    if (body.deadline === null) data.deadline = null;
+    if (owned.stage?.stage.trim().toLowerCase() === "offer") {
+      data.date = null;
+      if (typeof body.deadline === "string") {
+        const day = body.deadline.slice(0, 10);
+        if (!offerDaySchema.safeParse(day).success || Number.isNaN(Date.parse(body.deadline))) return NextResponse.json({message: "Enter a valid respond-by date"}, {status: 400});
+        data.deadline = new Date(`${day}T00:00:00.000Z`);
+      }
     }
     if (Number.isInteger(body.durationMinutes) && body.durationMinutes >= 15 && body.durationMinutes <= 480) {
       data.durationMinutes = body.durationMinutes;

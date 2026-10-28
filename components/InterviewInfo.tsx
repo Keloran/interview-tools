@@ -3,6 +3,7 @@
 import RecruiterContact from "@/components/RecruiterContact";
 import type {RecruiterContact as Contact} from "@/lib/recruiters";
 import FirstReplyDate from "@/components/FirstReplyDate";
+import {isOpenOffer, offerDeadlineState} from "@/lib/offers";
 import {useQuery} from "@tanstack/react-query";
 import {useUser} from "@clerk/nextjs";
 import {listGuestInterviews} from "@/lib/guestStorage";
@@ -203,13 +204,13 @@ export default function InterviewInfo(props: {interviewId: string | null}) {
         <p className="text-base">{vm.outcome || "Pending"}</p>
       </div>
 
-      {(vm.date || vm.deadline) && (
+      {(vm.stage?.toLowerCase() === "offer" ? !!vm.deadline : vm.date || vm.deadline) && (
         <div>
           <p className="text-sm font-medium text-muted-foreground">
-            {vm.deadline ? "Deadline" : "Interview Date"}
+            {vm.stage?.toLowerCase() === "offer" ? "Respond by" : vm.deadline ? "Deadline" : "Interview Date"}
           </p>
           <p className="text-base">
-            {new Date((vm.date || vm.deadline) as string).toLocaleDateString("en-US", {
+            {vm.stage?.toLowerCase() === "offer" && vm.deadline ? `${vm.deadline.slice(0, 10)}${isOpenOffer(vm.stage, vm.outcome) ? ` · ${offerDeadlineState(vm.deadline, new Date(now)).label}` : ""}` : new Date((vm.date || vm.deadline) as string).toLocaleDateString("en-US", {
               month: "long",
               day: "numeric",
               year: "numeric",
