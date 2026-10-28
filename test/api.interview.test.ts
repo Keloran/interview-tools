@@ -64,6 +64,48 @@ describe('/api/interview', () => {
       expect(data.application.create).toMatchObject({userId: 99, companyId: 1, jobTitle: 'SE'})
     })
 
+    it.each([0, -1, 'bad-id', ''])('rejects invalid parent %s before creating anything', async (previousInterviewId) => {
+      currentUser.mockResolvedValueOnce({id: 'user_123', emailAddresses: []})
+      const res = await POST({json: async () => ({stage: 'Phone Screen', companyName: 'Acme', jobTitle: 'SE', previousInterviewId})} as any)
+      expect(res.status).toBe(400)
+      expect(prisma.interview.create).not.toHaveBeenCalled()
+    })
+
+    it('does not fork an application when the requested parent is missing or unowned', async () => {
+      currentUser.mockResolvedValueOnce({id: 'user_123', emailAddresses: []})
+      ;(prisma.user.upsert as any).mockResolvedValueOnce({id: 99})
+      ;(prisma.interview.findFirst as any).mockResolvedValueOnce(null)
+      const res = await POST({json: async () => ({stage: 'Technical', companyName: 'Acme', jobTitle: 'SE', previousInterviewId: 7})} as any)
+      expect(res.status).toBe(404)
+      expect(prisma.interview.create).not.toHaveBeenCalled()
+      expect(prisma.company.upsert).not.toHaveBeenCalled()
+    })
+
+    it('preserves an explicitly selected meeting method instead of inferring another one', async () => {
+      currentUser.mockResolvedValueOnce({id: 'user_123', emailAddresses: []})
+      ;(prisma.user.upsert as any).mockResolvedValueOnce({id: 99})
+      ;(prisma.stageMethod.findFirst as any).mockResolvedValueOnce({id: 20, method: 'Teams'})
+      ;(prisma.company.upsert as any).mockResolvedValueOnce({id: 1, name: 'Acme'})
+      ;(prisma.stage.upsert as any).mockResolvedValueOnce({id: 2, stage: 'Phone Screen'})
+      ;(prisma.interview.create as any).mockResolvedValueOnce({id: 1, application: {id: 5, jobTitle: 'SE', applicationDate: new Date(), company: {id: 1, name: 'Acme'}}})
+      const res = await POST({json: async () => ({stage: 'Phone Screen', companyName: 'Acme', jobTitle: 'SE', stageMethodId: 20, durationMinutes: 45})} as any)
+      expect(res.status).toBe(201)
+      expect(prisma.stageMethod.findFirst).toHaveBeenCalledWith({where: {id: 20}, select: {id: true, method: true}})
+      const data = (prisma.interview.create as any).mock.calls[0][0].data
+      expect(data.stageMethod).toEqual({connect: {id: 20}})
+      expect(data.durationMinutes).toBe(45)
+      expect(prisma.stageMethod.create).not.toHaveBeenCalled()
+    })
+
+    it('rejects a selected meeting method that no longer exists', async () => {
+      currentUser.mockResolvedValueOnce({id: 'user_123', emailAddresses: []})
+      ;(prisma.user.upsert as any).mockResolvedValueOnce({id: 99})
+      ;(prisma.stageMethod.findFirst as any).mockResolvedValueOnce(null)
+      const res = await POST({json: async () => ({stage: 'Phone Screen', companyName: 'Acme', jobTitle: 'SE', stageMethodId: 999})} as any)
+      expect(res.status).toBe(404)
+      expect(prisma.interview.create).not.toHaveBeenCalled()
+    })
+
     it('adds the next stage to the previous stage\'s application', async () => {
       ;(currentUser as any).mockResolvedValueOnce({id: 'user_123', emailAddresses: []})
       ;(prisma.user.upsert as any).mockResolvedValueOnce({id: 99})
