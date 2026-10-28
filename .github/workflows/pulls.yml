@@ -41,6 +41,16 @@ jobs:
       - run: SKIP_ENV_VALIDATION=true pnpm build
       - run: SKIP_ENV_VALIDATION=true pnpm lint
       - run: SKIP_ENV_VALIDATION=true pnpm test
+      - name: Check activity-log PDF output
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y poppler-utils
+          node --import tsx scripts/check-activity-print.tsx
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: activity-log-print-check
+          path: /tmp/interview-tools-activity-print-*/*.*
   automerge:
     runs-on: ubuntu-latest
     permissions:

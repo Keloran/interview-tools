@@ -61,7 +61,7 @@ export function summarizeApplication(
   // They asked for your availability, then never opened the link: ghosting, unless it's since moved on
   const ignored = links.find((l) => linkState(l, now) === "ignored");
   if (ignored && !SETTLED_OUTCOMES.includes(latest.outcome ?? "")) {
-    return { status: `Availability link never opened (sent ${timeAgo(ignored.created_at, now)})`, response };
+    return { status: `Availability link never opened (sent ${timeAgo(ignored.sentAt ?? ignored.created_at, now)})`, response };
   }
 
   switch (latest.outcome) {

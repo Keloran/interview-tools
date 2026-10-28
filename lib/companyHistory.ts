@@ -11,7 +11,7 @@ export const companyHistorySelect = {
     id: true, viaRecruiter: true, recruiterName: true, recruiterEmail: true, recruiterLinkedIn: true,
     jobTitle: true, clientCompany: true, applicationDate: true, firstResponseAt: true, jobPostingLink: true,
     interviews: {select: {id: true, date: true, deadline: true, outcome: true, updated_at: true, created_at: true, replyBy: true, feedbackType: true, stage: {select: {stage: true}}}, orderBy: {created_at: "desc"}},
-    availabilityLinks: {select: {created_at: true, viewCount: true, lastViewedAt: true, bookedSlot: true}},
+    availabilityLinks: {select: {created_at: true, sentAt: true, viewCount: true, lastViewedAt: true, bookedSlot: true}},
     _count: {select: {followUps: true}},
   }, orderBy: {applicationDate: "desc"}},
 } satisfies Prisma.CompanySelect;

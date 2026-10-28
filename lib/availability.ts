@@ -80,17 +80,19 @@ export function freeWindows(
 export const LINK_IGNORED_AFTER_DAYS = 7;
 
 export type LinkTracking = {
+  sentAt?: string | Date | null;
   created_at: string | Date;
   viewCount: number;
   lastViewedAt: string | Date | null;
   bookedSlot: string | Date | null;
 };
 
-export type LinkState = "booked" | "opened" | "sent" | "ignored";
+export type LinkState = "booked" | "opened" | "sent" | "ignored" | "created";
 
 export function linkState(link: LinkTracking, now = Date.now()): LinkState {
   if (link.bookedSlot) return "booked";
   if (link.viewCount > 0) return "opened";
-  const ageDays = (now - new Date(link.created_at).getTime()) / (24 * 60 * MINUTE_MS);
+  if (link.sentAt === null) return "created";
+  const ageDays = (now - new Date(link.sentAt ?? link.created_at).getTime()) / (24 * 60 * MINUTE_MS);
   return ageDays >= LINK_IGNORED_AFTER_DAYS ? "ignored" : "sent";
 }

@@ -48,6 +48,7 @@ function DeleteForm() {
         <ul className="list-disc pl-5 text-muted-foreground space-y-1">
           <li>every application, interview stage, debrief and note</li>
           <li>your saved stories and their interview links</li>
+          <li>your free activity-log entries</li>
           <li>your companies and their history</li>
           <li>availability links you&apos;ve sent: anyone with one will get &quot;not found&quot;</li>
           <li>your calendar feed link</li>

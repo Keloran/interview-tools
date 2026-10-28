@@ -32,6 +32,7 @@ export async function GET(request: NextRequest) {
                 firstViewedAt: true,
                 lastViewedAt: true,
                 created_at: true,
+                sentAt: true,
                 stage: {select: {stage: true}},
               },
               orderBy: {created_at: "desc"},
