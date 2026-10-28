@@ -102,6 +102,13 @@ All routes authenticate via Clerk's `currentUser()`.
 - The Google token comes from Clerk (`getUserOauthAccessToken`); the `calendar.freebusy` scope is only requested from the Connect button in `CalendarSync`, never at sign-in
 - Fails open (`[]`) and caches for 5 minutes; the booking page and booking POST use `externalBusyAroundSlots`
 
+**POST /api/check** (for the iOS/Android apps)
+- Body `{link?, title?, company?, client?, description?}`; returns `{matches, flags}` from `findPreviousApplications` and `checkJobListing` (flags only when there's a description)
+
+**GET /api/recruiters** (for the apps)
+- `recruiterRecords` per agency and per recruiter contact, each with `stats` from `recruiterStats`
+- Both load the same history as `GET /api/companies` via `loadCompanyHistory` in `lib/companyHistory.ts`
+
 **POST /api/webhooks/clerk**
 - Webhook handler for Clerk `user.created` events
 - Syncs new users to local database
