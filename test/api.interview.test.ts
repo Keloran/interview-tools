@@ -128,3 +128,37 @@ describe('PUT /api/interview/[id] feedback', () => {
     expect(data).toMatchObject({outcome: 'REJECTED', feedbackType: 'SPECIFIC', feedbackText: 'More system design'})
   })
 })
+
+describe('PUT /api/interview/[id] application fields', () => {
+  const row = {id: 7, stage: {id: 1, stage: 'Technical'}, application: {id: 1, jobTitle: 'SE', clientCompany: null, applicationDate: new Date(), jobPostingLink: null, company: {id: 1, name: 'Acme'}}}
+  const put = async (body: unknown) => {
+    const {PUT} = await import('@/app/api/interview/[id]/route')
+    const req = new Request('http://localhost/api/interview/7', {method: 'PUT', body: JSON.stringify(body)})
+    return PUT(req as any, {params: Promise.resolve({id: '7'})})
+  }
+
+  it('renames the application and clears the date (the iOS edit screen does both)', async () => {
+    ;(prisma.interview.findFirst as any).mockResolvedValueOnce({id: 7})
+    ;(prisma.interview.update as any).mockResolvedValueOnce(row)
+    expect((await put({jobTitle: '  Senior SE ', date: null})).status).toBe(200)
+    const {data} = (prisma.interview.update as any).mock.calls.at(-1)[0]
+    expect(data.date).toBeNull()
+    expect(data.application).toEqual({update: {jobTitle: 'Senior SE'}})
+  })
+
+  it('ignores a blank title rather than erasing it', async () => {
+    ;(prisma.interview.findFirst as any).mockResolvedValueOnce({id: 7})
+    ;(prisma.interview.update as any).mockResolvedValueOnce(row)
+    await put({jobTitle: '   '})
+    const {data} = (prisma.interview.update as any).mock.calls.at(-1)[0]
+    expect(data).not.toHaveProperty('application')
+  })
+
+  it('returns 409 when the new title clashes with another application', async () => {
+    const {Prisma} = await import('@/app/generated/prisma/client')
+    ;(prisma.interview.findFirst as any).mockResolvedValueOnce({id: 7})
+    ;(prisma.interview.update as any).mockRejectedValueOnce(new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {code: 'P2002', clientVersion: 'test'}))
+    const res = await put({jobTitle: 'Existing'})
+    expect(res.status).toBe(409)
+  })
+})

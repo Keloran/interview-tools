@@ -74,6 +74,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       const d = new Date(body.date);
       if (!isNaN(d.getTime())) data.date = d;
     }
+    if (body.date === null) data.date = null;
     if (body.deadline) {
       const d = new Date(body.deadline);
       if (!isNaN(d.getTime())) data.deadline = d;
@@ -111,6 +112,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (typeof body.clientCompany === "string" || body.clientCompany === null) {
       application.clientCompany = body.clientCompany;
     }
+    if (typeof body.jobTitle === "string" && body.jobTitle.trim()) {
+      application.jobTitle = body.jobTitle.trim();
+    }
     if (body.metadata && typeof body.metadata === "object" && "jobListing" in body.metadata) {
       application.jobPostingLink = body.metadata.jobListing || null;
     }
@@ -124,6 +128,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json(toInterviewDto(updated));
   } catch (error) {
+    // Renaming into another of your applications (same company, title, date and client)
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      return NextResponse.json({ message: "You already have an application with that title at this company" }, { status: 409 });
+    }
     reportError("PUT /api/interview/[id] error", error);
     return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
   }
