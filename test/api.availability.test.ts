@@ -1,6 +1,7 @@
 import {beforeEach, describe, expect, it, vi} from 'vitest'
 import {POST as create} from '@/app/api/availability/route'
 import {POST as book} from '@/app/api/availability/[id]/route'
+import {POST as view} from '@/app/api/availability/[id]/view/route'
 import prisma from '@/lib/prisma'
 import {currentUser as mockedCurrentUser} from '@clerk/nextjs/server'
 
@@ -70,5 +71,37 @@ describe('/api/availability/[id] booking race', () => {
     p.availabilityLink.findUnique.mockResolvedValueOnce({bookedSlot: new Date()})
     const res = await book({json: async () => ({slot: new Date().toISOString()})} as any, {params: Promise.resolve({id: 'abc'})})
     expect(res.status).toBe(409)
+  })
+})
+
+describe('/api/availability/[id]/view', () => {
+  beforeEach(() => vi.clearAllMocks())
+  const ctx = {params: Promise.resolve({id: 'link1'})}
+
+  it("doesn't count the owner's own view", async () => {
+    currentUser.mockResolvedValueOnce({id: 'user_123'})
+    p.availabilityLink.findFirst.mockResolvedValueOnce({id: 'link1'})
+    const res = await view({} as any, ctx)
+    expect(res.status).toBe(204)
+    expect(p.availabilityLink.findFirst.mock.calls[0][0].where).toEqual({id: 'link1', application: {user: {clerkId: 'user_123'}}})
+    expect(p.availabilityLink.updateMany).not.toHaveBeenCalled()
+  })
+
+  it('counts an anonymous visitor', async () => {
+    currentUser.mockResolvedValueOnce(null)
+    p.availabilityLink.updateMany.mockResolvedValue({count: 1})
+    const res = await view({} as any, ctx)
+    expect(res.status).toBe(204)
+    expect(p.availabilityLink.findFirst).not.toHaveBeenCalled()
+    expect(p.availabilityLink.updateMany.mock.calls[0][0].data.viewCount).toEqual({increment: 1})
+  })
+
+  it("counts a signed-in visitor who isn't the owner", async () => {
+    currentUser.mockResolvedValueOnce({id: 'someone_else'})
+    p.availabilityLink.findFirst.mockResolvedValueOnce(null)
+    p.availabilityLink.updateMany.mockResolvedValue({count: 1})
+    const res = await view({} as any, ctx)
+    expect(res.status).toBe(204)
+    expect(p.availabilityLink.updateMany).toHaveBeenCalled()
   })
 })
