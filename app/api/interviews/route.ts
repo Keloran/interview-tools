@@ -126,9 +126,11 @@ export async function GET(request: NextRequest) {
     const interviews = await prisma.interview.findMany({
       where,
       select: interviewSelect,
+      // id last so take/skip pages are stable when dates tie or are null (the apps page through everything)
       orderBy: [
         {date: "asc"},
         {deadline: "asc"},
+        {id: "asc"},
       ],
       take: latestOnly ? undefined : take,
       skip: latestOnly ? undefined : skip,
