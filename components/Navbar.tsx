@@ -15,11 +15,6 @@ import {cn} from "@/lib/utils";
 export default function Navbar() {
   return (
     <nav className="flex shrink-0 items-center gap-2">
-      {/* Wide screens: everything inline */}
-      <div className="hidden xl:flex items-center gap-2">
-        <Companies />
-        <NavLinks />
-      </div>
       <SignedIn>
         <UserButton>
           <UserButton.MenuItems>
@@ -27,8 +22,7 @@ export default function Navbar() {
           </UserButton.MenuItems>
         </UserButton>
       </SignedIn>
-      {/* Phones: the rest goes in a drawer */}
-      <MobileMenu />
+      <NavigationMenu />
     </nav>
   );
 }
@@ -53,6 +47,7 @@ function NavLinks({stacked, onNavigate}: { stacked?: boolean; onNavigate?: () =>
           <Link href="/data" onClick={onNavigate}>Your data</Link>
         </Button>
         <Button asChild variant="ghost" className={item}><Link href="/recruiters" onClick={onNavigate}>Recruiters</Link></Button>
+        <Button asChild variant="ghost" className={item}><Link href="/report" onClick={onNavigate}>Report</Link></Button>
       </SignedIn>
       <Button asChild variant="ghost" className={item}>
         <Link href="/roadmap" onClick={onNavigate}>Roadmap</Link>
@@ -66,12 +61,12 @@ function NavLinks({stacked, onNavigate}: { stacked?: boolean; onNavigate?: () =>
   );
 }
 
-function MobileMenu() {
+function NavigationMenu() {
   const [open, setOpen] = useState(false);
   return (
     <DialogPrimitive.Root open={open} onOpenChange={setOpen}>
       <DialogPrimitive.Trigger asChild>
-        <Button variant="ghost" size="icon" className="relative xl:hidden cursor-pointer" aria-label="Menu">
+        <Button variant="ghost" size="icon" className="relative cursor-pointer" aria-label="Menu">
           <Menu />
           <SignedIn><FollowUpDot /></SignedIn>
         </Button>

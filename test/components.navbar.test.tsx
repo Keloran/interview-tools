@@ -36,6 +36,7 @@ describe('Navbar on a phone', () => {
     expect(within(menu).getByRole('link', {name: 'Roadmap'})).toBeInTheDocument()
     expect(within(menu).getByRole('link', {name: 'Questions'})).toHaveAttribute('href', '/questions')
     expect(within(menu).getByRole('link', {name: 'Stories'})).toHaveAttribute('href', '/stories')
+    expect(within(menu).getByRole('link', {name: 'Report'})).toHaveAttribute('href', '/report')
 
     await user.click(within(menu).getByRole('link', {name: 'Stories'}))
     expect(screen.queryByRole('dialog', {name: 'Menu'})).not.toBeInTheDocument()
