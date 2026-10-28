@@ -9,6 +9,7 @@ import {useAppStore} from "@/lib/store";
 import {FEEDBACK_LABEL, FeedbackType} from "@/lib/feedback";
 import {PreviousQuestions} from "@/components/QuestionBank";
 import InterviewPrep from "@/components/InterviewPrep";
+import Link from "next/link";
 
 export default function InterviewInfo(props: {interviewId: string | null}) {
   const {user} = useUser();
@@ -55,6 +56,7 @@ export default function InterviewInfo(props: {interviewId: string | null}) {
   }
 
   interface ApiInterview {
+    applicationId?: number;
     company?: { name?: string | null } | null;
     clientCompany?: string | null;
     jobTitle?: string | null;
@@ -157,6 +159,7 @@ export default function InterviewInfo(props: {interviewId: string | null}) {
   // Unified layout for both guest and authenticated interviews using the view model
   return (
     <div className="max-h-[65vh] space-y-4 overflow-y-auto pr-1">
+      {!isGuest && (interviewData as ApiInterview)?.applicationId && <Link className="inline-block underline underline-offset-2" href={`/applications/${(interviewData as ApiInterview).applicationId}`}>View application timeline</Link>}
       <div>
         <p className="text-sm font-medium text-muted-foreground">Company</p>
         <p
