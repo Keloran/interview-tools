@@ -63,7 +63,6 @@ The app uses a multi-table relational model:
   - Links to Application, Stage, StageMethod; `parentId` chains stages in order
   - Has `outcome` (SCHEDULED, PASSED, REJECTED, AWAITING_RESPONSE, OFFER_RECEIVED, etc.)
   - Stores `date` (interview datetime), optional `deadline` for take-homes
-- **LegacyInterview** (table `Interview`): Pre-Application data, copied into Application/Interview by migration `20261023000000_applications_and_stages`; kept read-only until dropped
 - **Stage**: Reference table for interview stages (e.g., "Phone Screen", "Technical", "Onsite")
 - **StageMethod**: Reference table for interview methods (e.g., "Phone", "Link")
 

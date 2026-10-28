@@ -21,7 +21,6 @@ model User {
   calendarUuid     String            @unique @default(uuid())
   companies        Company[]
   applications     Application[]
-  legacyInterviews LegacyInterview[]
   stories          Story[]
   activityEntries  ActivityEntry[]
   staleAfterDays   Int               @default(60)
@@ -35,39 +34,9 @@ model Company {
   userId           Int
   user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   applications     Application[]
-  legacyInterviews LegacyInterview[]
   created_at       DateTime          @default(now())
 
   @@unique([userId, name])
-}
-
-// LegacyInterview - the old interview table, kept for existing data
-// Maps to the existing "Interview" table in the database
-model LegacyInterview {
-  id              Int               @id @default(autoincrement())
-  companyId       Int
-  company         Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  clientCompany   String?
-  jobTitle        String
-  applicationDate DateTime
-  interviewer     String?
-  stageId         Int
-  stage           Stage             @relation(fields: [stageId], references: [id])
-  stageMethodId   Int
-  stageMethod     StageMethod       @relation(fields: [stageMethodId], references: [id])
-  userId          Int
-  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  date            DateTime?
-  deadline        DateTime?
-  outcome         InterviewOutcome?
-  notes           String?           @db.Text
-  metadata        Json?
-  created_at      DateTime          @default(now())
-  updated_at      DateTime          @updatedAt
-  link            String?
-
-  @@unique([userId, companyId, jobTitle, applicationDate, clientCompany])
-  @@map("Interview") // Maps to existing Interview table
 }
 
 // Application represents a job application - the root entity for tracking
@@ -230,7 +199,6 @@ model Stage {
   id                Int                @id @default(autoincrement())
   stage             String             @unique
   interviews        Interview[]
-  legacyInterviews  LegacyInterview[]
   availabilityLinks AvailabilityLink[]
 }
 
@@ -238,7 +206,6 @@ model StageMethod {
   id               Int               @id @default(autoincrement())
   method           String            @unique
   interviews       Interview[]
-  legacyInterviews LegacyInterview[]
 }
 
 enum FeedbackType {
