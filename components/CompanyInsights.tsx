@@ -34,6 +34,7 @@ export default function CompanyInsights({companyId}: {companyId?: string}) {
   return <section className="space-y-5">
     <nav className="flex flex-wrap gap-4 text-sm"><Link className="underline" href="/companies">Companies</Link>{company && <Link className="underline" href="/company-insights">All company insights</Link>}</nav>
     <h2 className="text-xl font-semibold">{company ? `${company.name}: your history` : "Company insights"}</h2>
+    <Link className="text-sm underline" href="/report">Your job-search report</Link>
     <p className="text-sm text-muted-foreground">Based only on your applications. Response and ghost rates use settled histories; waiting applications are excluded. Feedback uses only rejections where you recorded whether feedback was given. Response times use explicit first-reply dates; unknown historical dates are excluded, without estimates.</p>
     <Card className="p-4"><Metrics value={company ? insights(company.applications) : overview.overall} /></Card>
     {company ? <>
