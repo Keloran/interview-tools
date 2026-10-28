@@ -36,11 +36,20 @@ export default function CompanyInsights({companyId}: {companyId?: string}) {
   if (companyId && !company) return <div><p role="alert">Company not found.</p><Link className="underline" href="/companies">Back to companies</Link></div>;
   const overview = insightsOverview(data);
   return <section className="space-y-5">
-    <nav className="flex flex-wrap gap-4 text-sm"><Link className="underline" href="/companies">Companies</Link>{company && <Link className="underline" href="/company-insights">All company insights</Link>}</nav>
-    <h2 className="text-xl font-semibold">{company ? `${company.name}: your history` : "Company insights"}</h2>
-    <Link className="text-sm underline" href="/report">Your job-search report</Link>
-    <CommunityLookup />
-    <p className="text-sm text-muted-foreground">Based only on your applications. Response and ghost rates use settled histories; waiting applications are excluded. Feedback uses only rejections where you recorded whether feedback was given. Response times use explicit first-reply dates; unknown historical dates are excluded, without estimates.</p>
+    <header className="space-y-4">
+      <nav aria-label="Insights navigation" className="flex flex-wrap items-center gap-2">
+        <Button asChild variant="ghost" size="sm"><Link href="/companies">Companies</Link></Button>
+        {company && <Button asChild variant="ghost" size="sm"><Link href="/company-insights">All company insights</Link></Button>}
+      </nav>
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <h2 className="min-w-0 text-xl font-semibold tracking-tight">{company ? `${company.name}: your history` : "Company insights"}</h2>
+        <div className="flex flex-wrap items-center gap-2 lg:shrink-0" aria-label="Insights actions">
+          <Button asChild variant="outline" size="sm"><Link href="/report">Search report</Link></Button>
+          <CommunityLookup triggerLabel="Community lookup" />
+        </div>
+      </div>
+      <p className="max-w-4xl text-sm leading-relaxed text-muted-foreground">Based only on your applications. Response and ghost rates use settled histories; waiting applications are excluded. Feedback uses only rejections where you recorded whether feedback was given. Response times use explicit first-reply dates; unknown historical dates are excluded, without estimates.</p>
+    </header>
     <Card className="p-4"><Metrics value={company ? insights(company.applications) : overview.overall} /></Card>
     {company ? <>
       <Card className="p-4"><CommunityRecords applications={company.applications} /></Card>
