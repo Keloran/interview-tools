@@ -18,6 +18,7 @@ beforeEach(() => {
   vi.mocked(prisma.user.findUnique).mockResolvedValue({id: 1, communityConsent: null} as never);
   vi.mocked(prisma.user.upsert).mockResolvedValue({id: 1, communityConsent: null} as never);
   vi.mocked(prisma.communityContribution.count).mockResolvedValue(0);
+  vi.mocked(prisma.communityContribution.deleteMany).mockResolvedValue({count: 0});
 });
 afterEach(() => vi.unstubAllEnvs());
 describe("community consent", () => {
@@ -55,6 +56,7 @@ describe("community consent", () => {
     expect((await PUT(req({enabled: true, confirm: true, noticeVersion: COMMUNITY_NOTICE_VERSION, userId: 99}))).status).toBe(200);
     expect(prisma.user.upsert).toHaveBeenCalledWith(expect.objectContaining({where: {clerkId: "user_123"}}));
     expect(prisma.communityConsent.upsert).toHaveBeenCalledWith(expect.objectContaining({where: {userId: 1}, create: expect.objectContaining({userId: 1, noticeVersion: COMMUNITY_NOTICE_VERSION, grantedAt: expect.any(Date)})}));
+    expect(prisma.communityControl.update).not.toHaveBeenCalled(); // a first opt-in changes no published contribution
     expect(vi.mocked(prisma.$queryRaw).mock.invocationCallOrder[0]).toBeLessThan(vi.mocked(prisma.communityConsent.upsert).mock.invocationCallOrder[0]);
   });
   it("makes a duplicate grant idempotent and blocks reenrolment during cleanup", async () => {

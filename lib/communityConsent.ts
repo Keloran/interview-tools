@@ -27,8 +27,8 @@ export async function grantCommunityConsent(identity: {id: string; email: string
     if (user.communityConsent?.purgePending) return {status: 409, message: "Finish withdrawing your previous contribution before enabling sharing again."};
     if (consentCurrent(user.communityConsent)) return {status: 200};
     // A scope/version change never reuses an old contribution or consent revision.
-    await tx.communityContribution.deleteMany({where: {userId: user.id}});
-    await tx.communityControl.update({where: {id: "global"}, data: {revocationEpoch: {increment: 1}}});
+    const removed = await tx.communityContribution.deleteMany({where: {userId: user.id}});
+    if (removed.count) await tx.communityControl.update({where: {id: "global"}, data: {revocationEpoch: {increment: 1}}});
     await tx.communityConsent.upsert({where: {userId: user.id}, create: {userId: user.id, noticeVersion: COMMUNITY_NOTICE_VERSION, grantedAt: new Date()},
       update: {noticeVersion: COMMUNITY_NOTICE_VERSION, grantedAt: new Date(), withdrawnAt: null, purgePending: false, revision: {increment: 1}}});
     return {status: 200};
