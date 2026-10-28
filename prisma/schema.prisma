@@ -24,6 +24,7 @@ model User {
   legacyInterviews LegacyInterview[]
   stories          Story[]
   activityEntries  ActivityEntry[]
+  staleAfterDays   Int               @default(60)
 }
 
 model Company {
@@ -231,6 +232,7 @@ enum FeedbackType {
 }
 
 enum InterviewOutcome {
+  NO_RESPONSE // Explicitly closed as ghosted by the owner
   SCHEDULED // Interview is scheduled
   PASSED // You progressed to next stage
   REJECTED // You didn't get through

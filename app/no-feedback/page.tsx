@@ -2,6 +2,7 @@ import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import FollowUps from "@/components/FollowUps";
+import StaleApplications from "@/components/StaleApplications";
 import {
   Card,
   CardContent,
@@ -17,6 +18,7 @@ async function getStalledApplications(clerkId: string) {
   const applications = await prisma.application.findMany({
     where: {
       user: { clerkId },
+      firstResponseAt: null,
       applicationDate: { lt: new Date(Date.now() - 30 * DAY_MS) },
       interviews: { every: { OR: [{ outcome: "AWAITING_RESPONSE" }, { outcome: null }] } },
     },
@@ -49,6 +51,7 @@ export default async function NoFeedbackPage() {
 
   return (
     <div className="flex flex-col gap-6">
+      <StaleApplications />
       <FollowUps />
       <Card>
         <CardHeader>

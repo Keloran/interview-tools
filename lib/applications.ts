@@ -54,8 +54,9 @@ export function summarizeApplication(
 ): Pick<ApplicationSummary, "status" | "response" | "feedback"> {
   const latest = stages[0];
   if (!latest) return { status: firstResponseAt ? "Reply received; awaiting next step" : "Applied", response: firstResponseAt ? "responded" : "waiting" };
+  if (latest.outcome === "NO_RESPONSE") return {status: "No response (closed as ghosted)", response: "ghosted"};
 
-  const heardBack = !!firstResponseAt || stages.some((s) => s.stage !== "Applied" || (s.outcome && s.outcome !== "AWAITING_RESPONSE"));
+  const heardBack = !!firstResponseAt || stages.some((s) => s.stage !== "Applied" || (s.outcome && !["AWAITING_RESPONSE", "NO_RESPONSE"].includes(s.outcome)));
   const response = heardBack ? "responded" : "waiting";
 
   // They asked for your availability, then never opened the link: ghosting, unless it's since moved on

@@ -10,16 +10,18 @@ import {useFlags} from "@flags-gg/react-library";
 async function getInterviews() {
   const url = new URL('/api/interviews', window.location.origin);
   url.searchParams.set('includePast', 'true');
+  url.searchParams.set('latestOnly', 'true');
+  url.searchParams.set('take', '2000');
 
-  const res = await fetch(url.toString(), {
-    method: "GET",
-  });
-
-  if (!res.ok) {
-    throw new Error("failed to get interviews");
+  const all = [];
+  for (let skip = 0; ; skip += 2000) {
+    url.searchParams.set('skip', String(skip));
+    const res = await fetch(url.toString(), {method: "GET"});
+    if (!res.ok) throw new Error("failed to get application stats");
+    const page = await res.json();
+    all.push(...page);
+    if (page.length < 2000) return all;
   }
-
-  return await res.json();
 }
 
 interface OutcomeStat {
@@ -38,6 +40,7 @@ const outcomeConfig: Record<string, { label: string; color: string }> = {
   OFFER_ACCEPTED: { label: "Offer Accepted", color: "bg-emerald-500" },
   OFFER_DECLINED: { label: "Offer Declined", color: "bg-gray-500" },
   WITHDREW: { label: "Withdrew", color: "bg-orange-500" },
+  NO_RESPONSE: {label: "Ghosted (No response)", color: "bg-amber-600"},
 };
 
 export default function Stats() {
@@ -49,7 +52,7 @@ export default function Stats() {
   const {is} = useFlags()
 
   const { data: interviews } = useQuery({
-    queryKey: ["interviews", user?.id],
+    queryKey: ["interviews", user?.id, "current-stats"],
     queryFn: getInterviews,
     enabled: !!user?.id,
   });
@@ -58,15 +61,13 @@ export default function Stats() {
     return null;
   }
 
-  // Count interviews in "Applied" stage (stageId = 1)
-  const appliedCount = interviews.filter((interview: { stage?: { id: number } }) =>
-    interview.stage?.id === 8
-  ).length;
+  // The endpoint returns one current stage per application, in parent-chain order.
+  const appliedCount = interviews.length;
 
   // Group interviews by outcome
   const outcomeCounts: Record<string, number> = {};
   interviews.forEach((interview: { outcome?: string }) => {
-    const outcome = interview.outcome || "SCHEDULED";
+    const outcome = interview.outcome || "AWAITING_RESPONSE";
     outcomeCounts[outcome] = (outcomeCounts[outcome] || 0) + 1;
   });
 
@@ -106,7 +107,7 @@ export default function Stats() {
 
   return (
     <Card className="p-6">
-      <h2 className="text-xl font-semibold mb-4">Interview Stats</h2>
+      <h2 className="text-xl font-semibold mb-4">Application Stats</h2>
       <div className="grid grid-cols-2 md:grid-cols-1 gap-4">
         {stats.map((stat) => {
           const isApplied = stat.outcome === "APPLIED";

@@ -3,7 +3,7 @@ import {NextRequest, NextResponse} from "next/server"
 import prisma from "@/lib/prisma"
 import type {$Enums} from "@/app/generated/prisma/client"
 import {Prisma} from "@/app/generated/prisma/client"
-import {interviewSelect, toInterviewDto} from "@/lib/interviews"
+import {currentApplicationStages, interviewSelect, toInterviewDto} from "@/lib/interviews"
 import {reportError} from "@/lib/bugfixes"
 
 export async function GET(request: NextRequest) {
@@ -30,6 +30,7 @@ export async function GET(request: NextRequest) {
     // Multi-value enums
     // const statuses = searchParams.getAll("status") // e.g. status=SCHEDULED&status=COMPLETED
     const outcomes = searchParams.getAll("outcome")
+    const latestOnly = searchParams.get("latestOnly") === "true"
 
     // Free-text search
     const q = searchParams.get("q")?.trim()
@@ -104,7 +105,7 @@ export async function GET(request: NextRequest) {
 
     // Enum filters
     // status enum deprecated in favor of Stage table; ignore any status filters
-    if (outcomes.length) where.outcome = {in: outcomes as unknown as $Enums.InterviewOutcome[]}
+    if (outcomes.length && !latestOnly) where.outcome = {in: outcomes as unknown as $Enums.InterviewOutcome[]}
 
     // Free-text search across jobTitle, interviewer, company.name, and clientCompany
     if (q) {
@@ -129,11 +130,12 @@ export async function GET(request: NextRequest) {
         {date: "asc"},
         {deadline: "asc"},
       ],
-      take,
-      skip,
+      take: latestOnly ? undefined : take,
+      skip: latestOnly ? undefined : skip,
     })
 
-    return NextResponse.json(interviews.map(toInterviewDto))
+    const shown = latestOnly ? currentApplicationStages(interviews).filter((interview) => !outcomes.length || outcomes.includes(interview.outcome ?? "AWAITING_RESPONSE")).sort((a, b) => a.application.id - b.application.id).slice(skip, skip + take) : interviews
+    return NextResponse.json(shown.map(toInterviewDto), {headers: {"Cache-Control": "private, no-store"}})
   } catch (error) {
     reportError(error)
     return NextResponse.json({ message: "Internal Server Error" }, { status: 500 })
