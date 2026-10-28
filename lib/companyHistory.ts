@@ -1,3 +1,4 @@
+import prisma from "@/lib/prisma";
 import {employerNameKey} from "@/lib/communityAggregation";
 import type {Prisma} from "@/app/generated/prisma/client";
 import {CompanyHistory, summarizeApplication} from "@/lib/applications";
@@ -33,4 +34,10 @@ export function companyHistory(companies: CompanyRow[], now = Date.now(), includ
       ...(includeStages ? {stages: interviews.map((interview) => ({id: interview.id, stage: interview.stage.stage, date: interview.date, deadline: interview.deadline, outcome: interview.outcome}))} : {}),
     })),
   }));
+}
+
+// The signed-in user's history, as GET /api/companies returns it
+export async function loadCompanyHistory(clerkId: string) {
+  const companies = await prisma.company.findMany({where: {user: {clerkId}}, select: companyHistorySelect, orderBy: {name: "asc"}});
+  return companyHistory(companies);
 }
