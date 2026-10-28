@@ -23,6 +23,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Interview Planner",
   description: "interviews.tools",
+  itunes: {appId: "6756259187"},
   icons: {
     icon: [
       { url: '/favicon.ico' },

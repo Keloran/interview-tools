@@ -1,5 +1,6 @@
 "use client";
 
+import AppStoreLink from "@/components/AppStoreLink";
 import {useState} from "react";
 import Link from "next/link";
 import {Menu, Trash2} from "lucide-react";
@@ -16,6 +17,7 @@ import {OffersLink} from "@/components/Offers";
 export default function Navbar() {
   return (
     <nav className="flex shrink-0 items-center gap-2">
+      <AppStoreLink />
       <SignedIn>
         <UserButton>
           <UserButton.MenuItems>
