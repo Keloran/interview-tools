@@ -1,5 +1,7 @@
 "use client"
 
+import {Button} from "@/components/ui/button";
+
 import CommunityEmployerConfirmation from "@/components/CommunityEmployerConfirmation";
 import ApplicationCompensation from "@/components/Compensation";
 import RecruiterContact from "@/components/RecruiterContact";
@@ -166,7 +168,7 @@ export default function InterviewInfo(props: {interviewId: string | null}) {
   const applicationContact = interviewData as Contact & {applicationId?: number; applicationDate?: string; firstResponseAt?: string | null};
   return (
     <div className="max-h-[65vh] space-y-4 overflow-y-auto pr-1">
-      {!isGuest && (interviewData as ApiInterview)?.applicationId && <Link className="inline-block underline underline-offset-2" href={`/applications/${(interviewData as ApiInterview).applicationId}`}>View application timeline</Link>}
+      {!isGuest && (interviewData as ApiInterview)?.applicationId && <Button asChild variant="outline" size="sm"><Link href={`/applications/${(interviewData as ApiInterview).applicationId}`}>View application timeline</Link></Button>}
       <div>
         <p className="text-sm font-medium text-muted-foreground">Company</p>
         <p

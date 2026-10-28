@@ -7,6 +7,9 @@ import {useQuery} from "@tanstack/react-query";
 import {getCompanies} from "@/components/Company";
 import {Card} from "@/components/ui/card";
 import {Input} from "@/components/ui/input";
+import {Button} from "@/components/ui/button";
+import {Collapsible, CollapsibleTrigger, CollapsibleContent} from "@/components/ui/collapsible";
+import {ChevronDown} from "lucide-react";
 import RecruiterRecord from "@/components/RecruiterRecord";
 import {recruiterRecords} from "@/lib/recruiters";
 
@@ -25,9 +28,9 @@ export default function RecruitersDirectory() {
       <h3 className="font-semibold">{record.contact ? `${record.contact.recruiterName || record.contact.recruiterEmail || "Recruiter"} · ${record.agency}` : record.agency}</h3>
       <p className="text-xs text-muted-foreground">{record.contact ? "Contact record" : "Agency record"}</p>
       {record.contact?.recruiterEmail && <p className="text-sm break-all">{record.contact.recruiterEmail}</p>}
-      {record.contact?.recruiterLinkedIn && <a className="text-sm underline" href={record.contact.recruiterLinkedIn} target="_blank" rel="noopener noreferrer">LinkedIn profile</a>}
+      {record.contact?.recruiterLinkedIn && <Button asChild variant="outline" size="sm" className="self-start"><a href={record.contact.recruiterLinkedIn} target="_blank" rel="noopener noreferrer">LinkedIn profile</a></Button>}
       <RecruiterRecord applications={record.applications} />
-      <details><summary className="cursor-pointer text-sm underline">Roles put forward</summary><ul className="mt-2 space-y-2">{record.applications.map((application) => <li key={application.id} className="text-sm"><Link className="underline" href={`/companies?q=${encodeURIComponent(record.agency)}`}>{application.jobTitle}{application.clientCompany && ` · ${application.clientCompany}`}</Link><p className="text-muted-foreground">{application.status}</p></li>)}</ul></details>
+      <Collapsible className="group/roles"><CollapsibleTrigger asChild><Button variant="outline" size="sm">Roles put forward<ChevronDown aria-hidden="true" className="transition-transform group-data-[state=open]/roles:rotate-180" /></Button></CollapsibleTrigger><CollapsibleContent><ul className="mt-2 space-y-2">{record.applications.map((application) => <li key={application.id} className="text-sm"><Button asChild variant="outline" size="sm" className="h-auto max-w-full whitespace-normal text-left"><Link href={`/companies?q=${encodeURIComponent(record.agency)}`}>{application.jobTitle}{application.clientCompany && ` · ${application.clientCompany}`}</Link></Button><p className="text-muted-foreground">{application.status}</p></li>)}</ul></CollapsibleContent></Collapsible>
     </Card></li>)}</ul>}
   </section>;
 }

@@ -68,7 +68,7 @@ function Log({userId}: {userId: string}) {
   }
   return <section className="activity-log-page space-y-5">
     <div className="no-print space-y-4">
-      <Link className="text-sm underline" href="/report">Back to job-search report</Link>
+      <Button asChild variant="outline" size="sm"><Link href="/report">Back to job-search report</Link></Button>
       <p className="text-sm text-muted-foreground">Export your recorded job-search activity for a work coach or your own records. Use Print / save PDF and choose Save as PDF in your browser&apos;s print dialog. Dates follow your local time; outcomes show the current recorded status, rather than a historical snapshot. Unknown channels and send dates are not guessed.</p>
       <div className="flex flex-wrap gap-4"><div><Label htmlFor="activity-from">From</Label><Input id="activity-from" type="date" value={range.from} onChange={(event) => setRange({...range, from: event.target.value})} /></div><div><Label htmlFor="activity-through">Through</Label><Input id="activity-through" type="date" value={range.through} onChange={(event) => setRange({...range, through: event.target.value})} /></div></div>
       {!period && <p role="alert">Choose valid dates, in order, covering at most ten years.</p>}

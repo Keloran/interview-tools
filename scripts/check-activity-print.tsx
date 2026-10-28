@@ -16,7 +16,7 @@ const rows: ActivityRow[] = Array.from({length: 80}, (_, index) => ({
   employer: "Société Example", role: "Senior Software Engineer", how: "Careers fair / recruiter", outcome: "Follow-up arranged", notes: `Discussed the role and next steps.\nDetails for activity ${index + 1}.`,
 }));
 const css = readFileSync("app/activity-log/activity-log.css", "utf8");
-const content = renderToStaticMarkup(<main><div><header>HIDDEN SITE HEADER</header><section className="activity-log-page"><div className="no-print">HIDDEN EXPORT CONTROLS</div><ActivityPrint rows={rows} from="2026-10-01" through="2026-10-28" /></section></div></main>);
+const content = renderToStaticMarkup(<main><div><header>HIDDEN SITE HEADER</header><section className="activity-log-page"><div className="no-print">HIDDEN EXPORT CONTROLS</div><ActivityPrint rows={rows} from="2026-10-01" through="2026-10-28" /></section><footer>HIDDEN SITE FOOTER</footer></div></main>);
 writeFileSync(html, `<!doctype html><html><head><meta charset="utf-8"><title>Activity log print check</title><style>body{background:#111;color:white;font-family:Arial,sans-serif}${css}</style></head><body>${content}</body></html>`);
 // Bound the page-load wait as well as process startup/exit on shared CI runners.
 // https://developer.chrome.com/docs/automation-and-testing/headless-cli
@@ -29,6 +29,6 @@ assert.ok(pages >= 2, `Expected multiple pages, found ${pages}`);
 const rawText = execFileSync("pdftotext", [pdf, "-"], {encoding: "utf8", env});
 const text = rawText.replace(/\s+/g, " ");
 for (const expected of ["Job search activity log", "80 activities", "Sample activity 80", "Details for activity 80.", "Société Example", "2026-10-01 to 2026-10-28"]) assert.ok(text.includes(expected), `PDF missing ${expected}`);
-assert.ok(!text.includes("HIDDEN SITE HEADER") && !text.includes("HIDDEN EXPORT CONTROLS"), "Navigation or export controls leaked into the printout");
+assert.ok(!text.includes("HIDDEN SITE HEADER") && !text.includes("HIDDEN EXPORT CONTROLS") && !text.includes("HIDDEN SITE FOOTER"), "Navigation or export controls leaked into the printout");
 assert.ok((rawText.match(/\bDate\b/g) ?? []).length >= pages, "Table headers did not repeat across pages");
 console.log(`Activity PDF passed: ${pages} pages, 80 rows, repeated headers, accented text and final notes. Artifact: ${pdf}`);
