@@ -27,5 +27,17 @@ describe('/api/interviews', () => {
       expect(await res.json()).toEqual([])
       expect(prisma.interview.findMany).toHaveBeenCalled()
     })
+
+    it('orders by id last so pages are stable', async () => {
+      ;(currentUser as any).mockResolvedValueOnce({id: 'user_123'})
+      ;(prisma.interview.findMany as any).mockResolvedValueOnce([])
+
+      await GET({url: 'http://localhost/api/interviews?includePast=true&take=500&skip=500'} as any)
+      expect(prisma.interview.findMany).toHaveBeenCalledWith(expect.objectContaining({
+        orderBy: [{date: 'asc'}, {deadline: 'asc'}, {id: 'asc'}],
+        take: 500,
+        skip: 500,
+      }))
+    })
   })
 })
