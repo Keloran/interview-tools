@@ -472,7 +472,7 @@ export default function InterviewsList() {
                           <TooltipContent>Edit Interview Details</TooltipContent>
                         </Tooltip>
                       )}
-                      {interview.stage !== "Applied" && interview.date.getTime() < Date.now() && (
+                      {interview.stage !== "Applied" && interview.date < currentDate && (
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button
