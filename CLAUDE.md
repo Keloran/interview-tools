@@ -97,6 +97,11 @@ All routes authenticate via Clerk's `currentUser()`.
 - Optional: `interviewer`, `jobPostingLink`, `date`, `locationType` (phone|link), `interviewLink`
 - Defaults to today 9:00 AM if no date provided
 
+**GET /api/busy?from=&to=**
+- Busy times from the user's connected Google Calendar (free/busy only), via `externalBusy` in `lib/externalBusy.ts`
+- The Google token comes from Clerk (`getUserOauthAccessToken`); the `calendar.freebusy` scope is only requested from the Connect button in `CalendarSync`, never at sign-in
+- Fails open (`[]`) and caches for 5 minutes; the booking page and booking POST use `externalBusyAroundSlots`
+
 **POST /api/webhooks/clerk**
 - Webhook handler for Clerk `user.created` events
 - Syncs new users to local database

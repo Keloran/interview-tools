@@ -4,6 +4,10 @@ import {POST as book} from '@/app/api/availability/[id]/route'
 import {POST as view} from '@/app/api/availability/[id]/view/route'
 import prisma from '@/lib/prisma'
 import {currentUser as mockedCurrentUser} from '@clerk/nextjs/server'
+import {externalBusyAroundSlots as mockedCalendar} from '@/lib/externalBusy'
+
+vi.mock('@/lib/externalBusy', () => ({externalBusyAroundSlots: vi.fn(async () => [])}))
+const calendar = mockedCalendar as unknown as ReturnType<typeof vi.fn>
 
 const currentUser = mockedCurrentUser as unknown as ReturnType<typeof vi.fn>
 const p = prisma as any
@@ -47,20 +51,30 @@ describe('/api/availability/[id] booking', () => {
   const params = {params: Promise.resolve({id: 'abc'})}
   const link = (overrides = {}) => ({
     slots: [tomorrow], durationMinutes: 60, meetingLink: null, stageId: 9, bookedSlot: null,
-    application: {id: 5, userId: 1, interviews: []}, ...overrides,
+    application: {id: 5, userId: 1, interviews: [], user: {clerkId: 'user_123'}}, ...overrides,
   })
 
   it('only accepts offered times', async () => {
-    p.availabilityLink.findUnique.mockResolvedValueOnce(link())
+    p.availabilityLink.findUnique.mockResolvedValue(link())
     const res = await book(req({slot: new Date(tomorrow.getTime() + 60e3).toISOString()}), params)
     expect(res.status).toBe(400)
   })
 
   it('refuses a link that is already booked', async () => {
-    p.availabilityLink.findUnique.mockResolvedValueOnce(link({bookedSlot: tomorrow}))
+    p.availabilityLink.findUnique.mockResolvedValue(link({bookedSlot: tomorrow}))
     const res = await book(req({slot: tomorrow.toISOString()}), params)
     expect(res.status).toBe(409)
     expect(p.interview.create).not.toHaveBeenCalled()
+  })
+
+  it("refuses a time that's busy in the owner's Google Calendar", async () => {
+    p.availabilityLink.findUnique.mockResolvedValue(link())
+    p.interview.findMany.mockResolvedValueOnce([])
+    calendar.mockResolvedValueOnce([{start: new Date(tomorrow.getTime() + 30 * 60e3), durationMinutes: 60}])
+    const res = await book(req({slot: tomorrow.toISOString()}), params)
+    expect(res.status).toBe(409)
+    expect(calendar).toHaveBeenCalledWith('user_123', [tomorrow])
+    expect(p.availabilityLink.updateMany).not.toHaveBeenCalled()
   })
 })
 
@@ -68,7 +82,7 @@ describe('/api/availability/[id] booking race', () => {
   it('reports a losing concurrent booking as already booked, not a server error', async () => {
     const p = prisma as any
     p.$transaction.mockRejectedValueOnce(new Error('something odd from the driver'))
-    p.availabilityLink.findUnique.mockResolvedValueOnce({bookedSlot: new Date()})
+    p.availabilityLink.findUnique.mockResolvedValue({bookedSlot: new Date(), slots: [], application: {user: {clerkId: 'user_123'}}})
     const res = await book({json: async () => ({slot: new Date().toISOString()})} as any, {params: Promise.resolve({id: 'abc'})})
     expect(res.status).toBe(409)
   })

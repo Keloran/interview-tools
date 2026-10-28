@@ -11,6 +11,9 @@ const MINUTE_MS = 60 * 1000;
 
 export type Busy = { start: Date; durationMinutes: number };
 
+// Requested only when the user connects their calendar, never at sign-in
+export const GOOGLE_FREEBUSY_SCOPE = "https://www.googleapis.com/auth/calendar.freebusy";
+
 const end = ({start, durationMinutes}: Busy) => start.getTime() + durationMinutes * MINUTE_MS;
 
 export function clashes(candidate: Busy, busy: Busy[]): boolean {

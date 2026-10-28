@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {useFlags} from "@flags-gg/react-library";
 import {useUser} from "@clerk/nextjs";
+import {GOOGLE_FREEBUSY_SCOPE} from "@/lib/availability";
 
 interface CalendarSettings {
   calendarUuid: string;
@@ -29,6 +30,47 @@ async function regenerateCalendarUuid(): Promise<CalendarSettings> {
     throw new Error("Failed to regenerate calendar UUID");
   }
   return res.json();
+}
+
+// Lets free times and availability links skip your Google Calendar's busy times.
+// The scope is only asked for here, so signing in with Google never asks for calendar access.
+function GoogleCalendarBusy() {
+  const {user} = useUser();
+  const [error, setError] = useState("");
+  const google = user?.externalAccounts?.find((a) => a.provider === "google");
+  const connected = google?.approvedScopes?.split(" ").includes(GOOGLE_FREEBUSY_SCOPE);
+
+  const connect = async () => {
+    if (!user) return;
+    setError("");
+    try {
+      const options = {additionalScopes: [GOOGLE_FREEBUSY_SCOPE], redirectUrl: window.location.href};
+      const account = google ? await google.reauthorize(options) : await user.createExternalAccount({strategy: "oauth_google", ...options});
+      const url = account.verification?.externalVerificationRedirectURL;
+      if (url) window.location.href = url.href;
+    } catch {
+      setError("Couldn't connect Google Calendar, please try again");
+    }
+  };
+
+  return (
+    <div className="space-y-2 pb-4 mb-4 border-b">
+      <p className="text-sm font-medium">Google Calendar</p>
+      {connected ? (
+        <p className="text-sm text-muted-foreground">
+          Connected. Times you&apos;re busy in Google Calendar are left out of your free times and availability links. Only free/busy is read, never event details.
+        </p>
+      ) : (
+        <>
+          <p className="text-sm text-muted-foreground">
+            Connect it so times you&apos;re busy there aren&apos;t offered. Only free/busy is read, never event details.
+          </p>
+          <Button onClick={connect} variant="outline" size="sm">Connect Google Calendar</Button>
+        </>
+      )}
+      {error && <p className="text-sm text-destructive">{error}</p>}
+    </div>
+  );
 }
 
 export default function CalendarSync() {
@@ -77,6 +119,7 @@ export default function CalendarSync() {
 
   return (
     <div className="p-4">
+      {is("external calendar").enabled() && <GoogleCalendarBusy />}
       <div>
         <p className="text-sm text-muted-foreground mb-4">
           Subscribe to your interview calendar in any calendar app (Google Calendar, Apple Calendar, Outlook, etc.)
