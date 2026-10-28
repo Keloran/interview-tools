@@ -101,8 +101,9 @@ describe("closed application presentation", () => {
     });
     const user = userEvent.setup();
     render(withQueryClient(<InterviewsList />));
-    await user.click(await screen.findByRole("button", {name: "Reopen application"}));
-    await waitFor(() => expect(screen.queryByRole("button", {name: "Reopen application"})).not.toBeInTheDocument());
+    await user.click(await screen.findByRole("button", {name: "More actions for Engineer at Acme"}));
+    await user.click(screen.getByRole("menuitem", {name: "Reopen application"}));
+    await waitFor(() => expect(screen.queryByRole("menuitem", {name: "Reopen application"})).not.toBeInTheDocument());
     expect(row.outcome).toBe("AWAITING_RESPONSE");
     expect(screen.queryByText(/1970/)).not.toBeInTheDocument();
   });

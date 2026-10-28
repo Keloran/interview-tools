@@ -1,11 +1,12 @@
 "use client";
 
 import {useAppStore} from "@/lib/store";
+import {DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem} from "@/components/ui/dropdown-menu";
 import {Card} from "@/components/ui/card";
 import {Button} from "@/components/ui/button";
 import {cn, getStageColor, isSameDay, toISODate} from "@/lib/utils";
 import {useEffect, useMemo, useState} from "react";
-import {CalendarClock, Check, Clock, CornerUpRight, MessageSquare, MessageSquareQuote, NotebookPen, Pencil, ThumbsDown, X} from "lucide-react";
+import {CalendarClock, Check, Clock, CornerUpRight, MessageSquare, MessageSquareQuote, MoreHorizontal, NotebookPen, Pencil, ThumbsDown, X} from "lucide-react";
 import {useQuery, useQueryClient} from "@tanstack/react-query";
 import {useUser} from "@clerk/nextjs";
 import { getStageMethodButton } from "@/lib/utils/interviewMethod";
@@ -332,7 +333,7 @@ export default function InterviewsList() {
   // Placeholder: this would come from Prisma/DB filtered by filteredDate
   // For now just demonstrate the dependency on filteredDate
   return (
-    <div className="flex-1">
+    <div className="min-w-0 flex-1">
       <Card className="p-6">
         {outcomeError && <p role="alert" className="text-destructive">{outcomeError}</p>}
         <div className="flex items-center justify-between mb-6">
@@ -397,13 +398,13 @@ export default function InterviewsList() {
               .map((interview) => (
                 <div
                   key={interview.id}
-                  className="flex items-start justify-between p-4 rounded-lg border border-border hover:bg-accent transition-colors cursor-pointer"
+                  className="flex min-w-0 flex-col gap-3 rounded-lg border border-border p-4 hover:bg-accent transition-colors cursor-pointer sm:flex-row sm:items-start sm:justify-between"
                   onClick={() => {
                     setSelectedInterview(interview)
                     setInfoDialogOpen(true)
                   }}
                 >
-                  <div className="flex items-start gap-4 flex-1">
+                  <div className="flex min-w-0 flex-1 items-start gap-3">
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <div className={cn("w-3 h-3 rounded-full mt-1 flex-shrink-0", getStageColor(interview.outcome),)} />
@@ -413,7 +414,7 @@ export default function InterviewsList() {
                       </TooltipContent>
                     </Tooltip>
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-lg">
+                      <p className="font-semibold text-lg [overflow-wrap:anywhere]">
                         {interview.title} - {interview.company.name}
                         {interview.clientCompany && <span className="text-muted-foreground font-normal"> (for {interview.clientCompany})</span>}
                       </p>
@@ -426,230 +427,42 @@ export default function InterviewsList() {
                           minute: "numeric"
                         })}
                       </p>
-                      <div className="mt-2">
-                        {interview.applicationId && <Link className="mr-3 text-sm underline underline-offset-2" href={`/applications/${interview.applicationId}`} onClick={(event) => event.stopPropagation()}>Timeline</Link>}
-                        {interview.jobPostingLink && (
-                          <Link href={interview.jobPostingLink}><Button variant={"outline"}>Job Posting</Button></Link>
-                        )}&nbsp;
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary">
-                          {interview.stage}
-                        </span> &nbsp;
+                      <div className="mt-2 flex flex-wrap items-center gap-2" onClick={(event) => event.stopPropagation()}>
+                        {interview.applicationId && <Button asChild variant="outline" size="sm"><Link href={`/applications/${interview.applicationId}`}>Timeline</Link></Button>}
+                        {interview.jobPostingLink && <Button asChild variant="outline" size="sm"><Link href={interview.jobPostingLink}>Job Posting</Link></Button>}
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary">{interview.stage}</span>
                         {getStageMethodButton(interview.stageMethod, interview.link)}
                       </div>
                     </div>
                   </div>
-                  {(!user || String(interview.id).startsWith("guest_")) ? (
-                    // Guest entries: allow local delete only
-                    <Button
-                      variant={"ghost"}
-                      size={"sm"}
-                      className={"cursor-pointer"}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleRejectInterview(interview);
-                      }}
-                    >
-                      <X />
-                    </Button>
-                  ) : (
-                    // Signed-in entries: full actions
-                    <>
-                      {is("edit interview").enabled() && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant={"ghost"}
-                              size={"sm"}
-                              className={"cursor-pointer"}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleEditInterview(interview);
-                              }}
-                            >
-                              <Pencil />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Edit Interview Details</TooltipContent>
-                        </Tooltip>
-                      )}
-                      {interview.stage !== "Applied" && interview.date < currentDate && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant={"ghost"}
-                              size={"sm"}
-                              // stands out until it's been done
-                              className={cn("cursor-pointer", needsDebrief(interview) && "text-primary")}
-                              aria-label={interview.debriefedAt ? "Edit debrief" : "Debrief"}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedInterview(interview);
-                                setDebriefDialogOpen(true);
-                              }}
-                            >
-                              <NotebookPen />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>{interview.debriefedAt ? "Edit debrief" : "Debrief: how did it go?"}</TooltipContent>
-                        </Tooltip>
-                      )}
-                      {interview.outcome.toUpperCase() === "REJECTED" && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant={"ghost"}
-                              size={"sm"}
-                              className={"cursor-pointer"}
-                              aria-label="Feedback"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedInterview(interview);
-                                setFeedbackDialog("edit");
-                              }}
-                            >
-                              <MessageSquareQuote />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Feedback they gave</TooltipContent>
-                        </Tooltip>
-                      )}
-                      {templatesFor(interview).length > 0 && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant={"ghost"}
-                              size={"sm"}
-                              className={"cursor-pointer"}
-                              aria-label="Send a message"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedInterview(interview);
-                                setMessageDialogOpen(true);
-                              }}
-                            >
-                              <MessageSquare />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Send a message</TooltipContent>
-                        </Tooltip>
-                      )}
-                      {interview.stage !== "Offer" && !["REJECTED", "WITHDREW", "OFFER_ACCEPTED", "OFFER_DECLINED", "NO_RESPONSE"].includes(interview.outcome.toUpperCase()) && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant={"ghost"}
-                              size={"sm"}
-                              className={"cursor-pointer"}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedInterview(interview);
-                                setAvailabilityDialogOpen(true);
-                              }}
-                            >
-                              <CalendarClock />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Share your availability for the next stage</TooltipContent>
-                        </Tooltip>
-                      )}
-                      {interview.outcome === "NO_RESPONSE" && <Button size="sm" variant="outline" onClick={(event) => {event.stopPropagation(); handleSetOutcome(interview, "AWAITING_RESPONSE");}}>Reopen application</Button>}
-                      {!["REJECTED", "PASSED", "OFFER_ACCEPTED", "OFFER_DECLINED", "NO_RESPONSE"].includes(interview.outcome.toUpperCase()) && (
-                        <>
-                          {interview.stage === "Offer" ? (
-                            <>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant={"ghost"}
-                                    size={"sm"}
-                                    className={"cursor-pointer"}
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleSetOutcome(interview, "OFFER_ACCEPTED");
-                                    }}
-                                  >
-                                    <Check />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Accept offer</TooltipContent>
-                              </Tooltip>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant={"ghost"}
-                                    size={"sm"}
-                                    className={"cursor-pointer"}
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleSetOutcome(interview, "OFFER_DECLINED");
-                                    }}
-                                  >
-                                    <ThumbsDown />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Decline offer</TooltipContent>
-                              </Tooltip>
-                            </>
-                          ) : (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant={"ghost"}
-                                size={"sm"}
-                                className={"cursor-pointer"}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleProgressInterview(interview);
-                                }}
-                              >
-                                <CornerUpRight />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Progress interview to next stage</TooltipContent>
-                          </Tooltip>
-                          )}
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant={"ghost"}
-                                size={"sm"}
-                                className={"cursor-pointer"}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedInterview(interview);
-                                  setFeedbackDialog("reject");
-                                }}
-                              >
-                                <X />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              Rejected
-                            </TooltipContent>
-                          </Tooltip>
-
-                          {interview.outcome.toLowerCase() !== "awaiting_response" && (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant={"ghost"}
-                                  size={"sm"}
-                                  className={"cursor-pointer"}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleSetOutcome(interview, "AWAITING_RESPONSE");
-                                  }}
-                                >
-                                  <Clock />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>Set to awaiting response</TooltipContent>
-                            </Tooltip>
-                          )}
-                        </>
-                      )}
-                    </>
-                  )}
+                  <div className="flex max-w-full flex-wrap items-center gap-1 self-start sm:max-w-48 sm:shrink-0 sm:justify-end" onClick={(event) => event.stopPropagation()}>
+                    {(!user || String(interview.id).startsWith("guest_")) ? (
+                      <Button variant="ghost" size="icon" aria-label="Delete interview" onClick={() => handleRejectInterview(interview)}><X /></Button>
+                    ) : <>
+                      {interview.stage !== "Applied" && interview.date < currentDate && <Tooltip>
+                        <TooltipTrigger asChild><Button variant="ghost" size="icon" className={cn(needsDebrief(interview) && "text-primary")} aria-label={interview.debriefedAt ? "Edit debrief" : "Debrief"} onClick={() => {setSelectedInterview(interview); setDebriefDialogOpen(true);}}><NotebookPen /></Button></TooltipTrigger>
+                        <TooltipContent>{interview.debriefedAt ? "Edit debrief" : "Debrief: how did it go?"}</TooltipContent>
+                      </Tooltip>}
+                      {!["REJECTED", "PASSED", "OFFER_ACCEPTED", "OFFER_DECLINED", "NO_RESPONSE"].includes(interview.outcome.toUpperCase()) && (interview.stage === "Offer" ? <>
+                        <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" aria-label="Accept offer" onClick={() => handleSetOutcome(interview, "OFFER_ACCEPTED")}><Check /></Button></TooltipTrigger><TooltipContent>Accept offer</TooltipContent></Tooltip>
+                        <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" aria-label="Decline offer" onClick={() => handleSetOutcome(interview, "OFFER_DECLINED")}><ThumbsDown /></Button></TooltipTrigger><TooltipContent>Decline offer</TooltipContent></Tooltip>
+                      </> : <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" aria-label="Progress interview to next stage" onClick={() => handleProgressInterview(interview)}><CornerUpRight /></Button></TooltipTrigger><TooltipContent>Progress interview to next stage</TooltipContent></Tooltip>)}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" aria-label={`More actions for ${interview.title} at ${interview.company.name}`}><MoreHorizontal /></Button></DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="max-w-[calc(100vw-2rem)]" onClick={(event) => event.stopPropagation()}>
+                          {is("edit interview").enabled() && <DropdownMenuItem onSelect={() => handleEditInterview(interview)}><Pencil />Edit interview details</DropdownMenuItem>}
+                          {interview.outcome.toUpperCase() === "REJECTED" && <DropdownMenuItem onSelect={() => {setSelectedInterview(interview); setFeedbackDialog("edit");}}><MessageSquareQuote />Feedback</DropdownMenuItem>}
+                          {templatesFor(interview).length > 0 && <DropdownMenuItem onSelect={() => {setSelectedInterview(interview); setMessageDialogOpen(true);}}><MessageSquare />Send a message</DropdownMenuItem>}
+                          {interview.stage !== "Offer" && !["REJECTED", "WITHDREW", "OFFER_ACCEPTED", "OFFER_DECLINED", "NO_RESPONSE"].includes(interview.outcome.toUpperCase()) && <DropdownMenuItem onSelect={() => {setSelectedInterview(interview); setAvailabilityDialogOpen(true);}}><CalendarClock />Share availability</DropdownMenuItem>}
+                          {interview.outcome === "NO_RESPONSE" && <DropdownMenuItem onSelect={() => handleSetOutcome(interview, "AWAITING_RESPONSE")}><CornerUpRight />Reopen application</DropdownMenuItem>}
+                          {!["REJECTED", "PASSED", "OFFER_ACCEPTED", "OFFER_DECLINED", "NO_RESPONSE"].includes(interview.outcome.toUpperCase()) && <>
+                            {interview.outcome.toLowerCase() !== "awaiting_response" && <DropdownMenuItem onSelect={() => handleSetOutcome(interview, "AWAITING_RESPONSE")}><Clock />Set to awaiting response</DropdownMenuItem>}
+                            <DropdownMenuItem onSelect={() => {setSelectedInterview(interview); setFeedbackDialog("reject");}}><X />Rejected</DropdownMenuItem>
+                          </>}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </>}
+                  </div>
                 </div>
               ))}
           </div>
