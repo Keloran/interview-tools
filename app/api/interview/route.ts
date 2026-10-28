@@ -40,6 +40,7 @@ export async function POST(request: NextRequest) {
       previousInterviewId, // progressing an existing application to its next stage
       durationMinutes,
       offerDeadline,
+      stageMethodId,
     } = body ?? {}
 
     // Basic validations
@@ -71,6 +72,14 @@ export async function POST(request: NextRequest) {
       interviewDate = now
     }
 
+    const previousId = previousInterviewId == null ? null : Number(previousInterviewId);
+    if (previousId !== null && (!Number.isSafeInteger(previousId) || previousId <= 0 || previousId > 2147483647)) {
+      return NextResponse.json({message: "Invalid previous interview"}, {status: 400});
+    }
+    if (stageMethodId != null && (!Number.isSafeInteger(stageMethodId) || stageMethodId <= 0 || stageMethodId > 2147483647)) {
+      return NextResponse.json({message: "Invalid meeting method"}, {status: 400});
+    }
+
     // Ensure DB user exists
     const dbUser = await prisma.user.upsert({
       where: { clerkId: user.id },
@@ -84,6 +93,23 @@ export async function POST(request: NextRequest) {
 
     // Dev override: use userId 12 in development
     const effectiveUserId = dbUser.id
+
+    // A missing or unowned parent must never silently create another application.
+    const previous = previousId !== null
+      ? await prisma.interview.findFirst({
+          where: {id: previousId, application: {userId: effectiveUserId}},
+          select: {id: true, applicationId: true},
+        })
+      : null;
+    if (previousId !== null && !previous) {
+      return NextResponse.json({message: "Previous interview not found"}, {status: 404});
+    }
+    const selectedMethod = stageMethodId != null && !isOffer
+      ? await prisma.stageMethod.findFirst({where: {id: stageMethodId}, select: {id: true, method: true}})
+      : null;
+    if (stageMethodId != null && !isOffer && !selectedMethod) {
+      return NextResponse.json({message: "Meeting method not found"}, {status: 404});
+    }
 
     // Company connect or create (unique per userId+name)
     const company = await prisma.company.upsert({
@@ -103,7 +129,7 @@ export async function POST(request: NextRequest) {
     const methodName = isOffer ? "Not recorded" : inferStageMethodName(locationType, interviewLink)
 
     // Case-insensitive lookup to match any existing record (e.g., "zoom" vs "Zoom")
-    let stageMethod = await prisma.stageMethod.findFirst({
+    let stageMethod = selectedMethod ?? await prisma.stageMethod.findFirst({
       where: {method: {equals: methodName, mode: Prisma.QueryMode.insensitive}},
       select: { id: true, method: true },
     })
@@ -115,14 +141,6 @@ export async function POST(request: NextRequest) {
     const outcome = isOffer ? "OFFER_RECEIVED" : stage !== "Applied" ? "SCHEDULED" : "AWAITING_RESPONSE"
 
     const isTechnicalTest = String(stage).toLowerCase() === "technical test".toLowerCase()
-
-    // Next stage of an existing application, or a brand new application
-    const previous = previousInterviewId
-      ? await prisma.interview.findFirst({
-          where: { id: Number(previousInterviewId), application: { userId: effectiveUserId } },
-          select: { id: true, applicationId: true },
-        })
-      : null
 
     const created = await prisma.interview.create({
       data: {
