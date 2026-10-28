@@ -5,6 +5,7 @@ import {inferStageMethodName} from "@/lib/utils";
 import {interviewSelect, toInterviewDto} from "@/lib/interviews";
 import { $Enums, Prisma } from "@/app/generated/prisma/client";
 import {reportError} from "@/lib/bugfixes";
+import {contactData, recruiterSchema} from "@/lib/recruiters";
 
 // 15m-8h, default an hour
 function validDuration(value: unknown): number {
@@ -20,6 +21,8 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json()
+    const contact = recruiterSchema.safeParse(body);
+    if (!contact.success) return NextResponse.json({message: contact.error.issues[0].message}, {status: 400});
     const {
       stage,
       companyName,
@@ -125,6 +128,8 @@ export async function POST(request: NextRequest) {
                 jobTitle,
                 applicationDate: new Date(),
                 jobPostingLink: jobPostingLink || null,
+                ...contactData(contact.data),
+                viaRecruiter: !!contact.data.viaRecruiter || !!clientCompany?.trim(),
               },
             },
         parent: previous ? { connect: { id: previous.id } } : undefined,

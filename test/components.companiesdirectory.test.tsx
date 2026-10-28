@@ -29,6 +29,15 @@ afterEach(() => vi.unstubAllGlobals())
 const names = () => screen.getAllByText(/^Company \d+$/).map((el) => el.textContent)
 
 describe('CompaniesDirectory', () => {
+  it('distinguishes agency routes from direct employers in search results', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(Response.json([
+      {id: 1, name: 'Agency', applications: [{id: 1, jobTitle: 'Engineer', clientCompany: 'Client', applicationDate: '2026-01-01', response: 'waiting', status: 'Applied'}]},
+      {id: 2, name: 'Employer', applications: [{id: 2, jobTitle: 'Designer', clientCompany: null, applicationDate: '2026-01-01', response: 'responded', status: 'Rejected'}]},
+    ]))
+    render(withQueryClient(<CompaniesDirectory />))
+    expect(await screen.findByText('Recruiter / agency')).toBeVisible()
+    expect(screen.getByText('Direct employer')).toBeVisible()
+  })
   it('lists A–Z, a page at a time', async () => {
     render(withQueryClient(<CompaniesDirectory />))
     expect(await screen.findByText('Companies (30)')).toBeInTheDocument()

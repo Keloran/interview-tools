@@ -20,6 +20,10 @@ export async function GET() {
         applications: {
           select: {
             id: true,
+            viaRecruiter: true,
+            recruiterName: true,
+            recruiterEmail: true,
+            recruiterLinkedIn: true,
             jobTitle: true,
             clientCompany: true,
             applicationDate: true,
@@ -54,7 +58,7 @@ export async function GET() {
       })),
     }));
 
-    return NextResponse.json(history);
+    return NextResponse.json(history, {headers: {"Cache-Control": "private, no-store"}});
   } catch (err) {
     reportError("Error fetching companies: ", err);
     return NextResponse.json(

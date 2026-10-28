@@ -1,7 +1,9 @@
 import { z } from "zod";
+import {recruiterSchema} from "@/lib/recruiters";
 
 // Shared validation schema for interview forms
 export const interviewFormSchema = z.object({
+  ...recruiterSchema.shape,
   stage: z.string().min(1, "Stage is required"),
   companyName: z.string().min(1, "Company name is required"),
   clientCompany: z.string().optional(),

@@ -10,6 +10,7 @@ import {useAppStore} from "@/lib/store";
 import {useFlags} from "@flags-gg/react-library";
 import {CompanyHistory, responseRecord, timeAgo} from "@/lib/applications";
 import {feedbackRecord} from "@/lib/feedback";
+import {companyKind} from "@/lib/recruiters";
 
 type Company = CompanyHistory;
 
@@ -74,7 +75,7 @@ export function Companies() {
                   setSearchOpen(false)
                 }}>
                 <div className={"flex w-full justify-between gap-2"}>
-                  <span className={"font-medium"}>{company.name}</span>
+                  <span className={"font-medium"}>{company.name} <span className="text-xs text-muted-foreground">({companyKind(company.applications)})</span></span>
                   {record && <span className={"text-xs text-muted-foreground"}>{record}</span>}
                 </div>
                 {company.applications.map((a) => (

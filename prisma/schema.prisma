@@ -77,6 +77,10 @@ model Application {
   jobTitle          String // Role you're applying for
   applicationDate   DateTime // When you applied for this job
   jobPostingLink    String? // URL of job posting
+  viaRecruiter      Boolean            @default(false)
+  recruiterName     String?
+  recruiterEmail    String?
+  recruiterLinkedIn String?
   interviews        Interview[]
   availabilityLinks AvailabilityLink[]
   followUps         FollowUp[]
