@@ -6,6 +6,7 @@ import {interviewSelect, toInterviewDto} from "@/lib/interviews";
 import { $Enums, Prisma } from "@/app/generated/prisma/client";
 import {reportError} from "@/lib/bugfixes";
 import {contactData, recruiterSchema} from "@/lib/recruiters";
+import {offerDaySchema} from "@/lib/offers";
 
 // 15m-8h, default an hour
 function validDuration(value: unknown): number {
@@ -37,12 +38,15 @@ export async function POST(request: NextRequest) {
       notes,
       previousInterviewId, // progressing an existing application to its next stage
       durationMinutes,
+      offerDeadline,
     } = body ?? {}
 
     // Basic validations
     if (!stage || !companyName || !jobTitle) {
       return NextResponse.json({ message: "Missing required fields" }, { status: 400 })
     }
+    const isOffer = String(stage).trim().toLowerCase() === "offer";
+    if (isOffer && offerDeadline != null && offerDeadline !== "" && !offerDaySchema.safeParse(offerDeadline).success) return NextResponse.json({message: "Enter a valid respond-by date"}, {status: 400});
 
     // Parse date/deadline
     let interviewDate: Date | null = null
@@ -92,7 +96,7 @@ export async function POST(request: NextRequest) {
     })
 
     // StageMethod inferred from locationType and/or meeting link
-    const methodName = inferStageMethodName(locationType, interviewLink)
+    const methodName = isOffer ? "Not recorded" : inferStageMethodName(locationType, interviewLink)
 
     // Case-insensitive lookup to match any existing record (e.g., "zoom" vs "Zoom")
     let stageMethod = await prisma.stageMethod.findFirst({
@@ -104,7 +108,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Set outcome based on stage
-    const outcome = stage !== "Applied" ? "SCHEDULED" : "AWAITING_RESPONSE"
+    const outcome = isOffer ? "OFFER_RECEIVED" : stage !== "Applied" ? "SCHEDULED" : "AWAITING_RESPONSE"
 
     const isTechnicalTest = String(stage).toLowerCase() === "technical test".toLowerCase()
 
@@ -133,15 +137,15 @@ export async function POST(request: NextRequest) {
               },
             },
         parent: previous ? { connect: { id: previous.id } } : undefined,
-        interviewer: isTechnicalTest ? null : (interviewer || null),
+        interviewer: isTechnicalTest || isOffer ? null : (interviewer || null),
         stage: { connect: { id: stageRecord.id } },
         stageMethod: { connect: { id: stageMethod.id } },
-        date: isTechnicalTest ? null : interviewDate,
-        deadline: isTechnicalTest ? (deadlineDate ?? interviewDate) : null,
+        date: isTechnicalTest || isOffer ? null : interviewDate,
+        deadline: isOffer ? (offerDeadline ? new Date(`${offerDeadline}T00:00:00.000Z`) : null) : isTechnicalTest ? (deadlineDate ?? interviewDate) : null,
         durationMinutes: validDuration(durationMinutes),
         outcome: outcome as $Enums.InterviewOutcome,
         notes: notes || null,
-        link: isTechnicalTest ? null : (interviewLink || null),
+        link: isTechnicalTest || isOffer ? null : (interviewLink || null),
       },
       select: interviewSelect,
     })

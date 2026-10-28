@@ -14,6 +14,9 @@ import {listGuestInterviews} from "@/lib/guestStorage";
 import {useFlags} from "@flags-gg/react-library";
 import CalendarSync from "@/components/CalendarSync";
 import {useQuery} from "@tanstack/react-query";
+import {isOpenOffer} from "@/lib/offers";
+import {useOffers} from "@/components/Offers";
+import {parseLocalDay} from "@/lib/searchReport";
 
 interface InterviewApiItem {
   id: string | number;
@@ -72,6 +75,7 @@ export default function Calendar() {
   const [interviews, setInterviews] = useState<Interview[]>([])
   const [isAddInterviewOpen, setIsAddInterviewOpen] = useState(false)
   const { user } = useUser()
+  const {data: openOffers} = useOffers();
 
   const year = currentDate.getFullYear()
   const month = currentDate.getMonth()
@@ -100,10 +104,10 @@ export default function Calendar() {
   // Update interviews state when API data changes (for logged-in users)
   useEffect(() => {
     if (user && apiInterviews) {
-      const mapped: Interview[] = apiInterviews.map((item: InterviewApiItem) => ({
+      const mapped: Interview[] = apiInterviews.filter((item: InterviewApiItem) => item.stage?.stage.trim().toLowerCase() === "offer" ? !!item.deadline && isOpenOffer(item.stage.stage, item.outcome) && !!openOffers?.some((offer) => offer.interviewId === Number(item.id)) : !!(item.date || item.deadline)).map((item: InterviewApiItem) => ({
         id: String(item.id),
-        title: `${item.company.name} — ${item.jobTitle}`,
-        date: new Date((item.date ?? item.deadline) as string),
+        title: `${item.stage?.stage.trim().toLowerCase() === "offer" ? "Offer reply due: " : ""}${item.clientCompany || item.company.name} — ${item.jobTitle}`,
+        date: item.stage?.stage.trim().toLowerCase() === "offer" && item.deadline ? parseLocalDay(new Date(item.deadline).toISOString().slice(0, 10))! : new Date((item.date ?? item.deadline) as string),
         color: getStageColor(item.outcome ?? item.stage?.stage ?? "Unknown"),
         stage: item.outcome ?? item.stage?.stage ?? "Unknown",
         companyName: item.company.name,
@@ -114,7 +118,7 @@ export default function Calendar() {
       }));
       setInterviews(mapped);
     }
-  }, [user, apiInterviews]);
+  }, [user, apiInterviews, openOffers]);
 
   useEffect(() => {
     if (!user) {

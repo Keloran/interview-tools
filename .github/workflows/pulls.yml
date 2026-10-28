@@ -41,8 +41,12 @@ jobs:
       - run: SKIP_ENV_VALIDATION=true pnpm build
       - run: SKIP_ENV_VALIDATION=true pnpm lint
       - run: SKIP_ENV_VALIDATION=true pnpm test
+      - name: Check calendar days west of UTC
+        run: INTERVIEW_TEST_TIMEZONE=America/New_York pnpm exec vitest run test/lib.offers.test.ts test/components.offers.test.tsx test/lib.searchreport.test.ts test/lib.activitylog.test.ts
       - name: Check stale application transactions
         run: node --import tsx scripts/check-stale-closure.ts
+      - name: Check offer transactions
+        run: node --import tsx scripts/check-offer-transactions.ts
       - name: Check activity-log PDF output
         run: |
           sudo apt-get update -qq

@@ -1,7 +1,7 @@
 import type {Busy} from "@/lib/availability";
 import {toISODate} from "@/lib/utils";
 
-type ScheduledInterview = { date: string | null; durationMinutes?: number; outcome: string | null };
+type ScheduledInterview = { date: string | null; durationMinutes?: number; outcome: string | null; stage?: {stage: string} };
 
 export const addDays = (day: string, n: number) => {
   const d = new Date(`${day}T00:00`);
@@ -18,6 +18,6 @@ export async function getBusy(day: string): Promise<Busy[]> {
   if (!res.ok) throw new Error("Failed to load your interviews");
   const interviews: ScheduledInterview[] = await res.json();
   return interviews
-    .filter((i) => i.outcome === "SCHEDULED" && i.date)
+    .filter((i) => i.outcome === "SCHEDULED" && i.date && i.stage?.stage.trim().toLowerCase() !== "offer")
     .map((i) => ({start: new Date(i.date!), durationMinutes: i.durationMinutes ?? 60}));
 }
