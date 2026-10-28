@@ -24,6 +24,7 @@ export default function SearchReport() {
   return <section className="space-y-5">
     <h2 className="text-xl font-semibold">Your job-search report</h2>
     <Link className="text-sm underline" href="/company-insights">Company insights</Link>
+    <Link className="ml-4 text-sm underline" href="/activity-log">Export activity log</Link>
     <div className="flex flex-wrap gap-4"><div><Label htmlFor="report-from">From</Label><Input id="report-from" type="date" value={range.from} onChange={(event) => setRange({...range, from: event.target.value})} /></div><div><Label htmlFor="report-through">Through</Label><Input id="report-through" type="date" value={range.through} onChange={(event) => setRange({...range, through: event.target.value})} /></div></div>
     <p className="text-sm text-muted-foreground">Dates and weeks use your browser&apos;s local time. Funnel, response and source figures cover applications made in this period, using their current outcomes. Weekly activity counts applications and dated interviews within the period, including interviews for earlier applications.</p>
     {!period && <p role="alert">Choose valid start and end dates, in order, covering at most ten years.</p>}

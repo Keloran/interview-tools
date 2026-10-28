@@ -23,6 +23,7 @@ model User {
   applications     Application[]
   legacyInterviews LegacyInterview[]
   stories          Story[]
+  activityEntries  ActivityEntry[]
 }
 
 model Company {
@@ -119,6 +120,22 @@ model AvailabilityLink {
   firstViewedAt   DateTime?
   lastViewedAt    DateTime?
   created_at      DateTime    @default(now())
+  sentAt          DateTime?
+}
+
+model ActivityEntry {
+  id       Int      @id @default(autoincrement())
+  userId   Int
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date     DateTime @db.Date
+  activity String
+  employer String   @default("")
+  role     String   @default("")
+  how      String   @default("")
+  outcome  String   @default("")
+  notes    String   @default("") @db.Text
+
+  @@index([userId, date])
 }
 
 // Interview represents a single interview stage within an application

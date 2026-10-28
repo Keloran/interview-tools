@@ -1,0 +1,16 @@
+@media print {
+  @page activity-log { size: A4 landscape; margin: 12mm; }
+  body:has(.activity-log-page) { background: white !important; color: black !important; }
+  body:has(.activity-log-page) main { padding: 0 !important; min-height: 0 !important; }
+  body:has(.activity-log-page) main > div { max-width: none !important; }
+  body:has(.activity-log-page) main > div > :not(.activity-log-page) { display: none !important; }
+  .activity-log-page .no-print { display: none !important; }
+  .activity-print, .activity-print * { color: black !important; background: white !important; box-shadow: none !important; }
+  .activity-print { page: activity-log; font-size: 10pt; }
+  .activity-print h2 { font-size: 16pt; }
+  .activity-print .activity-table-wrap { overflow: visible !important; }
+  .activity-print table { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 9pt; }
+  .activity-print th, .activity-print td { padding: 4pt; border: 0.5pt solid #777; overflow-wrap: anywhere; white-space: pre-wrap; }
+  .activity-print thead { display: table-header-group; }
+  .activity-print tr { break-inside: avoid; }
+}
