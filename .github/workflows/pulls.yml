@@ -49,6 +49,8 @@ jobs:
         run: node --import tsx scripts/check-offer-transactions.ts
       - name: Check community consent transactions
         run: node --import tsx scripts/check-community-consent.ts
+      - name: Check community aggregation
+        run: node --import tsx scripts/check-community-aggregation.ts
       - name: Check activity-log PDF output
         run: |
           sudo apt-get update -qq

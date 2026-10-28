@@ -1,0 +1,23 @@
+name: Monthly community index
+on:
+  schedule:
+    - cron: '0 6 1 * *'
+  workflow_dispatch:
+permissions: {}
+jobs:
+  aggregate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Run protected monthly aggregation when configured
+        env:
+          REBUILD_URL: ${{ secrets.COMMUNITY_REBUILD_URL }}
+          REBUILD_TOKEN: ${{ secrets.COMMUNITY_REBUILD_TOKEN }}
+        run: |
+          if [ -z "$REBUILD_URL" ] || [ -z "$REBUILD_TOKEN" ]; then
+            echo 'Community aggregation is not configured.'
+            exit 0
+          fi
+          case "$REBUILD_URL" in https://*) ;; *) exit 1 ;; esac
+          curl --fail --silent --show-error --max-time 120 --request POST \
+            --header "Authorization: Bearer $REBUILD_TOKEN" "$REBUILD_URL" >/dev/null

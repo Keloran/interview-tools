@@ -87,6 +87,11 @@ model Application {
   recruiterLinkedIn String?
   firstResponseAt   DateTime?          @db.Date
   advertisedSalary  String?           @db.Text
+  communityEmployerId String?
+  communityEmployer CommunityEmployer? @relation(fields: [communityEmployerId], references: [id], onDelete: SetNull)
+  communityEmployerConfirmedAt DateTime?
+  communityEmployerChangedAt DateTime?
+  communityEmployerIdentity String?
   interviews        Interview[]
   availabilityLinks AvailabilityLink[]
   followUps         FollowUp[]
@@ -262,6 +267,7 @@ model CommunityControl {
   collectionEnabled Boolean @default(false)
   publicationEnabled Boolean @default(false)
   revocationEpoch Int @default(0)
+  lastPublicationMonth String?
 }
 
 // Latest choice only; cascades with the account. Never an analytics/event log.
@@ -273,13 +279,18 @@ model CommunityConsent {
   withdrawnAt DateTime?
   revision Int @default(1)
   purgePending Boolean @default(false)
+  quarantinedAt DateTime?
 }
 
 // Foundations for IT-81. No contributions or snapshots are created by the consent API.
 model CommunityEmployer {
   id String @id @default(uuid())
   name String
-  domain String? @unique
+  domain String?
+  jurisdiction String?
+  aliases String[] @default([])
+  cohortReviewedAt DateTime?
+  applications Application[]
   reviewedAt DateTime?
   suppressedAt DateTime?
   contributions CommunityContribution[]

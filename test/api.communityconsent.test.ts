@@ -5,8 +5,8 @@ import prisma from "@/lib/prisma";
 import {GET, PUT} from "@/app/api/community/consent/route";
 import {COMMUNITY_NOTICE_VERSION, collectionOpen, snapshotCurrent} from "@/lib/communityPolicy";
 import {deleteAccountData, grantCommunityConsent, withdrawCommunityConsent} from "@/lib/communityConsent";
-const control = () => ({id: "global", noticeVersion: COMMUNITY_NOTICE_VERSION, noticePublishedAt: new Date("2026-01-01"), collectionEnabled: true, publicationEnabled: true, revocationEpoch: 4});
-const choice = () => ({userId: 1, noticeVersion: COMMUNITY_NOTICE_VERSION, grantedAt: new Date("2026-01-01"), withdrawnAt: null as Date | null, revision: 1, purgePending: false});
+const control = () => ({id: "global", noticeVersion: COMMUNITY_NOTICE_VERSION, noticePublishedAt: new Date("2026-01-01"), collectionEnabled: true, publicationEnabled: true, revocationEpoch: 4, lastPublicationMonth: null});
+const choice = () => ({userId: 1, noticeVersion: COMMUNITY_NOTICE_VERSION, grantedAt: new Date("2026-01-01"), withdrawnAt: null as Date | null, revision: 1, purgePending: false, quarantinedAt: null as Date | null});
 const req = (body: unknown) => new NextRequest("http://localhost/api/community/consent", {method: "PUT", body: JSON.stringify(body)});
 beforeEach(() => {
   vi.resetAllMocks();

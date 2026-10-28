@@ -72,3 +72,69 @@ against a disposable local PostgreSQL database named `interview_test`. It tests
 default-off gates, idempotent grant, a forced database purge failure after durable
 withdrawal, snapshot invalidation, scoped cleanup/retry, retained private tracking
 and account cascades. It restores controls and removes its synthetic fixtures.
+
+## Reviewed employer registry (IT-81)
+
+There are no seeded real employers and no automatic legal-entity merging. A
+privileged operator maintains the independent registry with
+`node --import tsx scripts/community-review.ts --reviewed-file /path/to/review.json`.
+A new employer file contains `name`, `domain`, `jurisdiction`, an `aliases` array,
+`confirmReviewed: true` and `reviewCohort: false`. An optional existing UUID `id`
+updates that reviewed entity; aliases only help search, and may overlap between
+entities. A shared website domain does not combine subsidiaries. Check legal
+identity and small-employer/sole-trader disclosure risks before reviewing a record.
+Use `suppressed: true` to suppress an employer and `suppressed: false` only after
+a deliberate release review.
+
+Users explicitly confirm the reviewed employer UUID per application. Recruitment
+applications without an end client cannot be confirmed. Confirmation changes are
+limited to once per day; removal is always available. Clearing a link does not
+bypass that cooldown. A changed source employer name invalidates its confirmation
+for future collection. Confirmation creates no contribution and does not opt in.
+
+A contributor review file contains `type: "contributor"`, `clerkId`,
+`quarantined: true` and `confirmReviewed: true`; it pauses contribution eligibility,
+removes contributions and invalidates snapshots without restricting private use.
+Only privileged operators may run this tool. Do not paste contributor identifiers
+into issue comments or logs. Lifting quarantine does not override withdrawal or an
+outdated notice version.
+
+The initial consent-spike heuristic suppresses an employer when a 72-hour window
+contains at least ten and at least half of its eligible accounts, unless an
+operator has reviewed that cohort afterwards. It is a conservative review flag,
+not proof of fraud or of one account per real person. To acknowledge an examined
+cohort, update its employer with `reviewCohort: true`. The timestamp must follow
+the cohort's agreements. Do not approve a cohort solely to make scores appear.
+
+## Monthly collection and publication (IT-81)
+
+The protected `POST /api/community/rebuild` endpoint is unavailable without a
+server-side `COMMUNITY_REBUILD_TOKEN` of at least 32 characters. Configure the same
+secret in GitHub and `COMMUNITY_REBUILD_URL` as the full HTTPS endpoint only when
+the deployment is ready. The monthly workflow runs at 06:00 UTC on the first of
+each month; workflow dispatch permits a deliberate initial run. The endpoint
+accepts a Bearer token and no user/period/filter inputs. Do not log the token.
+
+Collection rechecks the notice, gates, current consent and reviewed employers
+under the singleton lock. It selects the newest eligible application per account
+and employer, with 30 days of actual record age and the 24-month applied-date
+window. Withdrawals with no reply evidence, unresolved applications, unknown reply
+dates, unconfirmed/changed identities and quarantined accounts are excluded as
+appropriate. Date calculations use explicit calendar dates; historical stage
+timestamps never estimate a first reply. Only minimal contribution fields are
+materialized, without role, notes, salary or source application IDs.
+
+Publication requires its separate gate. Every publication month is sealed on
+`CommunityControl.lastPublicationMonth`, even if all results are suppressed.
+Reruns may clean/recollect, but cannot replace that month's publication after a
+withdrawal or a threshold crossing. Revocation therefore leaves scores hidden
+until the next monthly publication. This is deliberately conservative; a monthly
+rerun must not reveal a before/after contributor difference. No historical-period
+query API is provided. Read paths require fresh controls, the current month,
+matching notice/epoch, a reviewed unsuppressed employer and an allowlisted DTO.
+Database failures and unknown/suppressed results fail closed.
+
+`node --import tsx scripts/check-community-aggregation.ts` uses only the disposable
+CI PostgreSQL database and synthetic fixtures. It checks reviewed entity isolation
+(including shared aliases/domains), duplicate applications, 19/20 thresholds,
+monthly sealing, a concurrent withdrawal/rerun and contributor quarantine.

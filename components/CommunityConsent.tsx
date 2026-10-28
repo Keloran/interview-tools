@@ -9,7 +9,7 @@ import {Card} from "@/components/ui/card";
 import {Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription} from "@/components/ui/dialog";
 import {COMMUNITY_NOTICE_VERSION} from "@/lib/communityPolicy";
 
-type State = {collectionPaused?: boolean; enabled: boolean; needsReview: boolean; purgePending: boolean; canEnable: boolean; verified: boolean; noticeVersion: string; agreedVersion: string | null; grantedAt: string | null; withdrawnAt: string | null};
+type State = {restricted?: boolean; collectionPaused?: boolean; enabled: boolean; needsReview: boolean; purgePending: boolean; canEnable: boolean; verified: boolean; noticeVersion: string; agreedVersion: string | null; grantedAt: string | null; withdrawnAt: string | null};
 export default function CommunityConsent() {
   const {user} = useUser();
   const queryClient = useQueryClient();
@@ -34,10 +34,10 @@ export default function CommunityConsent() {
     <p className="text-sm text-muted-foreground">Names of people, job titles, salaries, notes, contact details and individual application dates are excluded from public summaries. Sharing can still carry an inference risk; downloaded copies of past summaries cannot be recalled.</p>
     <Link href="/privacy/community" className="text-sm underline">Read the community privacy notice</Link>
     {error ? <div role="alert">Could not load sharing settings. <Button variant="outline" onClick={() => refetch()}>Try again</Button></div> : isPending || !data ? <p role="status">Loading sharing settings…</p> : <>
-      <p className="font-medium">{data.purgePending ? "Sharing stopped; removal pending" : data.needsReview ? "Sharing paused — review the updated notice" : data.enabled ? data.collectionPaused ? "Sharing on — collection paused" : "Sharing on" : "Sharing off"}</p>
+      <p className="font-medium">{data.purgePending ? "Sharing stopped; removal pending" : data.restricted ? "Sharing paused — contribution review required" : data.needsReview ? "Sharing paused — review the updated notice" : data.enabled ? data.collectionPaused ? "Sharing on — collection paused" : "Sharing on" : "Sharing off"}</p>
       {data.agreedVersion && <p className="text-sm text-muted-foreground">Last agreed notice: {data.agreedVersion}</p>}
       {data.enabled || data.needsReview || data.purgePending ? <Button variant="outline" disabled={busy} onClick={() => save(false)}>{data.purgePending ? "Retry contribution removal" : "Stop sharing"}</Button> : <Button disabled={busy || !data.canEnable} onClick={() => {setMessage(""); setReviewing(true);}}>Review and enable sharing</Button>}
-      {data.needsReview && !data.purgePending && <Button disabled={busy || !data.canEnable} onClick={() => {setMessage(""); setReviewing(true);}}>Review and enable sharing</Button>}
+      {data.needsReview && !data.purgePending && !data.restricted && <Button disabled={busy || !data.canEnable} onClick={() => {setMessage(""); setReviewing(true);}}>Review and enable sharing</Button>}
       {!data.canEnable && !data.enabled && !data.purgePending && <p className="text-sm text-muted-foreground">{!data.verified ? "Verify your email address before contributing." : "Community sharing is not open yet. Your data remains private."}</p>}
     </>}
     {message && <p role="status">{message}</p>}

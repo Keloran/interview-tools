@@ -18,7 +18,9 @@ const rows: ActivityRow[] = Array.from({length: 80}, (_, index) => ({
 const css = readFileSync("app/activity-log/activity-log.css", "utf8");
 const content = renderToStaticMarkup(<main><div><header>HIDDEN SITE HEADER</header><section className="activity-log-page"><div className="no-print">HIDDEN EXPORT CONTROLS</div><ActivityPrint rows={rows} from="2026-10-01" through="2026-10-28" /></section></div></main>);
 writeFileSync(html, `<!doctype html><html><head><meta charset="utf-8"><title>Activity log print check</title><style>body{background:#111;color:white;font-family:Arial,sans-serif}${css}</style></head><body>${content}</body></html>`);
-execFileSync(process.env.CHROME_BIN ?? "google-chrome", ["--headless", "--disable-gpu", "--no-sandbox", "--disable-background-networking", "--disable-extensions", "--no-first-run", `--user-data-dir=${join(directory, "browser")}`, "--no-pdf-header-footer", `--print-to-pdf=${pdf}`, `file://${html}`], {timeout: 30000, stdio: "pipe"});
+// Bound the page-load wait as well as process startup/exit on shared CI runners.
+// https://developer.chrome.com/docs/automation-and-testing/headless-cli
+execFileSync(process.env.CHROME_BIN ?? "google-chrome", ["--headless", "--timeout=15000", "--disable-gpu", "--no-sandbox", "--disable-background-networking", "--disable-extensions", "--no-first-run", `--user-data-dir=${join(directory, "browser")}`, "--no-pdf-header-footer", `--print-to-pdf=${pdf}`, `file://${html}`], {timeout: 60000, stdio: "pipe"});
 assert.equal(readFileSync(pdf).subarray(0, 5).toString(), "%PDF-");
 const env = {...process.env, LC_ALL: "C"};
 const info = execFileSync("pdfinfo", [pdf], {encoding: "utf8", env});
