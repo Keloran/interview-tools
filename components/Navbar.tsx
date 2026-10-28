@@ -2,8 +2,8 @@
 
 import {useState} from "react";
 import Link from "next/link";
-import {Menu, Trash2, X} from "lucide-react";
-import * as DialogPrimitive from "@radix-ui/react-dialog";
+import {Menu, Trash2} from "lucide-react";
+import {Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle, SheetDescription} from "@/components/ui/sheet";
 import {SignedIn, SignedOut, SignInButton, UserButton} from "@clerk/nextjs";
 import {Button} from "@/components/ui/button";
 import {Companies} from "@/components/Company";
@@ -66,32 +66,24 @@ function NavLinks({stacked, onNavigate}: { stacked?: boolean; onNavigate?: () =>
 function NavigationMenu() {
   const [open, setOpen] = useState(false);
   return (
-    <DialogPrimitive.Root open={open} onOpenChange={setOpen}>
-      <DialogPrimitive.Trigger asChild>
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger asChild>
         <Button variant="ghost" size="icon" className="relative cursor-pointer" aria-label="Menu">
           <Menu />
           <SignedIn><FollowUpDot /></SignedIn>
         </Button>
-      </DialogPrimitive.Trigger>
-      <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/50 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0" />
-        <DialogPrimitive.Content className="fixed inset-y-0 right-0 z-50 flex w-72 max-w-[85vw] flex-col gap-1 overflow-y-auto border-l bg-background p-4 shadow-lg data-[state=open]:animate-in data-[state=open]:slide-in-from-right data-[state=closed]:animate-out data-[state=closed]:slide-out-to-right">
-          <div className="mb-2 flex items-center justify-between">
-            <DialogPrimitive.Title className="font-semibold">Menu</DialogPrimitive.Title>
-            <DialogPrimitive.Close asChild>
-              <Button variant="ghost" size="icon" className="cursor-pointer" aria-label="Close menu">
-                <X />
-              </Button>
-            </DialogPrimitive.Close>
-          </div>
-          <DialogPrimitive.Description className="sr-only">Site navigation</DialogPrimitive.Description>
-          <div className="mb-2 [&_input]:w-full">
-            <Companies />
-          </div>
-          <NavLinks stacked onNavigate={() => setOpen(false)} />
-        </DialogPrimitive.Content>
-      </DialogPrimitive.Portal>
-    </DialogPrimitive.Root>
+      </SheetTrigger>
+      <SheetContent side="right" className="flex w-72 max-w-[85vw] flex-col gap-1 overflow-y-auto p-4">
+        <SheetHeader className="mb-2 text-left">
+          <SheetTitle>Menu</SheetTitle>
+          <SheetDescription className="sr-only">Site navigation</SheetDescription>
+        </SheetHeader>
+        <div className="mb-2 [&_input]:w-full">
+          <Companies />
+        </div>
+        <NavLinks stacked onNavigate={() => setOpen(false)} />
+      </SheetContent>
+    </Sheet>
   );
 }
 
