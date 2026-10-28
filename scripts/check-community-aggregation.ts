@@ -58,6 +58,13 @@ async function main() {
     await quarantineContributor(`${token}-1`, true);
     assert.equal(await readCommunitySummary(canonical, followingMonth), null);
     assert.equal(await prisma.communityContribution.count({where: {userId: ids[1]}}), 0);
+    // Deferred physical purges must also finish while new collection is switched off.
+    await prisma.communityConsent.update({where: {userId: ids[3]}, data: {withdrawnAt: new Date(), purgePending: true}});
+    await prisma.communityControl.update({where: {id: "global"}, data: {collectionEnabled: false}});
+    assert.deepEqual(await rebuildCommunity(followingMonth), {collected: false, published: false});
+    assert.equal(await prisma.communityContribution.count({where: {userId: ids[3]}}), 0);
+    assert.equal((await prisma.communityConsent.findUniqueOrThrow({where: {userId: ids[3]}})).purgePending, false);
+    assert.equal(await prisma.communityContribution.count({where: {userId: ids[2]}}), 1);
     console.log("Community aggregation passed: default-off gates, reviewed identity isolation, one vote/account, suppression boundaries, sealed monthly snapshots, concurrent withdrawal and quarantine.");
   } finally {
     await prisma.user.deleteMany({where: {id: {in: ids}}});

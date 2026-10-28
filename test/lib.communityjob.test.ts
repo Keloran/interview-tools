@@ -20,6 +20,15 @@ describe("community publication locks and suppression", () => {
     expect(await rebuildCommunity(now)).toEqual({collected: false, published: false});
     expect(prisma.communityContribution.deleteMany).not.toHaveBeenCalled();
   });
+  it("retries removal while collection is disabled, without reading application sources", async () => {
+    vi.mocked(prisma.communityControl.findUnique).mockResolvedValue({...control(), collectionEnabled: false});
+    vi.mocked(prisma.communityContribution.count).mockResolvedValue(1);
+    vi.mocked(prisma.communityControl.update).mockResolvedValue({...control(), collectionEnabled: false, revocationEpoch: 4});
+    expect(await rebuildCommunity(now)).toEqual({collected: false, published: false});
+    expect(prisma.communityContribution.deleteMany).toHaveBeenCalledWith(expect.objectContaining({where: expect.any(Object)}));
+    expect(prisma.communityConsent.updateMany).toHaveBeenCalledWith({where: {withdrawnAt: {not: null}, purgePending: true}, data: {purgePending: false}});
+    expect(prisma.communityConsent.findMany).not.toHaveBeenCalled();
+  });
   it("seals an entirely suppressed month and never replaces it in the same month", async () => {
     expect(await rebuildCommunity(now)).toEqual({collected: true, published: true});
     expect(prisma.communityControl.update).toHaveBeenCalledWith({where: {id: "global"}, data: {lastPublicationMonth: "2026-10"}});

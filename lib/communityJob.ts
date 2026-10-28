@@ -7,15 +7,19 @@ export async function rebuildCommunity(now = new Date()) {
   return prisma.$transaction(async (tx) => {
     await lockCommunity(tx);
     let control = await tx.communityControl.findUnique({where: {id: "global"}});
-    if (!collectionOpen(control, now)) return {collected: false, published: false};
-    const invalid = await tx.communityContribution.count({where: {user: {OR: [
+    const invalidWhere = {user: {OR: [
       {communityConsent: {is: null}},
       {communityConsent: {is: {OR: [{noticeVersion: {not: COMMUNITY_NOTICE_VERSION}}, {grantedAt: null}, {withdrawnAt: {not: null}}, {purgePending: true}, {quarantinedAt: {not: null}}]}}},
-    ]}}});
-    if (invalid) control = await tx.communityControl.update({where: {id: "global"}, data: {revocationEpoch: {increment: 1}}});
-    // Cleanup is inside the writer lock, before any collection or snapshot generation.
-    await tx.communityContribution.deleteMany({});
+    ]}};
+    const invalid = await tx.communityContribution.count({where: invalidWhere});
+    if (invalid) {
+      control = await tx.communityControl.update({where: {id: "global"}, data: {revocationEpoch: {increment: 1}}});
+      await tx.communityContribution.deleteMany({where: invalidWhere});
+    }
     await tx.communityConsent.updateMany({where: {withdrawnAt: {not: null}, purgePending: true}, data: {purgePending: false}});
+    // Removal runs even while collection is paused; source records are read only after the gate.
+    if (!collectionOpen(control, now)) return {collected: false, published: false};
+    await tx.communityContribution.deleteMany({});
     const employers = await tx.communityEmployer.findMany({where: {reviewedAt: {not: null}, suppressedAt: null}});
     const allowed = new Set(employers.map((employer) => employer.id));
     const consents = await tx.communityConsent.findMany({where: {noticeVersion: COMMUNITY_NOTICE_VERSION, grantedAt: {not: null}, withdrawnAt: null, purgePending: false, quarantinedAt: null}, include: {user: {select: {applications: {select: communityApplicationSelect, orderBy: [{applicationDate: "desc"}, {id: "desc"}]}}}}});

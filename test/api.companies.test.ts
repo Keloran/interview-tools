@@ -25,7 +25,7 @@ describe('GET /api/companies', () => {
     ;(currentUser as any).mockResolvedValueOnce({id: 'user_123'})
     ;(prisma.company.findMany as any).mockResolvedValueOnce([
       {id: 1, name: 'Acme', applications: [{
-        id: 5, jobTitle: 'SE', clientCompany: null, applicationDate: '2025-01-01T00:00:00.000Z',
+        id: 5, jobTitle: 'SE', clientCompany: null, communityEmployerId: null, communityEmployerConfirmedAt: null, communityEmployerIdentity: null, communityEmployer: null, applicationDate: '2025-01-01T00:00:00.000Z',
         interviews: [{outcome: 'REJECTED', updated_at: '2025-02-01T00:00:00.000Z', created_at: '2025-01-20T00:00:00.000Z', replyBy: null, stage: {stage: 'Technical'}}],
         _count: {followUps: 0},
       }]},
@@ -37,7 +37,7 @@ describe('GET /api/companies', () => {
     const json = await res.json()
     expect(json).toEqual([
       {id: 1, name: 'Acme', applications: [{
-        id: 5, jobTitle: 'SE', clientCompany: null, applicationDate: '2025-01-01T00:00:00.000Z',
+        id: 5, jobTitle: 'SE', clientCompany: null, communityEmployerId: null, communityEmployerName: null, applicationDate: '2025-01-01T00:00:00.000Z',
         status: 'Rejected at Technical', response: 'responded', feedback: null, promise: null, furthestStage: 'Technical', ignoredLinks: 0,
       }]},
       {id: 2, name: 'Beta', applications: []},
