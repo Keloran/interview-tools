@@ -1,4 +1,5 @@
 "use client";
+import {Button} from "@/components/ui/button";
 import Link from "next/link";
 import {useQuery} from "@tanstack/react-query";
 import type {ApplicationSummary} from "@/lib/applications";
@@ -20,7 +21,7 @@ export function CommunityRecord({employerId, name, compact = false}: {employerId
   return <div className="space-y-1 text-xs text-muted-foreground" aria-label={`Community record${name ? ` for ${name}` : ""}`}>
     <p className="font-medium">Community{name ? ` · ${name}` : ""}</p>
     {error ? <p>Community summary unavailable.</p> : isPending ? <p>Checking community summary…</p> : !current ? <p>Insufficient community data to show a summary.</p> : <><p>{record}</p><p>Snapshot {current.month} · smallest metric sample {current.sampleBand} accounts. Voluntary reports; small groups and unknown history are omitted.</p></>}
-    {!compact && <p><Link className="underline" href="/community">Manage community sharing</Link> · <Link className="underline" href="/privacy/community">Privacy notice</Link></p>}
+    {!compact && <div className="flex flex-wrap gap-2"><Button asChild variant="outline" size="sm"><Link href="/community">Manage community sharing</Link></Button><Button asChild variant="outline" size="sm"><Link href="/privacy/community">Privacy notice</Link></Button></div>}
   </div>;
 }
 export function CommunityRecords({applications, compact = false}: {applications: Pick<ApplicationSummary, "communityEmployerId" | "communityEmployerName">[]; compact?: boolean}) {

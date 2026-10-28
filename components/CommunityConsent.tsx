@@ -32,7 +32,7 @@ export default function CommunityConsent() {
     <p>Your private tracking works whether sharing is on or off. Contributing is optional.</p>
     <p className="text-sm text-muted-foreground">With your agreement, eligible employer outcomes from the past 24 months can contribute to coarse monthly summaries. Each account contributes at most one application per employer. Scores require at least 20 contributors; small outcome groups stay hidden.</p>
     <p className="text-sm text-muted-foreground">Names of people, job titles, salaries, notes, contact details and individual application dates are excluded from public summaries. Sharing can still carry an inference risk; downloaded copies of past summaries cannot be recalled.</p>
-    <Link href="/privacy/community" className="text-sm underline">Read the community privacy notice</Link>
+    <Button asChild variant="outline" size="sm" className="self-start"><Link href="/privacy/community">Read the community privacy notice</Link></Button>
     {error ? <div role="alert">Could not load sharing settings. <Button variant="outline" onClick={() => refetch()}>Try again</Button></div> : isPending || !data ? <p role="status">Loading sharing settings…</p> : <>
       <p className="font-medium">{data.purgePending ? "Sharing stopped; removal pending" : data.restricted ? "Sharing paused — contribution review required" : data.needsReview ? "Sharing paused — review the updated notice" : data.enabled ? data.collectionPaused ? "Sharing on — collection paused" : "Sharing on" : "Sharing off"}</p>
       {data.agreedVersion && <p className="text-sm text-muted-foreground">Last agreed notice: {data.agreedVersion}</p>}

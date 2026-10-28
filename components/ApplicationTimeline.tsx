@@ -25,12 +25,12 @@ export default function ApplicationTimeline({applicationId}: {applicationId: str
     },
   });
   if (!user) return null;
-  if (error) return <div role="alert" className="space-y-3"><p>{error.message}</p><Button onClick={() => refetch()}>Try again</Button><p><Link className="underline" href="/companies">Back to companies</Link></p></div>;
+  if (error) return <div role="alert" className="space-y-3"><p>{error.message}</p><Button onClick={() => refetch()}>Try again</Button><p><Button asChild variant="outline" size="sm"><Link href="/companies">Back to companies</Link></Button></p></div>;
   if (isPending || !data) return <p role="status">Loading application timeline…</p>;
   const summary = timelineSummary(data, now);
   const activity = timelineActivity(data);
   return <section className="space-y-6">
-    <nav className="flex flex-wrap gap-4 text-sm"><Link className="underline" href="/">Interview list</Link><Link className="underline" href={`/companies?q=${encodeURIComponent(data.company.name)}`}>Back to company</Link></nav>
+    <nav aria-label="Timeline navigation" className="flex flex-wrap gap-2"><Button asChild variant="outline" size="sm"><Link href="/">Interview list</Link></Button><Button asChild variant="outline" size="sm"><Link href={`/companies?q=${encodeURIComponent(data.company.name)}`}>Back to company</Link></Button></nav>
     <Card className="p-4 gap-2">
       <h2 className="text-xl font-semibold">{data.jobTitle} · {data.clientCompany || data.company.name}</h2>
       {data.clientCompany && <p>Via {data.company.name}</p>}

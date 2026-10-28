@@ -93,7 +93,7 @@ export default function HaveIApplied({withDescription = false, initialListing}: 
         </>}
       </form>
       {error && <p role="alert" className="text-sm text-destructive">Could not load your application history. Refresh the page to try again.</p>}
-      {!withDescription && <Link href="/check" className="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground">Check a job description</Link>}
+      {!withDescription && <Button asChild variant="outline" size="sm"><Link href="/check">Check a job description</Link></Button>}
 
       {query && !companies && !error && <p role="status">Checking your saved applications…</p>}
       {query && companies && !error && (

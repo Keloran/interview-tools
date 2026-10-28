@@ -8,6 +8,7 @@ import Navbar from "@/components/Navbar";
 import ClientProviders from "@/components/ClientProviders";
 import GuestBanner from "@/components/GuestBanner";
 import ErrorReporter from "@/components/ErrorReporter";
+import SiteFooter from "@/components/SiteFooter";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -45,7 +46,7 @@ export default function RootLayout({
         <html lang="en" className="dark">
           <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
             <ErrorReporter />
-            <main className="min-h-screen bg-background p-4 md:p-8">
+            <main className="min-h-dvh bg-background p-4 pb-24 md:p-8 md:pb-24">
               <div className="mx-auto max-w-6xl">
                 <div className="mb-6 md:mb-8 flex items-start justify-between gap-4">
                   <div className="min-w-0">
@@ -60,7 +61,7 @@ export default function RootLayout({
                 </div>
                 <GuestBanner />
                 {children}
-                <footer className="mt-8 text-sm text-muted-foreground"><Link className="underline" href="/privacy/community">Community privacy notice</Link></footer>
+                <SiteFooter />
               </div>
             </main>
           </body>

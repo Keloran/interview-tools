@@ -19,8 +19,17 @@ describe("recruiter directory", () => {
     expect(screen.getByText("Feedback: 1 of 1 noted rejections (100%)")).toBeVisible();
     expect(screen.queryByRole("heading", {name: "Direct"})).not.toBeInTheDocument();
     const user = userEvent.setup();
-    await user.click(screen.getAllByText("Roles put forward")[0]);
+    const disclosures = screen.getAllByRole("button", {name: "Roles put forward"});
+    expect(disclosures[0]).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByRole("link", {name: "Engineer · Client"})).not.toBeInTheDocument();
+    disclosures[0].focus();
+    await user.keyboard("{Enter}");
+    expect(disclosures[0]).toHaveAttribute("aria-expanded", "true");
+    expect(disclosures[1]).toHaveAttribute("aria-expanded", "false");
     expect(screen.getAllByRole("link", {name: "Engineer · Client"})[0]).toHaveAttribute("href", "/companies?q=Recruit%20Co");
+    await user.keyboard(" ");
+    expect(disclosures[0]).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByRole("link", {name: "Engineer · Client"})).not.toBeInTheDocument();
     expect(screen.getByRole("link", {name: "LinkedIn profile"})).toHaveAttribute("rel", "noopener noreferrer");
   });
   it("searches contacts by email and roles by client", async () => {
