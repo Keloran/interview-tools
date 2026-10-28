@@ -1,7 +1,7 @@
 import {NextRequest, NextResponse} from "next/server";
 import {clerkClient, currentUser} from "@clerk/nextjs/server";
 import {reportError} from "@/lib/bugfixes";
-import prisma from "@/lib/prisma";
+import {deleteAccountData} from "@/lib/communityConsent";
 import {DELETE_CONFIRMATION} from "@/lib/account";
 
 // Delete your data, then your login. Data first: if removing the login fails, retrying is safe.
@@ -17,10 +17,10 @@ export async function DELETE(request: NextRequest) {
   try {
     // Everything hangs off the user with ON DELETE CASCADE (companies, applications, stages, availability
     // links, follow-ups), so this one statement removes it all or nothing
-    await prisma.user.deleteMany({where: {clerkId: user.id}});
+    await deleteAccountData(user.id);
   } catch (error) {
     reportError("DELETE /api/account: deleting data failed", error);
-    return NextResponse.json({message: "Couldn't delete your data, nothing was removed. Please try again."}, {status: 500});
+    return NextResponse.json({message: "Could not finish deleting your data. Please try again."}, {status: 500});
   }
 
   try {

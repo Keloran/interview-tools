@@ -60,6 +60,7 @@ export default function RootLayout({
                 </div>
                 <GuestBanner />
                 {children}
+                <footer className="mt-8 text-sm text-muted-foreground"><Link className="underline" href="/privacy/community">Community privacy notice</Link></footer>
               </div>
             </main>
           </body>
