@@ -1,13 +1,18 @@
 import {NextRequest, NextResponse} from "next/server";
+import {currentUser} from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 import {reportError} from "@/lib/bugfixes";
 
 // Public: the booking page calls this from the browser when it opens. Link previews
 // (Slack, LinkedIn, email) fetch the HTML but don't run scripts, so they aren't counted.
-// ponytail: the owner opening their own link counts too; skip it if that turns out to muddy the numbers
+// The owner opening their own link to check it isn't counted.
 export async function POST(_request: NextRequest, {params}: { params: Promise<{ id: string }> }) {
   const {id} = await params;
   try {
+    const user = await currentUser();
+    if (user && await prisma.availabilityLink.findFirst({where: {id, application: {user: {clerkId: user.id}}}, select: {id: true}})) {
+      return new NextResponse(null, {status: 204});
+    }
     const now = new Date();
     const updated = await prisma.availabilityLink.updateMany({
       where: {id},
