@@ -19,6 +19,8 @@ import {useRouter} from "next/navigation";
 import {addGuestInterview} from "@/lib/guestStorage";
 import {interviewFormSchema} from "@/lib/validations/interview";
 import {Separator} from "@/components/ui/separator";
+import CommunityLookup from "@/components/CommunityLookup";
+import {CommunityRecords} from "@/components/CommunityRecord";
 import {CompanyHistory, findPreviousApplications} from "@/lib/applications";
 import PreviousApplications from "@/components/PreviousApplications";
 import {cn, toISODate} from "@/lib/utils";
@@ -457,6 +459,7 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
           <RecruiterFields value={contact} onChange={setContact} agency={companyName} disabled={isSubmitting} error={validationErrors.recruiterName || validationErrors.recruiterEmail || validationErrors.recruiterLinkedIn} />
           {companies?.filter((company) => company.name.trim().toLowerCase() === companyName.trim().toLowerCase() && company.applications.some(viaAgency)).map((company) => <div className="rounded-md border p-3" key={company.id}><p className="text-sm font-medium">{company.name}: your agency record</p><RecruiterRecord applications={company.applications.filter(viaAgency)} /></div>)}
         </div>}
+        {!!user && !isProgressing && companyName.trim() && <div className="md:col-span-2"><CommunityLookup initialQuery={clientCompany || companyName} /></div>}
         {previousApplications.length > 0 && (
           <div
             role="status"
@@ -471,6 +474,7 @@ export default function InterviewForm({ initialValues, initialDate, interviewId,
                 : previousApplications[0].sameTitle ? "You may have already applied for this job" : "You've applied to this company before"}
             </p>
             <PreviousApplications applications={previousApplications.slice(0, 5)} />
+            <CommunityRecords applications={previousApplications} />
           </div>
         )}
         <div className="space-y-2 md:col-span-2">

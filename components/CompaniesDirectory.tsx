@@ -1,5 +1,7 @@
 "use client";
 
+import {CommunityRecords} from "@/components/CommunityRecord";
+
 import {useQuery} from "@tanstack/react-query";
 import {useUser} from "@clerk/nextjs";
 import {usePathname, useRouter, useSearchParams} from "next/navigation";
@@ -87,6 +89,7 @@ export default function CompaniesDirectory() {
                     </summary>
                     <div className="mt-2 ml-1 border-l-2 border-border pl-4">
                       <Link className="text-sm underline" href={`/companies/${c.id}`}>Company history and insights</Link>
+                      <CommunityRecords applications={c.applications} />
                       {c.applications.some(viaAgency) && <RecruiterRecord applications={c.applications.filter(viaAgency)} />}
                       <PreviousApplications
                         applications={c.applications.map((a) => ({...a, companyName: c.name, sameTitle: true, samePosting: false}))}

@@ -109,13 +109,15 @@ the cohort's agreements. Do not approve a cohort solely to make scores appear.
 ## Monthly collection and publication (IT-81)
 
 The protected `POST /api/community/rebuild` endpoint is unavailable without a
-server-side `COMMUNITY_REBUILD_TOKEN` of at least 32 characters. Configure the same
+server-side `COMMUNITY_REBUILD_TOKEN` of at least 32 characters. Use a
+cryptographically random secret of at least 32 bytes. Configure the same
 secret in GitHub and `COMMUNITY_REBUILD_URL` as the full HTTPS endpoint only when
 the deployment is ready. The monthly workflow runs at 06:00 UTC on the first of
 each month; workflow dispatch permits a deliberate initial run. The endpoint
 accepts a Bearer token and no user/period/filter inputs. Do not log the token.
 
-Collection rechecks the notice, gates, current consent and reviewed employers
+Deferred withdrawal purges run even while collection is disabled. New collection
+rechecks the notice, gates, current consent and reviewed employers
 under the singleton lock. It selects the newest eligible application per account
 and employer, with 30 days of actual record age and the 24-month applied-date
 window. Withdrawals with no reply evidence, unresolved applications, unknown reply

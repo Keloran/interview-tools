@@ -25,12 +25,12 @@ export default function CommunityConsent() {
       if (!response.ok) throw new Error(result.message || "Could not update sharing");
       setReviewing(false); setMessage(enabled ? "Community sharing enabled." : "Community sharing is off. Your contributions have been removed.");
     } catch (err) {setMessage(err instanceof Error ? err.message : "Could not update sharing");}
-    finally {await queryClient.invalidateQueries({queryKey: ["community-consent"]}); setBusy(false);}
+    finally {await Promise.all([queryClient.invalidateQueries({queryKey: ["community-consent"]}), queryClient.resetQueries({queryKey: ["community-summary"]})]); setBusy(false);}
   }
   if (!user) return null;
   return <section className="space-y-4"><h2 className="text-xl font-semibold">Community sharing</h2><Card className="p-4 gap-3">
     <p>Your private tracking works whether sharing is on or off. Contributing is optional.</p>
-    <p className="text-sm text-muted-foreground">With your agreement, eligible employer outcomes from the past 24 months can contribute to coarse monthly summaries. Each person contributes at most one application per employer. Scores require at least 20 contributors; small outcome groups stay hidden.</p>
+    <p className="text-sm text-muted-foreground">With your agreement, eligible employer outcomes from the past 24 months can contribute to coarse monthly summaries. Each account contributes at most one application per employer. Scores require at least 20 contributors; small outcome groups stay hidden.</p>
     <p className="text-sm text-muted-foreground">Names of people, job titles, salaries, notes, contact details and individual application dates are excluded from public summaries. Sharing can still carry an inference risk; downloaded copies of past summaries cannot be recalled.</p>
     <Link href="/privacy/community" className="text-sm underline">Read the community privacy notice</Link>
     {error ? <div role="alert">Could not load sharing settings. <Button variant="outline" onClick={() => refetch()}>Try again</Button></div> : isPending || !data ? <p role="status">Loading sharing settings…</p> : <>

@@ -17,6 +17,8 @@ export type StageSummary = {
 };
 
 export type ApplicationSummary = {
+  communityEmployerId?: string | null;
+  communityEmployerName?: string | null;
   firstResponseAt?: string | Date | null;
   furthestStage?: string;
   ignoredLinks?: number;
