@@ -48,6 +48,7 @@ function inferStageMethodName(locationType?: string | null, interviewLink?: stri
 interface InterviewApiItem {
   id: string | number;
   applicationId?: number;
+  applicationDate?: string | Date | null;
   jobTitle: string;
   date?: string | Date | null;
   deadline?: string | Date | null;
@@ -87,6 +88,8 @@ async function getInterviews(date: Date | string | null, company?: string | null
 
   // When filtering by outcome, show all interviews (ignore date filters)
   if (outcome) {
+    url.searchParams.set('latestOnly', 'true');
+    url.searchParams.set('take', '2000');
     url.searchParams.set('includePast', 'true');
     url.searchParams.set('outcome', outcome);
   } else {
@@ -135,6 +138,7 @@ export default function InterviewsList() {
   const [progressDialogOpen, setProgressDialogOpen] = useState(false);
   const [availabilityDialogOpen, setAvailabilityDialogOpen] = useState(false);
   const [infoDialogOpen, setInfoDialogOpen] = useState(false);
+  const [outcomeError, setOutcomeError] = useState("");
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [messageDialogOpen, setMessageDialogOpen] = useState(false);
   const [debriefDialogOpen, setDebriefDialogOpen] = useState(false);
@@ -213,7 +217,7 @@ export default function InterviewsList() {
     id: String(item.id),
     applicationId: item.applicationId,
     title: item.jobTitle,
-    date: new Date((item.date ?? item.deadline) as string),
+    date: new Date(item.date ?? item.deadline ?? item.applicationDate ?? ""),
     stage: item.stage?.stage || "Unknown",
     stageMethod: item.stageMethod?.method || "Unknown",
     link: item.link as string,
@@ -265,21 +269,24 @@ export default function InterviewsList() {
   };
 
   const handleSetOutcome = async (interview: Interview, outcome: string) => {
+    setOutcomeError("");
     if (interview.id.startsWith("guest_")) {
       interview.outcome = outcome;
       return
     }
 
     try {
-      await fetch(`/api/interview/${interview.id}`, {
+      const response = await fetch(`/api/interview/${interview.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ outcome })
       })
+      if (!response.ok) throw new Error("Outcome update failed");
       interview.outcome = outcome;
       // Invalidate queries to refetch data
-      queryClient.invalidateQueries({ queryKey: ["interviews"] });
+      await Promise.all(["interviews", "companies", "stale-applications", "search-report", "activity-log", "follow-ups", "application-timeline"].map((key) => queryClient.invalidateQueries({queryKey: [key]})));
     } catch (error) {
+      setOutcomeError("Could not update this application. Please try again.");
       reportClientError(`Failed to set ${outcome} on interview`, error);
     } finally {
       router.refresh()
@@ -319,6 +326,7 @@ export default function InterviewsList() {
   return (
     <div className="flex-1">
       <Card className="p-6">
+        {outcomeError && <p role="alert" className="text-destructive">{outcomeError}</p>}
         <div className="flex items-center justify-between mb-6">
           <div>
             <h2 className="text-2xl font-semibold">
@@ -517,7 +525,7 @@ export default function InterviewsList() {
                           <TooltipContent>Send a message</TooltipContent>
                         </Tooltip>
                       )}
-                      {interview.stage !== "Offer" && !["REJECTED", "WITHDREW", "OFFER_ACCEPTED", "OFFER_DECLINED"].includes(interview.outcome.toUpperCase()) && (
+                      {interview.stage !== "Offer" && !["REJECTED", "WITHDREW", "OFFER_ACCEPTED", "OFFER_DECLINED", "NO_RESPONSE"].includes(interview.outcome.toUpperCase()) && (
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button
@@ -536,7 +544,8 @@ export default function InterviewsList() {
                           <TooltipContent>Share your availability for the next stage</TooltipContent>
                         </Tooltip>
                       )}
-                      {!["REJECTED", "PASSED", "OFFER_ACCEPTED", "OFFER_DECLINED"].includes(interview.outcome.toUpperCase()) && (
+                      {interview.outcome === "NO_RESPONSE" && <Button size="sm" variant="outline" onClick={(event) => {event.stopPropagation(); handleSetOutcome(interview, "AWAITING_RESPONSE");}}>Reopen application</Button>}
+                      {!["REJECTED", "PASSED", "OFFER_ACCEPTED", "OFFER_DECLINED", "NO_RESPONSE"].includes(interview.outcome.toUpperCase()) && (
                         <>
                           {interview.stage === "Offer" ? (
                             <>

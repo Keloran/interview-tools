@@ -44,7 +44,7 @@ export function importDate(text: string): string | null {
   return check.toISOString();
 }
 
-export const OUTCOMES = ["SCHEDULED", "PASSED", "REJECTED", "AWAITING_RESPONSE", "OFFER_RECEIVED", "OFFER_ACCEPTED", "OFFER_DECLINED", "WITHDREW"] as const;
+export const OUTCOMES = ["SCHEDULED", "PASSED", "REJECTED", "AWAITING_RESPONSE", "OFFER_RECEIVED", "OFFER_ACCEPTED", "OFFER_DECLINED", "WITHDREW", "NO_RESPONSE"] as const;
 export type ImportOutcome = typeof OUTCOMES[number];
 function outcome(text: string): ImportOutcome | null {
   const normalized = text.trim().toUpperCase().replace(/[ -]+/g, "_");
@@ -90,7 +90,7 @@ export function planImport(table: CSVTable, mapping: ColumnMapping, history: Com
     const clientCompany = read("clientCompany");
     if (clientCompany.length > 200) errors.push("Client company must be at most 200 characters");
     const status = outcome(read("outcome"));
-    if (!status) errors.push("Unknown status: use Applied, Pending, Scheduled, Passed, Rejected, Awaiting response, Offer received/accepted/declined, or Withdrew");
+    if (!status) errors.push("Unknown status: use Applied, Pending, Scheduled, Passed, Rejected, Awaiting response, Offer received/accepted/declined, Withdrew, or No response");
     if (errors.length) return {...row, reason: errors.join("; ")};
     const duplicate = findPreviousApplications(tracked, company, clientCompany, jobTitle, link).find((previous) => previous.samePosting || previous.sameTitle);
     if (duplicate) return {...row, status: "duplicate", reason: duplicate.id < 0 ? `Matches an earlier row at line ${-duplicate.id}` : `Already tracked: ${duplicate.jobTitle} at ${duplicate.companyName}`};

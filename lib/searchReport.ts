@@ -29,7 +29,7 @@ function weekStart(date: Date): Date {
 }
 const isInterview = (stage: ReportStage) => !["applied", "offer", "technical test"].includes(stage.stage.trim().toLowerCase());
 function milestone(application: ApplicationSummary & {stages?: ReportStage[]}): number {
-  let reached = application.response === "responded" ? 1 : 0;
+  let reached = application.response === "responded" || application.firstResponseAt ? 1 : 0;
   for (const stage of application.stages ?? []) {
     const name = stage.stage.trim().toLowerCase();
     if (name === "offer" || stage.outcome?.startsWith("OFFER_")) reached = Math.max(reached, 5);

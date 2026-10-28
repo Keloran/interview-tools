@@ -83,7 +83,7 @@ export const TEMPLATES: Record<TemplateId, { label: string; render: (ctx: Messag
   },
 };
 
-const SETTLED = ["OFFER_ACCEPTED", "OFFER_DECLINED", "WITHDREW"];
+const SETTLED = ["OFFER_ACCEPTED", "OFFER_DECLINED", "WITHDREW", "NO_RESPONSE"];
 
 // The messages that make sense for where this interview is
 export function templatesFor(

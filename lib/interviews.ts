@@ -1,7 +1,10 @@
 import type {Prisma} from "@/app/generated/prisma/client";
+import {orderedStages} from "@/lib/timeline";
 
 export const interviewSelect = {
   id: true,
+  parentId: true,
+  created_at: true,
   interviewer: true,
   date: true,
   deadline: true,
@@ -39,6 +42,12 @@ export const interviewSelect = {
 } satisfies Prisma.InterviewSelect;
 
 type InterviewRow = Prisma.InterviewGetPayload<{ select: typeof interviewSelect }>;
+
+export function currentApplicationStages<T extends {id: number; parentId: number | null; created_at: string | Date; application: {id: number}}>(interviews: T[]): T[] {
+  const applications = new Map<number, T[]>();
+  for (const interview of interviews) applications.set(interview.application.id, [...(applications.get(interview.application.id) ?? []), interview]);
+  return [...applications.values()].map((stages) => orderedStages(stages).at(-1)!);
+}
 
 // Flattened to the pre-Application response shape so the frontend didn't need to change
 export function toInterviewDto({ application, ...interview }: InterviewRow) {

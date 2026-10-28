@@ -52,11 +52,11 @@ vi.mock('@/lib/prisma', () => {
   const fn = vi.fn
   return {
     default: {
-      user: {upsert: fn(), deleteMany: fn()},
+      user: {upsert: fn(), findUnique: fn(), deleteMany: fn()},
       company: {findMany: fn(), upsert: fn()},
       stage: {findMany: fn(), upsert: fn()},
       stageMethod: {findFirst: fn(), create: fn(), upsert: fn()},
-      interview: {findMany: fn(), findFirst: fn(), create: fn(), update: fn()},
+      interview: {findMany: fn(), findFirst: fn(), create: fn(), update: fn(), updateMany: fn()},
       availabilityLink: {create: fn(), findUnique: fn(), findFirst: fn(), updateMany: fn(), update: fn()},
       activityEntry: {findMany: fn(), create: fn(), updateMany: fn(), deleteMany: fn()},
       application: {findMany: fn(), findFirst: fn(), create: fn(), updateMany: fn()},

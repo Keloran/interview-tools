@@ -72,7 +72,7 @@ export function brokenPromise(stages: PromiseStage[], now = Date.now()): string 
   if (i === -1) return null;
   const promised = stages[i];
   const deadline = nextWorkingDay(promised.replyBy!); // any time on the day they said counts
-  const moved = promised.outcome && !["AWAITING_RESPONSE", "SCHEDULED"].includes(promised.outcome);
+  const moved = promised.outcome && !["AWAITING_RESPONSE", "SCHEDULED", "NO_RESPONSE"].includes(promised.outcome);
   const repliedAt = i > 0 ? stages[i - 1].createdAt : moved ? promised.updatedAt : null;
   const said = `Said they'd reply by ${dayFmt.format(promised.replyBy!)}`;
 
