@@ -15,7 +15,7 @@ export async function communityConsentState(clerkId: string, verified: boolean) 
   ]);
   const choice = user?.communityConsent;
   return {enabled: consentCurrent(choice), needsReview: !!choice?.grantedAt && !choice.withdrawnAt && !consentCurrent(choice), purgePending: choice?.purgePending ?? false,
-    canEnable: collectionOpen(control) && verified, collectionPaused: !collectionOpen(control), verified, noticeVersion: COMMUNITY_NOTICE_VERSION,
+    restricted: !!choice?.quarantinedAt, canEnable: collectionOpen(control) && verified && !choice?.quarantinedAt, collectionPaused: !collectionOpen(control), verified, noticeVersion: COMMUNITY_NOTICE_VERSION,
     agreedVersion: choice?.noticeVersion ?? null, grantedAt: choice?.grantedAt ?? null, withdrawnAt: choice?.withdrawnAt ?? null};
 }
 export async function grantCommunityConsent(identity: {id: string; email: string; name: string | null}) {
@@ -24,6 +24,7 @@ export async function grantCommunityConsent(identity: {id: string; email: string
     const control = await tx.communityControl.findUnique({where: {id: "global"}});
     if (!collectionOpen(control)) return {status: 409, message: "Community sharing is not open. Your data remains private."};
     const user = await tx.user.upsert({where: {clerkId: identity.id}, update: {}, create: {clerkId: identity.id, email: identity.email, name: identity.name}, select: {id: true, communityConsent: true}});
+    if (user.communityConsent?.quarantinedAt) return {status: 409, message: "Community contributions are paused for review. Private tracking remains available."};
     if (user.communityConsent?.purgePending) return {status: 409, message: "Finish withdrawing your previous contribution before enabling sharing again."};
     if (consentCurrent(user.communityConsent)) return {status: 200};
     // A scope/version change never reuses an old contribution or consent revision.

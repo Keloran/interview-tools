@@ -14,7 +14,7 @@ describe("public community feature notice", () => {
     expect(screen.getByText(`Version ${COMMUNITY_NOTICE_VERSION}`)).toBeVisible();
   });
   it("displays a published notice independently of disabled collection/publication gates", async () => {
-    vi.mocked(prisma.communityControl.findUnique).mockResolvedValue({id: "global", noticeVersion: COMMUNITY_NOTICE_VERSION, noticePublishedAt: new Date("2026-01-01"), collectionEnabled: false, publicationEnabled: false, revocationEpoch: 0});
+    vi.mocked(prisma.communityControl.findUnique).mockResolvedValue({id: "global", noticeVersion: COMMUNITY_NOTICE_VERSION, noticePublishedAt: new Date("2026-01-01"), collectionEnabled: false, publicationEnabled: false, revocationEpoch: 0, lastPublicationMonth: null});
     render(await CommunityPrivacyPage());
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
     expect(screen.getByRole("link", {name: "Manage community sharing"})).toHaveAttribute("href", "/community");
