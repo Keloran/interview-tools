@@ -85,6 +85,7 @@ function TransferForm() {
     <Card className="p-4 gap-3">
       <h3 className="font-semibold">Export</h3>
       <p className="text-sm text-muted-foreground">Applications export includes every recorded interview stage and its notes. Stories download as a separate CSV.</p>
+      <Link className="text-sm underline" href="/community">Manage community sharing and your consent</Link>
       <Link className="text-sm underline" href="/activity-log">Export your activity log and free entries</Link>
       <div className="flex flex-wrap gap-2"><Button variant="outline" disabled={!!busy} onClick={() => download("applications")}>Export applications and stages</Button><Button variant="outline" disabled={!!busy} onClick={() => download("stories")}>Export stories</Button></div>
     </Card>

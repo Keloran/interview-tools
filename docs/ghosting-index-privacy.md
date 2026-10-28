@@ -1,8 +1,8 @@
 # Community ghosting index — IT-73 proposal
 
-Status: **awaiting owner agreement**. This design enables no collection or public
-sharing. IT-74 and its implementation tickets stay blocked until the thresholds
-and release scope below are agreed.
+Status: **approved by the owner on 28 October 2026**, with PR #320 merged.
+The thresholds and employers-only scope below are agreed. Collection and public
+sharing still require the privacy-notice and release gates described here.
 
 ## Proposed first release
 
@@ -101,6 +101,5 @@ our proposed engineering choices, not prescribed limits from those sources.
   snapshot labels and voluntary-sample context. Release only after the assessment
   and notice gates pass.
 
-Owner decision needed: approve the proposed 20-contributor/5-per-cell threshold
-and employers-only, coarse monthly release, or specify a different scope. Record
-that agreement here and on IT-73 before considering the spike complete.
+Owner agreement: the 20-contributor/5-per-cell threshold and employers-only,
+coarse monthly release were approved on 28 October 2026 and recorded on IT-73.

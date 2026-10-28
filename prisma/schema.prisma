@@ -25,6 +25,8 @@ model User {
   stories          Story[]
   activityEntries  ActivityEntry[]
   staleAfterDays   Int               @default(60)
+  communityConsent CommunityConsent?
+  communityContributions CommunityContribution[]
 }
 
 model Company {
@@ -250,4 +252,58 @@ enum InterviewOutcome {
   OFFER_ACCEPTED // You accepted the offer
   OFFER_DECLINED // You declined the offer
   WITHDREW // You withdrew your application
+}
+
+// Singleton release controls. Publication and collection are separate, default-off gates.
+model CommunityControl {
+  id String @id @default("global")
+  noticeVersion String?
+  noticePublishedAt DateTime?
+  collectionEnabled Boolean @default(false)
+  publicationEnabled Boolean @default(false)
+  revocationEpoch Int @default(0)
+}
+
+// Latest choice only; cascades with the account. Never an analytics/event log.
+model CommunityConsent {
+  userId Int @id
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  noticeVersion String
+  grantedAt DateTime?
+  withdrawnAt DateTime?
+  revision Int @default(1)
+  purgePending Boolean @default(false)
+}
+
+// Foundations for IT-81. No contributions or snapshots are created by the consent API.
+model CommunityEmployer {
+  id String @id @default(uuid())
+  name String
+  domain String? @unique
+  reviewedAt DateTime?
+  suppressedAt DateTime?
+  contributions CommunityContribution[]
+  snapshot CommunitySnapshot?
+}
+model CommunityContribution {
+  userId Int
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  employerId String
+  employer CommunityEmployer @relation(fields: [employerId], references: [id], onDelete: Cascade)
+  noticeVersion String
+  consentRevision Int
+  observedAt DateTime
+  responded Boolean?
+  ghosted Boolean?
+  feedbackGiven Boolean?
+  replyDays Int?
+  @@id([userId, employerId])
+}
+model CommunitySnapshot {
+  employerId String @id
+  employer CommunityEmployer @relation(fields: [employerId], references: [id], onDelete: Cascade)
+  revocationEpoch Int
+  noticeVersion String
+  publishedAt DateTime
+  data Json
 }
