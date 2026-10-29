@@ -62,7 +62,7 @@ vi.mock('@/lib/prisma', () => {
       availabilityLink: {create: fn(), findUnique: fn(), findFirst: fn(), updateMany: fn(), update: fn()},
       activityEntry: {findMany: fn(), create: fn(), updateMany: fn(), deleteMany: fn()},
       application: {findMany: fn(), findFirst: fn(), create: fn(), updateMany: fn()},
-      followUp: {create: fn()},
+      followUp: {create: fn(), findUnique: fn()},
       story: {findMany: fn(), create: fn(), updateMany: fn(), deleteMany: fn()},
       storyUse: {deleteMany: fn(), createMany: fn()},
       communityControl: {findUnique: fn(), update: fn()},

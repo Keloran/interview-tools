@@ -78,6 +78,9 @@ model FollowUp {
   applicationId Int
   application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
   sentAt        DateTime    @default(now())
+  clientMutationId String?
+
+  @@unique([applicationId, clientMutationId])
 
   @@index([applicationId])
 }
