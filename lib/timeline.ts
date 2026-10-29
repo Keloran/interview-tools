@@ -1,7 +1,7 @@
 import type {Prisma} from "@/app/generated/prisma/client";
 
 export const timelineSelect = {
-  id: true, jobTitle: true, clientCompany: true, applicationDate: true,
+  id: true, jobTitle: true, clientCompany: true, applicationDate: true, firstResponseAt: true,
   company: {select: {name: true}},
   interviews: {select: {
     id: true, parentId: true, date: true, deadline: true, created_at: true, updated_at: true,

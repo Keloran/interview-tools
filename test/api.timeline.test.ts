@@ -24,6 +24,7 @@ describe("owned application timeline API", () => {
     expect(prisma.application.findFirst).toHaveBeenCalledWith({where: {id: 7, user: {clerkId: "user_123"}}, select: timelineSelect});
     expect(response.headers.get("Cache-Control")).toBe("private, no-store");
     expect(await response.json()).toEqual(application());
+    expect(timelineSelect.firstResponseAt).toBe(true);
     expect(timelineSelect).not.toHaveProperty("user");
     expect(timelineSelect.availabilityLinks.select).not.toHaveProperty("slots");
   });
