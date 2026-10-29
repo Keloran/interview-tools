@@ -204,3 +204,80 @@ describe('PUT /api/interview/[id] application fields', () => {
     expect(res.status).toBe(409)
   })
 })
+
+describe('native create idempotency', () => {
+  const mutation = '11111111-1111-4111-8111-111111111111'
+  const body = {stage: 'Phone Screen', companyName: 'Acme', jobTitle: 'SE', clientMutationId: mutation}
+  const existing = {id: 7, application: {id: 5, jobTitle: 'SE', applicationDate: new Date(), company: {id: 1, name: 'Acme'}}}
+  beforeEach(() => { vi.clearAllMocks(); currentUser.mockResolvedValueOnce({id: 'user_123', emailAddresses: []}); (prisma.user.upsert as any).mockResolvedValueOnce({id: 99}) })
+
+  it('returns the acknowledged record when a lost response is retried', async () => {
+    ;(prisma.interviewCreateReceipt.findUnique as any).mockResolvedValueOnce({interview: existing})
+    const response = await POST({json: async () => body} as any)
+    expect(response.status).toBe(200)
+    expect((await response.json()).id).toBe(7)
+    expect(prisma.interviewCreateReceipt.findUnique).toHaveBeenCalledWith(expect.objectContaining({where: {userId_mutationId: {userId: 99, mutationId: mutation}}}))
+    expect(prisma.interview.create).not.toHaveBeenCalled()
+    expect(prisma.company.upsert).not.toHaveBeenCalled()
+  })
+
+  it('stores an owner-scoped identity on a new record', async () => {
+    ;(prisma.interviewCreateReceipt.findUnique as any).mockResolvedValueOnce(null)
+    ;(prisma.company.upsert as any).mockResolvedValueOnce({id: 1})
+    ;(prisma.stage.upsert as any).mockResolvedValueOnce({id: 2})
+    ;(prisma.stageMethod.findFirst as any).mockResolvedValueOnce({id: 3})
+    ;(prisma.interview.create as any).mockResolvedValueOnce(existing)
+    expect((await POST({json: async () => body} as any)).status).toBe(201)
+    expect((prisma.interview.create as any).mock.calls[0][0].data.createReceipt).toEqual({create: {userId: 99, mutationId: mutation}})
+  })
+
+  it('recovers a concurrent retry that loses the unique-key race', async () => {
+    const {Prisma} = await import('@/app/generated/prisma/client')
+    ;(prisma.interviewCreateReceipt.findUnique as any).mockResolvedValueOnce(null).mockResolvedValueOnce({interview: existing})
+    ;(prisma.company.upsert as any).mockResolvedValueOnce({id: 1})
+    ;(prisma.stage.upsert as any).mockResolvedValueOnce({id: 2})
+    ;(prisma.stageMethod.findFirst as any).mockResolvedValueOnce({id: 3})
+    ;(prisma.interview.create as any).mockRejectedValueOnce(new Prisma.PrismaClientKnownRequestError('duplicate mutation', {code: 'P2002', clientVersion: 'test'}))
+    const response = await POST({json: async () => body} as any)
+    expect(response.status).toBe(200)
+    expect((await response.json()).id).toBe(7)
+    expect((prisma.interviewCreateReceipt.findUnique as any).mock.calls.at(-1)[0].where.userId_mutationId.userId).toBe(99)
+  })
+
+  it('namespaces another account separately even when the client UUID is identical', async () => {
+    ;(prisma.user.upsert as any).mockReset().mockResolvedValueOnce({id: 100})
+    ;(prisma.interviewCreateReceipt.findUnique as any).mockResolvedValueOnce({interview: existing})
+    await POST({json: async () => body} as any)
+    expect((prisma.interviewCreateReceipt.findUnique as any).mock.calls[0][0].where).toEqual({userId_mutationId: {userId: 100, mutationId: mutation}})
+  })
+
+  it('retains a tombstone after deletion so delayed retries do not resurrect the interview', async () => {
+    ;(prisma.interviewCreateReceipt.findUnique as any).mockResolvedValueOnce({interview: null})
+    const response = await POST({json: async () => body} as any)
+    expect(response.status).toBe(410)
+    expect(prisma.interview.create).not.toHaveBeenCalled()
+  })
+
+  it('rejects malformed identities without creating records', async () => {
+    expect((await POST({json: async () => ({...body, clientMutationId: 'not-a-uuid'})} as any)).status).toBe(400)
+    expect(prisma.interview.create).not.toHaveBeenCalled()
+  })
+})
+
+describe('native queued editable fields', () => {
+  it('updates the owned application company and explicit stage/method selections', async () => {
+    const {PUT} = await import('@/app/api/interview/[id]/route')
+    currentUser.mockResolvedValueOnce({id: 'user_123'})
+    ;(prisma.interview.findFirst as any).mockResolvedValueOnce({id: 7, application: {userId: 99}, stage: {stage: 'Phone Screen'}})
+    ;(prisma.company.upsert as any).mockResolvedValueOnce({id: 20})
+    ;(prisma.stage.upsert as any).mockResolvedValueOnce({id: 30})
+    ;(prisma.stageMethod.upsert as any).mockResolvedValueOnce({id: 40})
+    ;(prisma.interview.update as any).mockResolvedValueOnce({id: 7, application: {id: 5, jobTitle: 'SE', applicationDate: new Date(), company: {id: 20, name: 'New company'}}})
+    const req = new Request('http://localhost/api/interview/7', {method: 'PUT', body: JSON.stringify({companyName: 'New company', stageName: 'Second Stage', stageMethodName: 'Phone', notes: '', link: null})})
+    const response = await PUT(req as any, {params: Promise.resolve({id: '7'})})
+    expect(response.status).toBe(200)
+    expect((prisma.company.upsert as any).mock.calls.at(-1)[0].where.userId_name.userId).toBe(99)
+    const data = (prisma.interview.update as any).mock.calls.at(-1)[0].data
+    expect(data).toMatchObject({application: {update: {company: {connect: {id: 20}}}}, stage: {connect: {id: 30}}, stageMethod: {connect: {id: 40}}, notes: '', link: null})
+  })
+})

@@ -26,6 +26,7 @@ model User {
   staleAfterDays   Int               @default(60)
   communityConsent CommunityConsent?
   communityContributions CommunityContribution[]
+  interviewCreateReceipts InterviewCreateReceipt[]
 }
 
 model Company {
@@ -166,6 +167,7 @@ model Interview {
   stories          StoryUse[]
 
   @@map("InterviewStage") // New table name to avoid conflict
+  createReceipt InterviewCreateReceipt?
 }
 
 model Story {
@@ -284,4 +286,16 @@ model CommunitySnapshot {
   noticeVersion String
   publishedAt DateTime
   data Json
+}
+
+// Retained after an interview is deleted so delayed retries cannot resurrect it.
+model InterviewCreateReceipt {
+  id          Int        @id @default(autoincrement())
+  userId      Int
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mutationId  String
+  interviewId Int?       @unique
+  interview   Interview? @relation(fields: [interviewId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, mutationId])
 }

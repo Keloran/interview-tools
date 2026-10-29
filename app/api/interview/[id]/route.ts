@@ -53,7 +53,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     const owned = await prisma.interview.findFirst({
       where: { id, application: { user: { clerkId: user.id } } },
-      select: { id: true, stage: {select: {stage: true}} },
+      select: { id: true, application: {select: {userId: true}}, stage: {select: {stage: true}} },
     });
     if (!owned) return NextResponse.json({ message: "Not Found" }, { status: 404 });
 
@@ -94,6 +94,14 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (typeof body.interviewer === "string" || body.interviewer === null) {
       data.interviewer = body.interviewer;
     }
+    if (typeof body.stageName === "string" && body.stageName.trim() && body.stageName.trim().length <= 100) {
+      const stage = await prisma.stage.upsert({where: {stage: body.stageName.trim()}, create: {stage: body.stageName.trim()}, update: {}});
+      data.stage = {connect: {id: stage.id}};
+    }
+    if (typeof body.stageMethodName === "string" && body.stageMethodName.trim() && body.stageMethodName.trim().length <= 100) {
+      const method = await prisma.stageMethod.upsert({where: {method: body.stageMethodName.trim()}, create: {method: body.stageMethodName.trim()}, update: {}});
+      data.stageMethod = {connect: {id: method.id}};
+    }
     if (typeof body.stageId === "number") {
       data.stage = { connect: { id: body.stageId } };
     }
@@ -109,6 +117,13 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (feedback) Object.assign(data, feedback);
     // Application-level fields live on the parent application
     const application: Prisma.ApplicationUpdateWithoutInterviewsInput = {};
+    if (typeof body.companyName === "string" && body.companyName.trim()) {
+      const company = await prisma.company.upsert({
+        where: {userId_name: {userId: owned.application.userId, name: body.companyName.trim()}},
+        create: {userId: owned.application.userId, name: body.companyName.trim()}, update: {},
+      });
+      application.company = {connect: {id: company.id}};
+    }
     if (typeof body.clientCompany === "string" || body.clientCompany === null) {
       application.clientCompany = body.clientCompany;
     }
