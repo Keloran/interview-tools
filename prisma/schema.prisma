@@ -27,6 +27,7 @@ model User {
   communityConsent CommunityConsent?
   communityContributions CommunityContribution[]
   interviewCreateReceipts InterviewCreateReceipt[]
+  storyCreateReceipts StoryCreateReceipt[]
 }
 
 model Company {
@@ -183,6 +184,7 @@ model Story {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
   interviews StoryUse[]
+  createReceipt StoryCreateReceipt?
 
   @@index([userId])
 }
@@ -296,6 +298,17 @@ model InterviewCreateReceipt {
   mutationId  String
   interviewId Int?       @unique
   interview   Interview? @relation(fields: [interviewId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, mutationId])
+}
+
+model StoryCreateReceipt {
+  id         Int    @id @default(autoincrement())
+  userId     Int
+  user       User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mutationId String
+  storyId    Int?   @unique
+  story      Story? @relation(fields: [storyId], references: [id], onDelete: SetNull)
 
   @@unique([userId, mutationId])
 }
