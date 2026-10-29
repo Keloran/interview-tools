@@ -21,6 +21,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: "unauthorized" }, { status: 401 })
   }
 
+  let mutationKey: string | null = null;
+  let actorId: number | null = null;
   try {
     const body = await request.json()
     const contact = recruiterSchema.safeParse(body);
@@ -41,6 +43,7 @@ export async function POST(request: NextRequest) {
       durationMinutes,
       offerDeadline,
       stageMethodId,
+      clientMutationId,
     } = body ?? {}
 
     // Basic validations
@@ -72,6 +75,10 @@ export async function POST(request: NextRequest) {
       interviewDate = now
     }
 
+    if (clientMutationId != null && (typeof clientMutationId !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(clientMutationId))) {
+      return NextResponse.json({message: "Invalid upload identity"}, {status: 400});
+    }
+
     const previousId = previousInterviewId == null ? null : Number(previousInterviewId);
     if (previousId !== null && (!Number.isSafeInteger(previousId) || previousId <= 0 || previousId > 2147483647)) {
       return NextResponse.json({message: "Invalid previous interview"}, {status: 400});
@@ -92,7 +99,17 @@ export async function POST(request: NextRequest) {
     })
 
     // Dev override: use userId 12 in development
-    const effectiveUserId = dbUser.id
+    const effectiveUserId = dbUser.id;
+    actorId = effectiveUserId;
+    mutationKey = clientMutationId == null ? null : clientMutationId.toLowerCase();
+    if (mutationKey) {
+      const receipt = await prisma.interviewCreateReceipt.findUnique({
+        where: {userId_mutationId: {userId: effectiveUserId, mutationId: mutationKey}}, select: {interview: {select: interviewSelect}},
+      });
+      if (receipt) return receipt.interview
+        ? NextResponse.json(toInterviewDto(receipt.interview), {status: 200})
+        : NextResponse.json({message: "The original interview was removed. This upload will not recreate it."}, {status: 410});
+    }
 
     // A missing or unowned parent must never silently create another application.
     const previous = previousId !== null
@@ -144,6 +161,7 @@ export async function POST(request: NextRequest) {
 
     const created = await prisma.interview.create({
       data: {
+        createReceipt: mutationKey ? {create: {userId: effectiveUserId, mutationId: mutationKey}} : undefined,
         application: previous
           ? { connect: { id: previous.applicationId } }
           : {
@@ -175,6 +193,15 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(toInterviewDto(created), { status: 201 })
   } catch (error) {
+    // Concurrent retries can both miss the first lookup. The unique key chooses one winner.
+    if (mutationKey && actorId !== null && error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      const receipt = await prisma.interviewCreateReceipt.findUnique({
+        where: {userId_mutationId: {userId: actorId, mutationId: mutationKey}}, select: {interview: {select: interviewSelect}},
+      });
+      if (receipt) return receipt.interview
+        ? NextResponse.json(toInterviewDto(receipt.interview), {status: 200})
+        : NextResponse.json({message: "The original interview was removed. This upload will not recreate it."}, {status: 410});
+    }
     reportError("POST /api/interview error", error)
     return NextResponse.json({ message: "Internal Server Error" }, { status: 500 })
   }
