@@ -3,6 +3,7 @@ import {NextRequest} from "next/server";
 import prisma from "@/lib/prisma";
 import {deleteAccountData} from "@/lib/communityConsent";
 import {reportError} from "@/lib/bugfixes";
+import {syncCustomer} from "@/lib/chewedfeed";
 
 export async function POST(req: NextRequest) {
   try {
@@ -13,19 +14,16 @@ export async function POST(req: NextRequest) {
       `Received webhook with ID ${id} and event type of ${eventType}`
     );
 
-    // console.info("eventData", evt.data, evt)
-
     if (eventType === "user.created") {
       const { id, email_addresses, first_name, last_name } = evt.data;
+      const email = email_addresses[0]?.email_address ?? `${id}@example.com`; // same placeholder the routes use
+      const name = [first_name, last_name].filter(Boolean).join(" ") || null; // not "null null"
       await prisma.user.upsert({
         where: { clerkId: id },
         update: {},
-        create: {
-          clerkId: id,
-          email: email_addresses[0].email_address,
-          name: `${first_name} ${last_name}`,
-        },
+        create: { clerkId: id, email, name },
       });
+      await syncCustomer({ clerkId: id, email, name }); // a new free customer in ChewedFeed HQ
     }
 
     // Deleted from Clerk's side (dashboard, or our own DELETE /api/account): make sure the data goes too

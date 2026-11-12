@@ -1,6 +1,14 @@
 import type {Instrumentation} from "next";
 import {reportError} from "@/lib/bugfixes";
 
+// At boot and hourly after, every user goes to ChewedFeed HQ as a customer (see lib/chewedfeed)
+export async function register() {
+  if (process.env.NEXT_RUNTIME !== "nodejs") return;
+  const {syncAllCustomers} = await import("@/lib/chewedfeed");
+  void syncAllCustomers();
+  setInterval(() => void syncAllCustomers(), 60 * 60 * 1000).unref();
+}
+
 // Anything a page, route handler or server action throws without catching
 export const onRequestError: Instrumentation.onRequestError = (err, request, context) => {
   // The app has no server actions, so this only comes from bots probing for them (or a tab left open over a deploy)
