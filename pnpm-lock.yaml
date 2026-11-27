@@ -69,8 +69,8 @@ importers:
         specifier: ^1.1.1
         version: 1.1.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       lucide-react:
-        specifier: ^1.78.0
-        version: 1.78.0(@types/react@19.3.0)(react@19.2.4)
+        specifier: ^1.79.0
+        version: 1.79.0(@types/react@19.3.0)(react@19.2.4)
       next:
         specifier: 16.4.6
         version: 16.4.6(@babel/core@7.29.7(supports-color@7.2.0))(@types/node@26.6.6)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -3141,8 +3141,8 @@ packages:
     resolution: {integrity: sha512-5J9ysMYUpYIg9RF2vJpy9SinEmSviFSe0GyPpCQ4L5QSkLAgeLXlTAOu2ZwWUU5m+0SBl6gUU1R1ZQB3aKypfA==}
     engines: {bun: '>=1.0.0', deno: '>=1.30.0', node: '>=8.0.0'}
 
-  lucide-react@1.78.0:
-    resolution: {integrity: sha512-61NFdT5ZfAY8xs3LWKkB78GVeuiCcjYFEXeHWxWP+mQhP+UWLGsA9hJZQPtIyXRDhOvT8kgmWwAIyH5L7RIhAA==}
+  lucide-react@1.79.0:
+    resolution: {integrity: sha512-MDHKxzUobPRyQgt4hHO1z+pUQJKYMvenh8qw+ndWQE0Wg+Hbjli/ZrkZXBGmRBrMvvqDRjkmQj0Z5RbeL/ogNw==}
     peerDependencies:
       '@types/react': '*'
       react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
@@ -4398,7 +4398,7 @@ snapshots:
       '@swc/helpers': 0.5.23
       fast-equals: 6.2.1
       jotai: 3.0.2(@types/react@19.3.0)(react@19.2.4)
-      lucide-react: 1.78.0(@types/react@19.3.0)(react@19.2.4)
+      lucide-react: 1.79.0(@types/react@19.3.0)(react@19.2.4)
       react: 19.2.4
       react-dom: 19.2.4(react@19.2.4)
     transitivePeerDependencies:
@@ -6973,7 +6973,7 @@ snapshots:
 
   lru.min@1.1.5: {}
 
-  lucide-react@1.78.0(@types/react@19.3.0)(react@19.2.4):
+  lucide-react@1.79.0(@types/react@19.3.0)(react@19.2.4):
     dependencies:
       react: 19.2.4
     optionalDependencies:
