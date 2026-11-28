@@ -19,4 +19,10 @@ describe('onRequestError', () => {
     await onRequestError(new Error('Failed to find Server Action. This request might be from an older or newer deployment.'), request, context as any)
     expect(reportError).not.toHaveBeenCalled()
   })
+
+  it('ignores bots posting junk bodies at RSC paths', async () => {
+    vi.mocked(reportError).mockClear()
+    await onRequestError(new TypeError('Failed to parse body as FormData.'), {...request, path: '/RSC/1i4slclpidokfwr.txt'}, context as any)
+    expect(reportError).not.toHaveBeenCalled()
+  })
 })
